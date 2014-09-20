@@ -2,12 +2,13 @@
 package main
 
 import (
-	"github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/output"
+	"github.com/padster/go-sound/sounds"
 )
 
 func main() {
 	sound := sounds.NewSineWave(440)
-	renderer := output.NewScreen(1200, 300)
-	renderer.Render(sound)
+	// renderer := output.NewScreen(1200, 300)
+	// renderer.Render(sound)
+	output.Play(sound)
 }

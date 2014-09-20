@@ -7,19 +7,19 @@ import (
 
 type SineWave struct {
 	samples chan float64
-	hz float64
+	hz      float64
 
-	timeAt float64
+	timeAt  float64
 	running bool
 }
 
 // NewSineWave creates a new sound at a given pitch.
 func NewSineWave(hz float64) *SineWave {
-	ret := SineWave {
+	ret := SineWave{
 		make(chan float64),
 		hz,
-		0 /* timeAt */,
-		false /* running */,
+		0,     /* timeAt */
+		false, /* running */
 	}
 	return &ret
 }
@@ -39,7 +39,7 @@ func (s *SineWave) Start() {
 		}
 	}()
 }
-	
+
 func (s *SineWave) Stop() {
 	s.running = false
 }
