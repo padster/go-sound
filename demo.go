@@ -3,11 +3,17 @@ package main
 
 import (
 	"github.com/padster/go-sound/output"
-	"github.com/padster/go-sound/sounds"
+	s "github.com/padster/go-sound/sounds"
 )
 
 func main() {
-	sound := sounds.NewSineWave(440)
+	// TODO - fix it so it works at lower values (e.g. 215)
+	b := int32(500)
+	sound := s.ConcatSounds(
+		s.NewTimedSound(s.NewSineWave(440), b),
+		s.NewTimedSound(s.NewSineWave(880), b),
+		s.NewTimedSound(s.NewSineWave(440), b),
+	)
 	// renderer := output.NewScreen(1200, 300)
 	// renderer.Render(sound)
 	output.Play(sound)

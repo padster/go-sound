@@ -30,7 +30,7 @@ func (s *SineWave) GetSamples() <-chan float64 {
 
 func (s *SineWave) Start() {
 	s.running = true
-	timeDelta := s.hz * 2.0 * math.Pi / CyclesPerSecond()
+	timeDelta := s.hz * 2.0 * math.Pi * SecondsPerCycle()
 
 	go func() {
 		for s.running {
