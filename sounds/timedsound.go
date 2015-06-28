@@ -1,6 +1,10 @@
 // Runs a particular sound for a set amount of time.
 package sounds
 
+import (
+	"fmt"
+)
+
 type TimedSound struct {
 	samples chan float64
 	wrapped Sound
@@ -29,15 +33,18 @@ func (s *TimedSound) Start() {
 	s.running = true
 	s.wrapped.Start()
 	go func() {
+		fmt.Printf("Running sound for %vms\n", s.durationLeft)
 		for s.running && s.durationLeft > 0.0 {
 			next := <-s.wrapped.GetSamples()
 			s.samples <- next
 			s.durationLeft -= SecondsPerCycle() * 1000.0
 		}
+		fmt.Println("Timed sound complete!")
 		// TODO: BIG HACK
 		if s.running {
-			close(s.samples)
 			s.running = false
+			s.wrapped.Stop()
+			close(s.samples)
 		}
 	}()
 }

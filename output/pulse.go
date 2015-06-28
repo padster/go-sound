@@ -4,12 +4,11 @@ package output
 import (
 	"fmt"
 
-	"github.com/moriyoshi/pulsego" // Requires slight modifications.
 	"github.com/padster/go-sound/sounds"
 )
 
 func Play(s sounds.Sound) {
-	pa := pulsego.NewPulseMainLoop()
+	pa := NewPulseMainLoop()
 	defer pa.Dispose()
 	pa.Start()
 
@@ -18,7 +17,7 @@ func Play(s sounds.Sound) {
 	<-sync_ch
 }
 
-func playSamples(s sounds.Sound, sync_ch chan int, pa *pulsego.PulseMainLoop) {
+func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	defer func() {
 		sync_ch <- 0
 	}()
@@ -32,8 +31,8 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *pulsego.PulseMainLoop) {
 	defer ctx.Dispose()
 
 	// Create a single-channel pulse audio stream to write the sound to.
-	st := ctx.NewStream("default", &pulsego.PulseSampleSpec{
-		Format:   pulsego.SAMPLE_FLOAT32LE,
+	st := ctx.NewStream("default", &PulseSampleSpec{
+		Format:   SAMPLE_FLOAT32LE,
 		Rate:     int(sounds.CyclesPerSecond()),
 		Channels: 1,
 	})
@@ -54,11 +53,23 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *pulsego.PulseMainLoop) {
 		// TODO - read add size from pulseAudio
 		toAdd := 65536
 		buffer := make([]float32, toAdd)
+		finishedAt := toAdd
 
-		// TODO - detect when the sample has finished.
+		fmt.Printf("Filling buffer of size %d\n", toAdd)
 		for i := range buffer {
-			buffer[i] = float32(<-samples)
+			sample, stream_ok := <-samples
+			if !stream_ok {
+				finishedAt = i
+				break
+			}
+			buffer[i] = float32(sample)
 		}
-		st.Write(buffer, pulsego.SEEK_RELATIVE)
+		if finishedAt == 0 {
+			fmt.Printf("Finished :) Waiting until pulse has played everything...\n")
+			st.Drain()
+			return
+		}
+		fmt.Printf("Filled %v values, writing to pulse...\n", finishedAt)
+		st.Write(buffer[0:finishedAt], SEEK_RELATIVE)
 	}
 }

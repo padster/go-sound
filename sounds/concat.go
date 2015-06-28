@@ -1,6 +1,10 @@
 // Runs multiple non-infinite sounds, one after the other.
 package sounds
 
+import (
+	"fmt"
+)
+
 type Concat struct {
 	samples chan float64
 	wrapped []Sound
@@ -29,6 +33,7 @@ func (s *Concat) Start() {
 	if len(s.wrapped) > 0 {
 		go func() {
 			for s.running && s.indexAt < len(s.wrapped) {
+				fmt.Printf("Starting concat sound at %v\n", s.indexAt)
 				s.wrapped[s.indexAt].Start()
 				samples := s.wrapped[s.indexAt].GetSamples()
 				for sample := range samples {
@@ -37,9 +42,13 @@ func (s *Concat) Start() {
 					}
 					s.samples <- sample
 				}
+				fmt.Printf("Finished concat sound at %v\n", s.indexAt)
 				s.wrapped[s.indexAt].Stop()
 				s.indexAt++
 			}
+			fmt.Printf("CONCAT FINISHED, closing samples\n")
+			s.running = false
+			close(s.samples)
 		}()
 	}
 }
