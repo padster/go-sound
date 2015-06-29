@@ -3,14 +3,18 @@ package sounds
 
 /**
  * Upcoming:
+ *   - get renderer working again
+ *   - repeater
  *   - add chords
- *   - add attack function
  *   - write recognizeable tune in demo
- *   - write README documentation for running
- *   - migrate pulse to local file?
+ *   - clean up README documentation for running
  *   - remove TODOs
  *   - add documentation
  *   - cleanup and push.
+ *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
+ *   - implement instrument synthesizers
+ *   - midi / wave input
+ *   - reverb: https://christianfloisand.wordpress.com/2012/09/04/digital-reverberation
  */
 type Sound interface {
   /* Sound wave samples for the sound */
