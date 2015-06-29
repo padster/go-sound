@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// TODO - fix it so it works at lower values (e.g. 215)
-	b := int32(1000)
+	b := float64(1000)
 	chordC := s.SumSounds(
 		s.NewTimedSound(s.NewSineWave(523.25), b), // C
 		s.NewTimedSound(s.NewSineWave(659.25), b), // E

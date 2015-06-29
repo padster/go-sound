@@ -13,7 +13,11 @@ package sounds
  *   - cleanup and push.
  */
 type Sound interface {
+  /* Sound wave samples for the sound */
 	GetSamples() <-chan float64
+
+  /* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
+  DurationMs() uint64 // PICK: use time.Duration?
 
 	Start()
 	Stop()
@@ -21,7 +25,7 @@ type Sound interface {
 	// TODO - Does reset also restart? Have separate, or rename?
 	Reset()
 
-	// TODO - Consider adding Pause(), and Length()
+	// TODO - Consider adding Pause()
 }
 
 // Global constant for the sample rate of each sound stream.

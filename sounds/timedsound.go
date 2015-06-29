@@ -5,24 +5,28 @@ type TimedSound struct {
 	samples chan float64
 	wrapped Sound
 
-	durationMs   float64
+	durationMs   uint64
 	durationLeft float64
 	running      bool
 }
 
-func NewTimedSound(wrapped Sound, durationMs int32) *TimedSound {
+func NewTimedSound(wrapped Sound, durationMs float64) *TimedSound {
 	ret := TimedSound{
 		make(chan float64),
 		wrapped,
-		float64(durationMs),
-		float64(durationMs), /* durationLeft */
-		false,               /* running */
+		uint64(durationMs),
+		durationMs, /* durationLeft */
+		false,      /* running */
 	}
 	return &ret
 }
 
 func (s *TimedSound) GetSamples() <-chan float64 {
 	return s.samples
+}
+
+func (s *TimedSound) DurationMs() uint64 {
+	return s.durationMs
 }
 
 func (s *TimedSound) Start() {
@@ -52,7 +56,7 @@ func (s *TimedSound) Stop() {
 }
 
 func (s *TimedSound) Reset() {
-	s.durationLeft = s.durationMs
+	s.durationLeft = float64(s.durationMs)
 	s.running = true
 	s.wrapped.Reset()
 }

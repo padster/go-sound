@@ -43,6 +43,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	defer st.Dispose()
 
 	// Starts the sound, and accesses its sample stream.
+	fmt.Printf("Playing sound for %d ms\n", s.DurationMs())
 	s.Start()
 	samples := s.GetSamples()
 	defer s.Stop()

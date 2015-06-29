@@ -28,6 +28,10 @@ func (s *SineWave) GetSamples() <-chan float64 {
 	return s.samples
 }
 
+func (s *SineWave) DurationMs() uint64 {
+	return math.MaxUint64
+}
+
 func (s *SineWave) Start() {
 	s.running = true
 	timeDelta := s.hz * 2.0 * math.Pi * SecondsPerCycle()
