@@ -10,23 +10,23 @@ type Repeater struct {
 	samples chan float64
 	wrapped Sound
 
-	loops int
-	loopAt int
+	loops      int
+	loopAt     int
 	durationMs uint64
-	running bool
+	running    bool
 }
 
 func RepeatSound(wrapped Sound, loops int) *Repeater {
 	durationMs := wrapped.DurationMs()
 	if durationMs != math.MaxUint64 {
 		durationMs *= uint64(loops)
-	} 
+	}
 
 	ret := Repeater{
 		make(chan float64),
 		wrapped,
 		loops,
-		0,     /* loopAt */
+		0, /* loopAt */
 		durationMs,
 		false, /* running */
 	}
@@ -73,8 +73,8 @@ func (s *Repeater) Stop() {
 
 func (s *Repeater) Reset() {
 	if s.running {
-    panic("Stop before reset!")
-  }
+		panic("Stop before reset!")
+	}
 
 	s.samples = make(chan float64)
 	s.loopAt = 0

@@ -2,92 +2,92 @@
 package sounds
 
 import (
-  "math"
+	"math"
 )
 
 type NormalSum struct {
-  samples chan float64
-  wrapped []Sound
+	samples chan float64
+	wrapped []Sound
 
-  durationMs uint64
-  running bool
+	durationMs uint64
+	running    bool
 }
 
 func SumSounds(wrapped ...Sound) *NormalSum {
-  if len(wrapped) == 0 {
-    panic("NormalSum can't take no sounds")
-  }
+	if len(wrapped) == 0 {
+		panic("NormalSum can't take no sounds")
+	}
 
-  var durationMs uint64 = math.MaxUint64
-  for _, child := range wrapped {
-    childDurationMs := child.DurationMs()
-    if childDurationMs < durationMs {
-      durationMs = childDurationMs
-    }
-  }
+	var durationMs uint64 = math.MaxUint64
+	for _, child := range wrapped {
+		childDurationMs := child.DurationMs()
+		if childDurationMs < durationMs {
+			durationMs = childDurationMs
+		}
+	}
 
-  ret := NormalSum{
-    make(chan float64),
-    wrapped,
-    durationMs,
-    false, /* running */
-  }
-  return &ret
+	ret := NormalSum{
+		make(chan float64),
+		wrapped,
+		durationMs,
+		false, /* running */
+	}
+	return &ret
 }
 
 func (s *NormalSum) GetSamples() <-chan float64 {
-  return s.samples
+	return s.samples
 }
 
 func (s *NormalSum) DurationMs() uint64 {
-  return s.durationMs
+	return s.durationMs
 }
 
 func (s *NormalSum) Start() {
-  normScalar := 1.0 / float64(len(s.wrapped))
-  
-  s.running = true
-  for _, wrapped := range s.wrapped {
-    wrapped.Start()
-  }
+	normScalar := 1.0 / float64(len(s.wrapped))
 
-  go func() {
-    for s.running {
-      sum := 0.0
-      for _, wrapped := range s.wrapped {
-        sample, stream_ok := <-wrapped.GetSamples()
-        if !stream_ok || !s.running {
-          s.running = false
-          break
-        }
-        sum += sample
-      }
+	s.running = true
+	for _, wrapped := range s.wrapped {
+		wrapped.Start()
+	}
 
-      if s.running {
-        s.samples <- sum * normScalar
-      }
-    }
+	go func() {
+		for s.running {
+			sum := 0.0
+			for _, wrapped := range s.wrapped {
+				sample, stream_ok := <-wrapped.GetSamples()
+				if !stream_ok || !s.running {
+					s.running = false
+					break
+				}
+				sum += sample
+			}
 
-    s.Stop()
-    close(s.samples)
-  }()
+			if s.running {
+				s.samples <- sum * normScalar
+			}
+		}
+
+		s.Stop()
+		close(s.samples)
+	}()
 }
 
 func (s *NormalSum) Stop() {
-  s.running = false
-  for _, wrapped := range s.wrapped {
-    wrapped.Stop()
-  }
+	s.running = false
+	for _, wrapped := range s.wrapped {
+		wrapped.Stop()
+	}
 }
 
 func (s *NormalSum) Reset() {
-  if s.running {
-    panic("Stop before reset!")
-  }
+	if s.running {
+		panic("Stop before reset!")
+	}
 
-  s.samples = make(chan float64)
-  for _, wrapped := range s.wrapped {
-    wrapped.Reset()
-  }
-  s.running = true
+	s.samples = make(chan float64)
+	for _, wrapped := range s.wrapped {
+		wrapped.Reset()
+	}
+	s.running = true
 }

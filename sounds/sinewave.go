@@ -53,7 +53,7 @@ func (s *SineWave) Reset() {
 	if s.running {
 		panic("Stop before reset!")
 	}
-	
+
 	s.timeAt = 0
 	s.samples = make(chan float64)
 	s.running = true

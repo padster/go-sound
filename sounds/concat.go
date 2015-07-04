@@ -10,15 +10,15 @@ type Concat struct {
 	wrapped []Sound
 
 	durationMs uint64
-	indexAt int
-	running bool
+	indexAt    int
+	running    bool
 }
 
 func ConcatSounds(wrapped ...Sound) *Concat {
 	durationMs := uint64(0)
 	for _, child := range wrapped {
 		wrappedLength := child.DurationMs()
-		if durationMs + wrappedLength < wrappedLength { // Overflow, so cap out at max.
+		if durationMs+wrappedLength < wrappedLength { // Overflow, so cap out at max.
 			durationMs = math.MaxUint64
 			break
 		} else {
@@ -76,15 +76,15 @@ func (s *Concat) Stop() {
 }
 
 func (s *Concat) Reset() {
-  if s.running {
-    panic("Stop before reset!")
-  }
+	if s.running {
+		panic("Stop before reset!")
+	}
 
-  s.samples = make(chan float64)
-  for _, wrapped := range s.wrapped {
-  	wrapped.Stop()
-    wrapped.Reset()
-  }
+	s.samples = make(chan float64)
+	for _, wrapped := range s.wrapped {
+		wrapped.Stop()
+		wrapped.Reset()
+	}
 	s.indexAt = 0
 	s.running = true
 }

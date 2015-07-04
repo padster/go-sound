@@ -17,16 +17,16 @@ package sounds
  *   - reverb: https://christianfloisand.wordpress.com/2012/09/04/digital-reverberation
  */
 type Sound interface {
-  /* Sound wave samples for the sound */
+	/* Sound wave samples for the sound */
 	GetSamples() <-chan float64
 
-  /* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
-  DurationMs() uint64 // PICK: use time.Duration?
+	/* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
+	DurationMs() uint64 // PICK: use time.Duration?
 
-  /* Being writing the soundwave to the samples channel. */
+	/* Being writing the soundwave to the samples channel. */
 	Start()
 
-  /* Stop writing samples, and close the channel. */
+	/* Stop writing samples, and close the channel. */
 	Stop()
 
 	/* Reset back to the pre-start state. */

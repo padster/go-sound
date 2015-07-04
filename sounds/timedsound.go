@@ -64,7 +64,7 @@ func (s *TimedSound) Reset() {
 	s.running = true
 	s.wrapped.Reset()
 
-	fmt.Printf("Resetting timed sound...\n");
+	fmt.Printf("Resetting timed sound...\n")
 
 	s.samples = make(chan float64) // HACK - need to recreate, otherwise it may already be closed.
 }

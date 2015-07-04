@@ -18,26 +18,26 @@ func main() {
 	)
 	chordC = s.NewADSREnvelope(chordC, 50, 250, 0.3, 100)
 	// chordA := s.SumSounds(
-		// s.NewSineWave(440), s.NewSineWave(523.25), s.NewSineWave(659.25))
+	// s.NewSineWave(440), s.NewSineWave(523.25), s.NewSineWave(659.25))
 	// sound := s.ConcatSounds(
-		// chordC,
-		// s.NewTimedSound(chordA, b * 2),
+	// chordC,
+	// s.NewTimedSound(chordA, b * 2),
 	// )
 
 	// sound := s.ConcatSounds(
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
 	// )
 
 	// base := s.NewADSREnvelope(
- 		// s.NewTimedSound(s.NewSineWave(440), b), 25, 200, 0.3, 100)
+	// s.NewTimedSound(s.NewSineWave(440), b), 25, 200, 0.3, 100)
 	sound := s.RepeatSound(chordC, 2)
-	// sound := s.ConcatSounds(base, 
-		// s.NewADSREnvelope(s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100))
+	// sound := s.ConcatSounds(base,
+	// s.NewADSREnvelope(s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100))
 
 	// renderer := output.NewScreen(1200, 300)
 	// renderer.Render(sound)
