@@ -61,23 +61,30 @@ func (s *Concat) Start() {
 				s.wrapped[s.indexAt].Stop()
 				s.indexAt++
 			}
-			s.running = false
+
+			if s.indexAt < len(s.wrapped) {
+				s.wrapped[s.indexAt].Stop()
+			}
+			s.Stop()
 			close(s.samples)
 		}()
 	}
 }
 
 func (s *Concat) Stop() {
-	if s.running {
-		s.running = false
-		s.wrapped[s.indexAt].Stop()
-		s.indexAt = 0
-	}
+	s.running = false
 }
 
-// TODO - implement properly (properly handle immediate changes while running)
 func (s *Concat) Reset() {
-	s.running = true
-	s.wrapped[s.indexAt].Stop()
+  if s.running {
+    panic("Stop before reset!")
+  }
+
+  s.samples = make(chan float64)
+  for _, wrapped := range s.wrapped {
+  	wrapped.Stop()
+    wrapped.Reset()
+  }
 	s.indexAt = 0
+	s.running = true
 }

@@ -14,6 +14,10 @@ type NormalSum struct {
 }
 
 func SumSounds(wrapped ...Sound) *NormalSum {
+  if len(wrapped) == 0 {
+    panic("NormalSum can't take no sounds")
+  }
+
   var durationMs uint64 = math.MaxUint64
   for _, child := range wrapped {
     childDurationMs := child.DurationMs()
@@ -40,52 +44,50 @@ func (s *NormalSum) DurationMs() uint64 {
 }
 
 func (s *NormalSum) Start() {
+  normScalar := 1.0 / float64(len(s.wrapped))
+  
   s.running = true
-
   for _, wrapped := range s.wrapped {
     wrapped.Start()
   }
 
-  if len(s.wrapped) > 0 {
-    normScalar := 1.0 / float64(len(s.wrapped))
-
-    go func() {
-      for s.running {
-        sum := 0.0
-        for _, wrapped := range s.wrapped {
-          sample, stream_ok := <-wrapped.GetSamples()
-          if !stream_ok || !s.running {
-            s.running = false
-            break
-          }
-          sum += sample
+  go func() {
+    for s.running {
+      sum := 0.0
+      for _, wrapped := range s.wrapped {
+        sample, stream_ok := <-wrapped.GetSamples()
+        if !stream_ok || !s.running {
+          s.running = false
+          break
         }
-
-        if s.running {
-          s.samples <- sum * normScalar
-        }
+        sum += sample
       }
 
-      s.running = false
-      close(s.samples)
-    }()
-  }
+      if s.running {
+        s.samples <- sum * normScalar
+      }
+    }
+
+    s.Stop()
+    close(s.samples)
+  }()
 }
 
 func (s *NormalSum) Stop() {
-  if s.running {
-    s.running = false
-    for _, wrapped := range s.wrapped {
-      wrapped.Stop()
-    }
-    // close(s.samples)
+  s.running = false
+  for _, wrapped := range s.wrapped {
+    wrapped.Stop()
   }
 }
 
-// TODO - implement properly (properly handle immediate changes while running)
 func (s *NormalSum) Reset() {
-  s.running = true
+  if s.running {
+    panic("Stop before reset!")
+  }
+
+  s.samples = make(chan float64)
   for _, wrapped := range s.wrapped {
     wrapped.Reset()
   }
+  s.running = true
 }

@@ -3,12 +3,12 @@ package sounds
 
 /**
  * Upcoming:
- *   - get renderer working again
- *   - repeater
- *   - add chords
+ *   - chords/note parser
+ *   - get renderer working again (upgrade openGL versions)
  *   - write recognizeable tune in demo
  *   - clean up README documentation for running
  *   - remove TODOs
+ *   - simplified API to manage lifecycle.
  *   - add documentation
  *   - cleanup and push.
  *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
@@ -23,10 +23,13 @@ type Sound interface {
   /* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
   DurationMs() uint64 // PICK: use time.Duration?
 
+  /* Being writing the soundwave to the samples channel. */
 	Start()
+
+  /* Stop writing samples, and close the channel. */
 	Stop()
 
-	// TODO - Does reset also restart? Have separate, or rename?
+	/* Reset back to the pre-start state. */
 	Reset()
 
 	// TODO - Consider adding Pause()

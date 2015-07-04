@@ -70,24 +70,23 @@ func (s *ADSREnvelope) Start() {
       s.msAt += SecondsPerCycle() * 1000.0
     }
 
-    // TODO: BIG HACK?
-    if s.running {
-      s.running = false
-      s.wrapped.Stop()
-      close(s.samples)
-    }
+    s.Stop()
+    close(s.samples)
   }()
 }
 
 func (s *ADSREnvelope) Stop() {
-  if s.running {
-    s.running = false
-    s.wrapped.Stop()
-  }
+  s.wrapped.Stop()
+  s.running = false
 }
 
 func (s *ADSREnvelope) Reset() {
+  if s.running {
+    panic("Stop before reset!")
+  }
+
+  s.samples = make(chan float64)
   s.msAt = float64(0)
-  s.running = true
   s.wrapped.Reset()
+  s.running = true
 }

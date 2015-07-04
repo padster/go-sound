@@ -14,16 +14,16 @@ Golang libraries for reading and processing sound waves.
 
 #### Done:
 1. _Input_: Wave
-1. _Output_: GL screen render
 1. _Output_: Pulse audio
 1. _Math_: Parallel sum (chord)
 1. _Math_: Timed note
 1. _Math_: Serial sum (melody)
+1. _Effect_: Envelope
+1. _Math_: Repeater
 
 
 #### Upcoming:
-1. _Math_: Repeater
-1. _Effect_: Envelope
+1. _Output_: GL screen render
 1. _Input_: Note parser (e.g. "A#")
 1. _Input_: Chord parser (e.g. "Gm7")
 
