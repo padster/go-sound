@@ -29,3 +29,7 @@ Golang libraries for reading and processing sound waves.
 
 etc ...
 
+
+Note: Sample C piano wav sound from:
+http://freewavesamples.com/ensoniq-sq-1-dyno-keys-c4
+

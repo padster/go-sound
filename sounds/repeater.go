@@ -17,6 +17,7 @@ type Repeater struct {
 }
 
 func RepeatSound(wrapped Sound, loops int) *Repeater {
+	// TODO - support -1 == infinite loop
 	durationMs := wrapped.DurationMs()
 	if durationMs != math.MaxUint64 {
 		durationMs *= uint64(loops)
