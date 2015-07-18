@@ -8,7 +8,8 @@ import (
 
 func main() {
 	// TODO - fix it so it works at lower values (e.g. 215)
-	b := float64(500)
+	mspb := 404 // ~= 148 bmp ~= 400 ms/b
+	b := float64(mspb * 8)
 	// var chordC s.Sound = s.ConcatSounds(
 		// s.NewTimedSound(s.NewSineWave(523.25), b), // C
 		// s.NewTimedSound(s.NewSineWave(659.25), b), // E
@@ -22,14 +23,14 @@ func main() {
 	// s.NewTimedSound(chordA, b * 2),
 	// )
 
-	sound := s.ConcatSounds(
-		s.NewADSREnvelope(
-			s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
-		s.NewADSREnvelope(
-			s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
-		s.NewADSREnvelope(
-			s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
-	)
+	// sound := s.ConcatSounds(
+		// s.NewADSREnvelope(
+			// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
+		// s.NewADSREnvelope(
+			// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
+		// s.NewADSREnvelope(
+			// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
+	// )
 
 	// base := s.NewADSREnvelope(
 	// s.NewTimedSound(s.NewSineWave(440), b), 25, 200, 0.3, 100)
@@ -44,10 +45,41 @@ func main() {
 
 	// sound := s.RepeatSound(s.NewTimedSound(chord, b), 3)
 
-	// output.Play(sound)
+	// sound := s.RepeatSound(s.ConcatSounds(
+		// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEbG", 4), b), 20, 100, 0.9, 20),
+		// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 20, 100, 0.4, 20),
+	// ), 4)
 
-	renderer := output.NewScreen(1500, 400)
-	renderer.Render(sound)
+	// Hotel #1
+	/*
+	sound := s.ConcatSounds(
+		s.NewTimedSound(s.ParseChord("Bm", 4), b),
+		s.NewTimedSound(s.ParseChord("F#", 4), b),
+		s.NewTimedSound(s.ParseChord("A", 4), b),
+		s.NewTimedSound(s.ParseChord("E", 4), b),
+		s.NewTimedSound(s.ParseChord("G", 4), b),
+		s.NewTimedSound(s.ParseChord("D", 4), b),
+		s.NewTimedSound(s.ParseChord("Em", 4), b),
+		s.NewTimedSound(s.ParseChord("F#", 4), b),
+	)
+	*/
+
+	// Hotel #2
+	sound := s.ConcatSounds(
+		s.NewTimedSound(s.GuitarChord("224432"), b),
+		s.NewTimedSound(s.GuitarChord("244322"), b),
+		s.NewTimedSound(s.GuitarChord("x02220"), b),
+		s.NewTimedSound(s.GuitarChord("022100"), b),
+		s.NewTimedSound(s.GuitarChord("320003"), b),
+		s.NewTimedSound(s.GuitarChord("xx0232"), b),
+		s.NewTimedSound(s.GuitarChord("022000"), b),
+		s.NewTimedSound(s.GuitarChord("244322"), b),
+	)
+
+	output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+
+	// renderer := output.NewScreen(1500, 400)
+	// renderer.Render(sound)
 
 	// TODO - modem faker: 440 for 0.5s, pause for 1s, 440 for 0.5s, pause for 1s, 880 for 1.5s
 }

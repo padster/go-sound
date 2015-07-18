@@ -3,14 +3,15 @@ package sounds
 
 /**
  * Upcoming:
- *   - chords/note parser
- *   - get renderer working again (upgrade openGL versions)
- *   - write recognizeable tune in demo
- *   - clean up README documentation for running
+ *   - sound forker
  *   - remove TODOs
+ *   - move screen renderer into this repo.
  *   - simplified API to manage lifecycle.
+ *   - write examples for each type, and one overall demo with tune using multiple
  *   - add documentation
- *   - cleanup and push.
+ *   - proper README
+ *   - golang cleanup
+ *   - push to github, make public and announce
  *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
  *   - implement instrument synthesizers
  *   - midi / wave input
