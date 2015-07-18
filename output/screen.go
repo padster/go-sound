@@ -13,7 +13,7 @@ type Screen struct {
 // NewScreen creates a new output screen of a given size.
 func NewScreen(width int, height int) *Screen {
 	ret := Screen{
-		ui.NewScreen(width, height),
+		ui.NewScreen(width, height, 15),
 	}
 	return &ret
 }
@@ -21,5 +21,5 @@ func NewScreen(width int, height int) *Screen {
 // Render starts rendering a sound wave's samples to screen.
 func (ui *Screen) Render(s sounds.Sound) {
 	s.Start()
-	ui.screen.Render(s.GetSamples(), 1000)
+	ui.screen.Render(s.GetSamples(), 2)
 }
