@@ -59,6 +59,7 @@ func main() {
 	// ), 4)
 
 	// Hotel #1
+	/*
 	sound := s.ConcatSounds(
 		s.NewTimedSound(s.ParseChord("Bm", 3), b),
 		s.NewTimedSound(s.ParseChord("F#", 3), b),
@@ -69,23 +70,23 @@ func main() {
 		s.NewTimedSound(s.ParseChord("Em", 3), b),
 		s.NewTimedSound(s.ParseChord("F#", 3), b),
 	)
-
-	// Hotel #2
-	/*
-	sound := s.ConcatSounds(
-		s.NewTimedSound(s.GuitarChord("224432"), b),
-		s.NewTimedSound(s.GuitarChord("244322"), b),
-		s.NewTimedSound(s.GuitarChord("x02220"), b),
-		s.NewTimedSound(s.GuitarChord("022100"), b),
-		s.NewTimedSound(s.GuitarChord("320003"), b),
-		s.NewTimedSound(s.GuitarChord("xx0232"), b),
-		s.NewTimedSound(s.GuitarChord("022000"), b),
-		s.NewTimedSound(s.GuitarChord("244322"), b),
-	)
 	*/
 
-	fmt.Printf("Playing sound.\n")
-	output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+	// Hotel #2
+	sound := s.ConcatSounds(
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("224432"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("x02220"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("022100"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("320003"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("xx0232"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("022000"), b), 50, 250, 0.8, 50),
+		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
+	)
+
+	// fmt.Printf("Playing sound.\n")
+	// output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+	output.WriteSoundToWav(sound, "hotcal.wav")
 
 	// renderer := output.NewScreen(1500, 400)
 	// renderer.Render(sound)
