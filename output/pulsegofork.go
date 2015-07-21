@@ -198,6 +198,12 @@ int stream_write(pa_threaded_mainloop *pa, pa_stream *p, const void *data, size_
     return retval;
 }
 
+// Added: Read read the available size to be written
+size_t stream_writable_size(pa_stream *p) 
+{
+    return pa_stream_writable_size(p);  
+}
+
 // Added: Drain a stream, and wait for it to finish before returning.
 void stream_drain(pa_threaded_mainloop *pa, pa_stream *s)
 {
@@ -490,6 +496,10 @@ func (self *PulseStream) Write(data interface{}, flags int) int {
 	}
 	retval := int(C.stream_write(self.Context.MainLoop.pa, self.st, ptr, C.size_t(typ.Elem().Size()*uintptr(nsamples)), C.pa_seek_mode_t(flags)))
 	return retval
+}
+
+func (self *PulseStream) WritableSize() int {
+    return int(C.stream_writable_size(self.st))
 }
 
 func (self *PulseStream) Drain() {

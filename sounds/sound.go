@@ -4,10 +4,11 @@ package sounds
 /**
  * Upcoming:
  *   - sound forker
- *   - remove TODOs
+ *   - .wav output
  *   - move screen renderer into this repo.
  *   - simplified API to manage lifecycle.
  *   - write examples for each type, and one overall demo with tune using multiple
+ *   - remove TODOs
  *   - add documentation
  *   - proper README
  *   - golang cleanup

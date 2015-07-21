@@ -2,14 +2,22 @@
 package main
 
 import (
+	"fmt"
+	"runtime"
+
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
 
 func main() {
+	// TODO - fix this here?
+	runtime.GOMAXPROCS(4)
+
+	fmt.Println("Building sound...")
+
 	// TODO - fix it so it works at lower values (e.g. 215)
 	mspb := 404 // ~= 148 bmp ~= 400 ms/b
-	b := float64(mspb * 8)
+	b := float64(mspb * 4)
 	// var chordC s.Sound = s.ConcatSounds(
 		// s.NewTimedSound(s.NewSineWave(523.25), b), // C
 		// s.NewTimedSound(s.NewSineWave(659.25), b), // E
@@ -51,20 +59,19 @@ func main() {
 	// ), 4)
 
 	// Hotel #1
-	/*
 	sound := s.ConcatSounds(
-		s.NewTimedSound(s.ParseChord("Bm", 4), b),
-		s.NewTimedSound(s.ParseChord("F#", 4), b),
-		s.NewTimedSound(s.ParseChord("A", 4), b),
-		s.NewTimedSound(s.ParseChord("E", 4), b),
-		s.NewTimedSound(s.ParseChord("G", 4), b),
-		s.NewTimedSound(s.ParseChord("D", 4), b),
-		s.NewTimedSound(s.ParseChord("Em", 4), b),
-		s.NewTimedSound(s.ParseChord("F#", 4), b),
+		s.NewTimedSound(s.ParseChord("Bm", 3), b),
+		s.NewTimedSound(s.ParseChord("F#", 3), b),
+		s.NewTimedSound(s.ParseChord("A", 3), b),
+		s.NewTimedSound(s.ParseChord("E", 3), b),
+		s.NewTimedSound(s.ParseChord("G", 3), b),
+		s.NewTimedSound(s.ParseChord("D", 3), b),
+		s.NewTimedSound(s.ParseChord("Em", 3), b),
+		s.NewTimedSound(s.ParseChord("F#", 3), b),
 	)
-	*/
 
 	// Hotel #2
+	/*
 	sound := s.ConcatSounds(
 		s.NewTimedSound(s.GuitarChord("224432"), b),
 		s.NewTimedSound(s.GuitarChord("244322"), b),
@@ -75,7 +82,9 @@ func main() {
 		s.NewTimedSound(s.GuitarChord("022000"), b),
 		s.NewTimedSound(s.GuitarChord("244322"), b),
 	)
+	*/
 
+	fmt.Printf("Playing sound.\n")
 	output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
 
 	// renderer := output.NewScreen(1500, 400)

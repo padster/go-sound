@@ -51,8 +51,12 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	// Continually buffers data from the stream and writes to audio.
 	st.ConnectToSink()
 	for {
-		// TODO - read available size from pulseAudio
-		toAdd := 65536
+		toAdd := st.WritableSize()
+		if (toAdd == 0) {
+			// PICK: use toAdd < MIN_WRITE_SIZE instead, to avoid small writes?
+			continue
+		}
+
 		buffer := make([]float32, toAdd)
 		finishedAt := toAdd
 
@@ -68,6 +72,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 			st.Drain()
 			return
 		}
+		fmt.Printf("Writing %d samples\n", finishedAt)
 		st.Write(buffer[0:finishedAt], SEEK_RELATIVE)
 	}
 }

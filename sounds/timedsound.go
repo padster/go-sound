@@ -2,7 +2,7 @@
 package sounds
 
 import (
-	"fmt"
+	// "fmt"
 )
 
 type TimedSound struct {
@@ -63,8 +63,5 @@ func (s *TimedSound) Reset() {
 	s.durationLeft = float64(s.durationMs)
 	s.running = true
 	s.wrapped.Reset()
-
-	fmt.Printf("Resetting timed sound...\n")
-
 	s.samples = make(chan float64) // HACK - need to recreate, otherwise it may already be closed.
 }
