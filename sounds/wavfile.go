@@ -13,20 +13,16 @@ const (
 )
 
 type WavFileSound struct {
-	samples chan float64
-	path    string
-	channel uint16
-
-	wavReader  *wav.Reader
-	meta       wav.File
-	durationMs uint64
+	path      string
+	channel   uint16
+	wavReader *wav.Reader
+	meta      wav.File
 
 	samplesLeft uint32
-	running     bool
 }
 
 // NewSineWave loads a wav file and turns a particular channel into a Sound.
-func LoadWavAsSound(path string, channel uint16) *WavFileSound {
+func LoadWavAsSound(path string, channel uint16) Sound {
 	wavReader := loadReaderOrPanic(path)
 
 	meta := wavReader.GetFile()
@@ -38,70 +34,48 @@ func LoadWavAsSound(path string, channel uint16) *WavFileSound {
 	}
 	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))
 
-	ret := WavFileSound{
-		make(chan float64),
+	wav := WavFileSound{
 		path,
 		channel,
 		wavReader,
 		meta,
-		durationMs,
 		wavReader.GetSampleCount(),
-		false, /* running */
 	}
-	return &ret
+
+	return NewBaseSound(&wav, durationMs)
 }
 
-func (s *WavFileSound) GetSamples() <-chan float64 {
-	return s.samples
-}
-
-func (s *WavFileSound) DurationMs() uint64 {
-	return s.durationMs
-}
-
-func (s *WavFileSound) Start() {
-	s.running = true
-
-	go func() {
-		for s.running && s.samplesLeft > 0 {
-			// Read all channels, but pick just the one we want.
-			selected := float64(0)
-			for i := uint16(0); i < s.meta.Channels; i++ {
-				n, err := s.wavReader.ReadSample()
-				if err != nil {
-					s.running = false
-					break
-				}
-				if i == s.channel {
-					selected = float64(int16(n)) * normScale
-				}
-			}
-
-			if !s.running {
+func (s *WavFileSound) Run(base *BaseSound) {
+	for s.samplesLeft > 0 {
+		// Read all channels, but pick just the one we want.
+		selected := float64(0)
+		for i := uint16(0); i < s.meta.Channels; i++ {
+			n, err := s.wavReader.ReadSample()
+			if err != nil {
+				base.Stop()
+				// s.running = false
 				break
 			}
-			s.samples <- selected
-			s.samplesLeft--
+			if i == s.channel {
+				selected = float64(int16(n)) * normScale
+			}
 		}
-		s.Stop()
-		close(s.samples)
-	}()
+
+		if !base.WriteSample(selected) {
+			break
+		}
+		s.samplesLeft--
+	}
 }
 
 func (s *WavFileSound) Stop() {
-	s.running = false
+	// No-op
 }
 
 func (s *WavFileSound) Reset() {
-	if s.running {
-		panic("Stop before reset!")
-	}
-
-	s.samples = make(chan float64)
 	s.wavReader = loadReaderOrPanic(s.path)
 	s.meta = s.wavReader.GetFile()
 	s.samplesLeft = s.wavReader.GetSampleCount()
-	s.running = true
 }
 
 // Utility to handle failure cases of reading an input file.

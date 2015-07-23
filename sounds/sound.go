@@ -4,13 +4,14 @@ package sounds
 /**
  * Upcoming:
  *   - sound forker
+ *   - 'silence' sound
  *   - move screen renderer into this repo.
- *   - simplified API to manage lifecycle.
  *   - write examples for each type, and one overall demo with tune using multiple
- *   - remove TODOs
+ *   - remove TODOs and PICKs
  *   - add documentation
  *   - proper README
- *   - golang cleanup
+ *   - fix static in wav output
+ *   - golang cleanup - gofmt, toString, fix exported set, final variables?
  *   - push to github, make public and announce
  *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
  *   - implement instrument synthesizers

@@ -85,11 +85,21 @@ func main() {
 	)
 
 	// fmt.Printf("Playing sound.\n")
-	// output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+	output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+	// output.Play(sound)
+	sound.Reset()
 	output.WriteSoundToWav(sound, "hotcal.wav")
+
+	// sound := s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 250, 250, 0.3, 250)
+	// sound.Reset()
+	// output.WriteSoundToWav(sound, "chek.wav")
 
 	// renderer := output.NewScreen(1500, 400)
 	// renderer.Render(sound)
 
 	// TODO - modem faker: 440 for 0.5s, pause for 1s, 440 for 0.5s, pause for 1s, 880 for 1.5s
 }
+
+// TODO - figure out why this fails the stop-before-reset panic:
+//	sound := s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 250, 250, 0.3, 250)
+//	output.Play(s.RepeatSound(sound, 4))

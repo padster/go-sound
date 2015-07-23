@@ -6,15 +6,12 @@ import (
 )
 
 type Concat struct {
-	samples chan float64
 	wrapped []Sound
 
-	durationMs uint64
-	indexAt    int
-	running    bool
+	indexAt int
 }
 
-func ConcatSounds(wrapped ...Sound) *Concat {
+func ConcatSounds(wrapped ...Sound) Sound {
 	durationMs := uint64(0)
 	for _, child := range wrapped {
 		wrappedLength := child.DurationMs()
@@ -26,65 +23,43 @@ func ConcatSounds(wrapped ...Sound) *Concat {
 		}
 	}
 
-	ret := Concat{
-		make(chan float64),
+	concat := Concat{
 		wrapped,
-		durationMs,
-		0,     /* indexAt */
-		false, /* running */
+		0, /* indexAt */
 	}
-	return &ret
+	return NewBaseSound(&concat, durationMs)
 }
 
-func (s *Concat) GetSamples() <-chan float64 {
-	return s.samples
-}
+func (s *Concat) Run(base *BaseSound) {
+	for s.indexAt < len(s.wrapped) {
+		s.wrapped[s.indexAt].Start()
+		// TODO - merge with range statement?
+		samples := s.wrapped[s.indexAt].GetSamples()
 
-func (s *Concat) DurationMs() uint64 {
-	return s.durationMs
-}
-
-func (s *Concat) Start() {
-	s.running = true
-
-	if len(s.wrapped) > 0 {
-		go func() {
-			for s.running && s.indexAt < len(s.wrapped) {
-				s.wrapped[s.indexAt].Start()
-				samples := s.wrapped[s.indexAt].GetSamples()
-				for sample := range samples {
-					if !s.running {
-						break
-					}
-					s.samples <- sample
-				}
-				s.wrapped[s.indexAt].Stop()
-				s.indexAt++
+		cease := false
+		for sample := range samples {
+			if !base.WriteSample(sample) {
+				cease = true
+				break
 			}
+		}
+		s.wrapped[s.indexAt].Stop()
+		s.indexAt++
 
-			if s.indexAt < len(s.wrapped) {
-				s.wrapped[s.indexAt].Stop()
-			}
-			s.Stop()
-			close(s.samples)
-		}()
+		if cease {
+			break
+		}
 	}
 }
 
 func (s *Concat) Stop() {
-	s.running = false
+	// No-op, handled inside Run
 }
 
 func (s *Concat) Reset() {
-	if s.running {
-		panic("Stop before reset!")
-	}
-
-	s.samples = make(chan float64)
 	for _, wrapped := range s.wrapped {
-		wrapped.Stop()
+		// TODO - needed? wrapped.Stop()
 		wrapped.Reset()
 	}
 	s.indexAt = 0
-	s.running = true
 }

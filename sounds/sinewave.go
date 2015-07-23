@@ -6,55 +6,37 @@ import (
 )
 
 type SineWave struct {
-	samples chan float64
-	hz      float64
+	hz        float64
+	timeDelta float64
 
-	timeAt  float64
-	running bool
+	timeAt float64
 }
 
 // NewSineWave creates a new sound at a given pitch.
-func NewSineWave(hz float64) *SineWave {
-	ret := SineWave{
-		make(chan float64),
+func NewSineWave(hz float64) Sound {
+	timeDelta := hz * 2.0 * math.Pi * SecondsPerCycle()
+	sineWave := SineWave{
 		hz,
-		0,     /* timeAt */
-		false, /* running */
+		timeDelta,
+		0, /* timeAt */
 	}
-	return &ret
+
+	return NewBaseSound(&sineWave, math.MaxUint64)
 }
 
-func (s *SineWave) GetSamples() <-chan float64 {
-	return s.samples
-}
-
-func (s *SineWave) DurationMs() uint64 {
-	return math.MaxUint64
-}
-
-func (s *SineWave) Start() {
-	s.running = true
-	timeDelta := s.hz * 2.0 * math.Pi * SecondsPerCycle()
-
-	go func() {
-		for s.running {
-			s.samples <- math.Sin(s.timeAt)
-			s.timeAt += timeDelta
+func (s *SineWave) Run(base *BaseSound) {
+	for {
+		if !base.WriteSample(math.Sin(s.timeAt)) {
+			return
 		}
-		close(s.samples)
-	}()
+		s.timeAt += s.timeDelta
+	}
 }
 
 func (s *SineWave) Stop() {
-	s.running = false
+	// No-op
 }
 
 func (s *SineWave) Reset() {
-	if s.running {
-		panic("Stop before reset!")
-	}
-
 	s.timeAt = 0
-	s.samples = make(chan float64)
-	s.running = true
 }
