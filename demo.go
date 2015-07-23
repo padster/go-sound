@@ -19,9 +19,9 @@ func main() {
 	mspb := 404 // ~= 148 bmp ~= 400 ms/b
 	b := float64(mspb * 4)
 	// var chordC s.Sound = s.ConcatSounds(
-		// s.NewTimedSound(s.NewSineWave(523.25), b), // C
-		// s.NewTimedSound(s.NewSineWave(659.25), b), // E
-		// s.NewTimedSound(s.NewSineWave(783.99), b), // G
+	// s.NewTimedSound(s.NewSineWave(523.25), b), // C
+	// s.NewTimedSound(s.NewSineWave(659.25), b), // E
+	// s.NewTimedSound(s.NewSineWave(783.99), b), // G
 	// )
 	// chordC = s.NewADSREnvelope(chordC, 50, 250, 0.3, 100)
 	// chordA := s.SumSounds(
@@ -32,12 +32,12 @@ func main() {
 	// )
 
 	// sound := s.ConcatSounds(
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
-		// s.NewADSREnvelope(
-			// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
+	// s.NewADSREnvelope(
+	// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
 	// )
 
 	// base := s.NewADSREnvelope(
@@ -47,29 +47,29 @@ func main() {
 	// s.NewADSREnvelope(s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100))
 
 	// chord := s.SumSounds(
-		// s.LoadWavAsSound("piano.wav", 0),
-		// s.NewSineWave(392.00),
+	// s.LoadWavAsSound("piano.wav", 0),
+	// s.NewSineWave(392.00),
 	// )
 
 	// sound := s.RepeatSound(s.NewTimedSound(chord, b), 3)
 
 	// sound := s.RepeatSound(s.ConcatSounds(
-		// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEbG", 4), b), 20, 100, 0.9, 20),
-		// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 20, 100, 0.4, 20),
+	// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEbG", 4), b), 20, 100, 0.9, 20),
+	// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 20, 100, 0.4, 20),
 	// ), 4)
 
 	// Hotel #1
 	/*
-	sound := s.ConcatSounds(
-		s.NewTimedSound(s.ParseChord("Bm", 3), b),
-		s.NewTimedSound(s.ParseChord("F#", 3), b),
-		s.NewTimedSound(s.ParseChord("A", 3), b),
-		s.NewTimedSound(s.ParseChord("E", 3), b),
-		s.NewTimedSound(s.ParseChord("G", 3), b),
-		s.NewTimedSound(s.ParseChord("D", 3), b),
-		s.NewTimedSound(s.ParseChord("Em", 3), b),
-		s.NewTimedSound(s.ParseChord("F#", 3), b),
-	)
+		sound := s.ConcatSounds(
+			s.NewTimedSound(s.ParseChord("Bm", 3), b),
+			s.NewTimedSound(s.ParseChord("F#", 3), b),
+			s.NewTimedSound(s.ParseChord("A", 3), b),
+			s.NewTimedSound(s.ParseChord("E", 3), b),
+			s.NewTimedSound(s.ParseChord("G", 3), b),
+			s.NewTimedSound(s.ParseChord("D", 3), b),
+			s.NewTimedSound(s.ParseChord("Em", 3), b),
+			s.NewTimedSound(s.ParseChord("F#", 3), b),
+		)
 	*/
 
 	// Hotel #2

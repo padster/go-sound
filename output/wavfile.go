@@ -30,7 +30,7 @@ func WriteSoundToWav(s sounds.Sound, path string) error {
 	}()
 
 	// Create a .wav writer for the file
-	var wf = wav.File {
+	var wf = wav.File{
 		SampleRate:      uint32(sounds.CyclesPerSecond()),
 		Channels:        1,
 		SignificantBits: 16,

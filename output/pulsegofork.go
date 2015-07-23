@@ -199,9 +199,9 @@ int stream_write(pa_threaded_mainloop *pa, pa_stream *p, const void *data, size_
 }
 
 // Added: Read read the available size to be written
-size_t stream_writable_size(pa_stream *p) 
+size_t stream_writable_size(pa_stream *p)
 {
-    return pa_stream_writable_size(p);  
+    return pa_stream_writable_size(p);
 }
 
 // Added: Drain a stream, and wait for it to finish before returning.
@@ -499,7 +499,7 @@ func (self *PulseStream) Write(data interface{}, flags int) int {
 }
 
 func (self *PulseStream) WritableSize() int {
-    return int(C.stream_writable_size(self.st))
+	return int(C.stream_writable_size(self.st))
 }
 
 func (self *PulseStream) Drain() {

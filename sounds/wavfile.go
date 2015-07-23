@@ -14,15 +14,15 @@ const (
 
 type WavFileSound struct {
 	samples chan float64
-	path string
+	path    string
 	channel uint16
 
-	wavReader *wav.Reader
-	meta wav.File
+	wavReader  *wav.Reader
+	meta       wav.File
 	durationMs uint64
 
 	samplesLeft uint32
-	running bool
+	running     bool
 }
 
 // NewSineWave loads a wav file and turns a particular channel into a Sound.
@@ -35,7 +35,7 @@ func LoadWavAsSound(path string, channel uint16) *WavFileSound {
 	}
 	if meta.SampleRate != uint32(CyclesPerSecond()) {
 		panic("TODO: Support wav files that aren't 44.1kHz")
-	} 
+	}
 	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))
 
 	ret := WavFileSound{
@@ -79,7 +79,7 @@ func (s *WavFileSound) Start() {
 
 			if !s.running {
 				break
-			}			
+			}
 			s.samples <- selected
 			s.samplesLeft--
 		}
@@ -98,7 +98,7 @@ func (s *WavFileSound) Reset() {
 	}
 
 	s.samples = make(chan float64)
-	s.wavReader = loadReaderOrPanic(s.path)	
+	s.wavReader = loadReaderOrPanic(s.path)
 	s.meta = s.wavReader.GetFile()
 	s.samplesLeft = s.wavReader.GetSampleCount()
 	s.running = true
@@ -106,15 +106,15 @@ func (s *WavFileSound) Reset() {
 
 // Utility to handle failure cases of reading an input file.
 func loadReaderOrPanic(path string) *wav.Reader {
-	testInfo, err := os.Stat(path); 
+	testInfo, err := os.Stat(path)
 	if err != nil {
 		panic(err)
 	}
-	testWav, err := os.Open(path); 
+	testWav, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}
-	result, err := wav.NewReader(testWav, testInfo.Size()); 
+	result, err := wav.NewReader(testWav, testInfo.Size())
 	if err != nil {
 		panic(err)
 	}
