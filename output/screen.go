@@ -2,18 +2,18 @@
 package output
 
 import (
-	"github.com/padster/go-muse/ui"
 	"github.com/padster/go-sound/sounds"
+	"github.com/padster/go-sound/util"
 )
 
 type Screen struct {
-	screen *ui.Screen
+	screen *util.Screen
 }
 
 // NewScreen creates a new output screen of a given size.
 func NewScreen(width int, height int) *Screen {
 	ret := Screen{
-		ui.NewScreen(width, height, 15),
+		util.NewScreen(width, height, 15),
 	}
 	return &ret
 }

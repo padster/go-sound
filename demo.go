@@ -87,7 +87,7 @@ func main() {
 	*/
 
 	// fmt.Printf("Playing sound.\n")
-	sound := s.SumSounds(
+	notes := s.SumSounds(
 		s.MidiToSound(54),
 		s.ConcatSounds(s.NewTimedSilence(1 * b), s.MidiToSound(57)),
 		s.ConcatSounds(s.NewTimedSilence(2 * b), s.MidiToSound(60)),
@@ -98,8 +98,9 @@ func main() {
 		s.ConcatSounds(s.NewTimedSilence(7 * b), s.MidiToSound(75)),
 		s.ConcatSounds(s.NewTimedSilence(8 * b), s.MidiToSound(78)),
 	)
-	// output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
-	output.Play(s.NewTimedSound(sound, b * 12))
+	sound := s.NewTimedSound(notes, b * 12)
+	// output.Play(sound) // TODO - figure out why -1 doesn't work here
+	// output.Play(s.NewTimedSound(sound, b * 12))
 	// sound.Reset()
 	// output.WriteSoundToWav(sound, "hotcal.wav")
 
@@ -107,8 +108,8 @@ func main() {
 	// sound.Reset()
 	// output.WriteSoundToWav(sound, "chek.wav")
 
-	// renderer := output.NewScreen(1500, 400)
-	// renderer.Render(sound)
+	renderer := output.NewScreen(2000, 400)
+	renderer.Render(sound)
 
 	// TODO - modem faker: 440 for 0.5s, pause for 1s, 440 for 0.5s, pause for 1s, 880 for 1.5s
 }

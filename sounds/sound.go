@@ -3,7 +3,6 @@ package sounds
 
 /**
  * Upcoming:
- *   - move screen renderer into this repo.
  *   - write examples for each type, and one overall demo with tune using multiple
  *   - remove TODOs and PICKs
  *   - add documentation
