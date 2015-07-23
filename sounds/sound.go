@@ -3,8 +3,6 @@ package sounds
 
 /**
  * Upcoming:
- *   - sound forker
- *   - 'silence' sound
  *   - move screen renderer into this repo.
  *   - write examples for each type, and one overall demo with tune using multiple
  *   - remove TODOs and PICKs
@@ -13,6 +11,7 @@ package sounds
  *   - fix static in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables?
  *   - push to github, make public and announce
+ *   - sound forker
  *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
  *   - implement instrument synthesizers
  *   - midi / wave input
@@ -23,7 +22,7 @@ type Sound interface {
 	GetSamples() <-chan float64
 
 	/* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
-	DurationMs() uint64 // PICK: use time.Duration?
+	DurationMs() uint64 // TODO: use time.Duration
 
 	/* Being writing the soundwave to the samples channel. */
 	Start()
@@ -34,7 +33,7 @@ type Sound interface {
 	/* Reset back to the pre-start state. */
 	Reset()
 
-	// TODO - Consider adding Pause()
+	// PICK - Consider adding Pause()
 }
 
 // Global constant for the sample rate of each sound stream.

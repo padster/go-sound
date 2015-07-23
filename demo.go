@@ -17,7 +17,7 @@ func main() {
 
 	// TODO - fix it so it works at lower values (e.g. 215)
 	mspb := 404 // ~= 148 bmp ~= 400 ms/b
-	b := float64(mspb * 4)
+	b := float64(mspb * 1)
 	// var chordC s.Sound = s.ConcatSounds(
 	// s.NewTimedSound(s.NewSineWave(523.25), b), // C
 	// s.NewTimedSound(s.NewSineWave(659.25), b), // E
@@ -73,6 +73,7 @@ func main() {
 	*/
 
 	// Hotel #2
+	/*
 	sound := s.ConcatSounds(
 		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("224432"), b), 50, 250, 0.8, 50),
 		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
@@ -83,12 +84,24 @@ func main() {
 		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("022000"), b), 50, 250, 0.8, 50),
 		s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
 	)
+	*/
 
 	// fmt.Printf("Playing sound.\n")
-	output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
-	// output.Play(sound)
-	sound.Reset()
-	output.WriteSoundToWav(sound, "hotcal.wav")
+	sound := s.SumSounds(
+		s.MidiToSound(54),
+		s.ConcatSounds(s.NewTimedSilence(1 * b), s.MidiToSound(57)),
+		s.ConcatSounds(s.NewTimedSilence(2 * b), s.MidiToSound(60)),
+		s.ConcatSounds(s.NewTimedSilence(3 * b), s.MidiToSound(63)),
+		s.ConcatSounds(s.NewTimedSilence(4 * b), s.MidiToSound(66)),
+		s.ConcatSounds(s.NewTimedSilence(5 * b), s.MidiToSound(69)),
+		s.ConcatSounds(s.NewTimedSilence(6 * b), s.MidiToSound(72)),
+		s.ConcatSounds(s.NewTimedSilence(7 * b), s.MidiToSound(75)),
+		s.ConcatSounds(s.NewTimedSilence(8 * b), s.MidiToSound(78)),
+	)
+	// output.Play(s.RepeatSound(sound, 4)) // TODO - figure out why -1 doesn't work here
+	output.Play(s.NewTimedSound(sound, b * 12))
+	// sound.Reset()
+	// output.WriteSoundToWav(sound, "hotcal.wav")
 
 	// sound := s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 250, 250, 0.3, 250)
 	// sound.Reset()
