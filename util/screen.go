@@ -11,10 +11,10 @@ import (
 )
 
 type Screen struct {
-	width  int
-	height int
-	pixelsPerSample float64 
-	buffer *Buffer
+	width           int
+	height          int
+	pixelsPerSample float64
+	buffer          *Buffer
 }
 
 // NewScreen creates a new output screen of a given size.
@@ -34,7 +34,7 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 
 	// TODO - error callback
 	// glfw.SetErrorCallback(func(err glfw.ErrorCode, desc string) {
-		// log.Fatalf("%v: %s\n", err, desc)
+	// log.Fatalf("%v: %s\n", err, desc)
 	// })
 	if err := glfw.Init(); err != nil {
 		log.Fatalf("Can't init glfw!")
@@ -68,7 +68,8 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 	// Actually start writing data to the buffer.
 	s.buffer.GoPushChannel(values, sampleRate)
 
-	for !window.ShouldClose() && !s.buffer.IsFinished(){
+	// Keep drawing while we still can (and should).
+	for !window.ShouldClose() && !s.buffer.IsFinished() {
 		if window.GetKey(glfw.KeyEscape) == glfw.Press {
 			break
 		}
@@ -77,13 +78,18 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
+
+	// Keep window around, only close on esc.
+	for !window.ShouldClose() && window.GetKey(glfw.KeyEscape) != glfw.Press {
+		glfw.PollEvents()
+	}
 }
 
 // drawSignal writes the input wave form(s) out to screen.
 func (s *Screen) drawSignal() {
 	gl.Begin(gl.LINE_STRIP)
 	s.buffer.Each(func(index int, value float64) {
-		gl.Vertex2d(float64(index) * s.pixelsPerSample, value)
+		gl.Vertex2d(float64(index)*s.pixelsPerSample, value)
 	})
 	gl.End()
 }

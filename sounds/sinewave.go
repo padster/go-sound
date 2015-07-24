@@ -1,42 +1,50 @@
-// Sound implementation that is a single pure sine wave.
 package sounds
 
 import (
 	"math"
 )
 
-type SineWave struct {
+// A sineWave is parameters to the algorithm that generates a sound wave at a given pitch.
+type sineWave struct {
 	hz        float64
 	timeDelta float64
 
 	timeAt float64
 }
 
-// NewSineWave creates a new sound at a given pitch.
+// NewSineWave creates an unending sound at a given pitch (in hz).
+//
+// For example, to create a sound represeting A440:
+//	s := sounds.NewSineWave(440)
 func NewSineWave(hz float64) Sound {
-	timeDelta := hz * 2.0 * math.Pi * SecondsPerCycle()
-	sineWave := SineWave{
+	timeDelta := (2.0 * math.Pi) * (hz * SecondsPerCycle())
+
+	data := sineWave{
 		hz,
 		timeDelta,
 		0, /* timeAt */
 	}
 
-	return NewBaseSound(&sineWave, math.MaxUint64)
+	return NewBaseSound(&data, math.MaxUint64)
 }
 
-func (s *SineWave) Run(base *BaseSound) {
+// Run generates the samples by creating a sine wave at the desired frequency.
+func (s *sineWave) Run(base *BaseSound) {
 	for {
 		if !base.WriteSample(math.Sin(s.timeAt)) {
 			return
 		}
+		// NOTE: Will overflow if run too long.
 		s.timeAt += s.timeDelta
 	}
 }
 
-func (s *SineWave) Stop() {
+// Stop cleans up the sound, in this case doing nothing.
+func (s *sineWave) Stop() {
 	// No-op
 }
 
-func (s *SineWave) Reset() {
+// Reset sets the offset in the wavelength back to zero.
+func (s *sineWave) Reset() {
 	s.timeAt = 0
 }

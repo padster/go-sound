@@ -18,6 +18,7 @@ type BaseSound struct {
 // TODO - explain
 func NewBaseSound(def SoundDefinition, durationMs uint64) *BaseSound {
 	ret := BaseSound{
+		// TODO - make the channel lazily
 		make(chan float64),
 		false, /* running */
 		durationMs,

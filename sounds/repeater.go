@@ -1,60 +1,75 @@
-// Runs a single sound multiple times.
 package sounds
 
 import (
-	"fmt"
 	"math"
 )
 
-type Repeater struct {
-	wrapped Sound
+// A repeater is parameters to the algorithm that repeats a sound a given number of times.
+type repeater struct {
+	wrapped   Sound
+	loopCount int
 
-	loops  int
 	loopAt int
 }
 
-func RepeatSound(wrapped Sound, loops int) Sound {
+// RepeatSound forms a sound by repeating a given sound a number of times in series.
+//
+// For example, for the cello part of Pachelbel's Canon in D:
+//	sound := s.RepeatSound(s.ConcatSounds(
+//		s.NewTimedSound(s.MidiToSound(50), 800),
+//		s.NewTimedSound(s.MidiToSound(45), 800),
+//		s.NewTimedSound(s.MidiToSound(47), 800),
+//		s.NewTimedSound(s.MidiToSound(42), 800),
+//		s.NewTimedSound(s.MidiToSound(43), 800),
+//		s.NewTimedSound(s.MidiToSound(38), 800),
+//		s.NewTimedSound(s.MidiToSound(43), 800),
+//		s.NewTimedSound(s.MidiToSound(45), 800),
+//	), -1 /* repeat indefinitely */)
+func RepeatSound(wrapped Sound, loopCount int) Sound {
 	// TODO - support -1 == infinite loop
 	durationMs := wrapped.DurationMs()
 	if durationMs != math.MaxUint64 {
-		durationMs *= uint64(loops)
+		durationMs *= uint64(loopCount)
 	}
 
-	repeater := Repeater{
+	data := repeater{
 		wrapped,
-		loops,
+		loopCount,
 		0, /* loopAt */
 	}
-	return NewBaseSound(&repeater, durationMs)
+	return NewBaseSound(&data, durationMs)
 }
 
-func (s *Repeater) Run(base *BaseSound) {
-RepeatLoop:
-	for s.loopAt < s.loops {
+// Run generates the samples by copying from the wrapped sound multiple times.
+func (s *repeater) Run(base *BaseSound) {
+	cease := false
+
+	for !cease && s.loopAt < s.loopCount {
+		if s.loopAt > 0 {
+			s.wrapped.Reset()
+		}
 		s.wrapped.Start()
+
 		// TODO - merge with range statement?
 		samples := s.wrapped.GetSamples()
-
 		for sample := range samples {
 			if !base.WriteSample(sample) {
-				break RepeatLoop
+				cease = true
 			}
 		}
 
-		// TODO - figure out semantics of stopping wrapped children here vs. in base sound.
 		s.wrapped.Stop()
-		s.wrapped.Reset()
 		s.loopAt++
 	}
 }
 
-func (s *Repeater) Stop() {
-	fmt.Println("Stop repeat")
+// Stop cleans up the sound by stopping the underlying sound.
+func (s *repeater) Stop() {
 	s.wrapped.Stop()
 }
 
-func (s *Repeater) Reset() {
-	fmt.Println("Reset repeat")
+// Reset resets the underlying sound, plus the loop count tracking.
+func (s *repeater) Reset() {
 	s.wrapped.Reset()
 	s.loopAt = 0
 }

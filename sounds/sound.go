@@ -1,14 +1,15 @@
-// API for the Sound type.
+// API for the Sound type. TODO - proper package docs.
 package sounds
 
 /**
  * Upcoming:
- *   - write examples for each type, and one overall demo with tune using multiple
+ *   - Finalize overall demo with tune using lots of examples.
+ *   - move parser into util
  *   - remove TODOs and PICKs
- *   - add documentation
+ *   - add documentation for Sound, and non sounds/ files.
  *   - proper README
- *   - fix static in wav output
- *   - golang cleanup - gofmt, toString, fix exported set, final variables?
+ *   - fix static audio in wav output
+ *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
  *   - push to github, make public and announce
  *   - sound forker
  *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
@@ -21,7 +22,7 @@ type Sound interface {
 	GetSamples() <-chan float64
 
 	/* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
-	DurationMs() uint64 // TODO: use time.Duration
+	DurationMs() uint64 // TODO: use time.Duration, and a const for 'infinite' (or nil)
 
 	/* Being writing the soundwave to the samples channel. */
 	Start()
@@ -37,6 +38,7 @@ type Sound interface {
 
 // Global constant for the sample rate of each sound stream.
 func CyclesPerSecond() float64 {
+	// TODO - const?
 	return 44100.0
 }
 

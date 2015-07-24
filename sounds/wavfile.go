@@ -1,4 +1,3 @@
-// Converts a .wav file into a Sound.
 package sounds
 
 import (
@@ -12,7 +11,8 @@ const (
 	normScale = float64(1) / float64(math.MaxInt16)
 )
 
-type WavFileSound struct {
+// A wavFileSound is parameters to the algorithm that converts a channel from a .wav file into a sound.
+type wavFileSound struct {
 	path      string
 	channel   uint16
 	wavReader *wav.Reader
@@ -21,7 +21,10 @@ type WavFileSound struct {
 	samplesLeft uint32
 }
 
-// NewSineWave loads a wav file and turns a particular channel into a Sound.
+// LoadWavAsSound loads a .wav file and converts one of its channels into a Sound.
+//
+// For example, to read the first channel from a local file at 'piano.wav':
+//	s.LoadWavAsSound("piano.wav", 0)
 func LoadWavAsSound(path string, channel uint16) Sound {
 	wavReader := loadReaderOrPanic(path)
 
@@ -34,18 +37,19 @@ func LoadWavAsSound(path string, channel uint16) Sound {
 	}
 	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))
 
-	wav := WavFileSound{
+	data := wavFileSound{
 		path,
 		channel,
 		wavReader,
 		meta,
-		wavReader.GetSampleCount(),
+		wavReader.GetSampleCount(), /* samplesLeft */
 	}
 
-	return NewBaseSound(&wav, durationMs)
+	return NewBaseSound(&data, durationMs)
 }
 
-func (s *WavFileSound) Run(base *BaseSound) {
+// Run generates the samples by extracting them out of the .wav file.
+func (s *wavFileSound) Run(base *BaseSound) {
 	for s.samplesLeft > 0 {
 		// Read all channels, but pick just the one we want.
 		selected := float64(0)
@@ -53,10 +57,10 @@ func (s *WavFileSound) Run(base *BaseSound) {
 			n, err := s.wavReader.ReadSample()
 			if err != nil {
 				base.Stop()
-				// s.running = false
 				break
 			}
 			if i == s.channel {
+				// Need this to convert the 16-bit integer into a [-1, 1] float sample.
 				selected = float64(int16(n)) * normScale
 			}
 		}
@@ -68,17 +72,19 @@ func (s *WavFileSound) Run(base *BaseSound) {
 	}
 }
 
-func (s *WavFileSound) Stop() {
-	// No-op
+// Stop cleans up this sound, in this case doing nothing.
+func (s *wavFileSound) Stop() {
+	// TODO: Close the reader?
 }
 
-func (s *WavFileSound) Reset() {
+// Reset reopens the file from the start.
+func (s *wavFileSound) Reset() {
 	s.wavReader = loadReaderOrPanic(s.path)
 	s.meta = s.wavReader.GetFile()
 	s.samplesLeft = s.wavReader.GetSampleCount()
 }
 
-// Utility to handle failure cases of reading an input file.
+// loadReaderOrPanic reads a wav file and handles failure cases.
 func loadReaderOrPanic(path string) *wav.Reader {
 	testInfo, err := os.Stat(path)
 	if err != nil {

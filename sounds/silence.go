@@ -1,33 +1,39 @@
-// The sound of silence.
 package sounds
 
 import (
-  "math"
+	"math"
 )
 
-type Silence struct {
+// A silence is parameters to the algorithm that generates silence.
+type silence struct{}
 
-}
-
+// NewSilence creates an unending sound that is inaudible.
 func NewSilence() Sound {
-  silence := Silence{}
-  return NewBaseSound(&silence, math.MaxUint64)
+	data := silence{}
+	return NewBaseSound(&data, math.MaxUint64)
 }
 
-func (s *Silence) Run(base *BaseSound) {
-  for base.WriteSample(0) {
-    // No-op
-  }
-}
-
-func (s *Silence) Stop() {
-  // No-op
-}
-
-func (s *Silence) Reset() {
-  // No-op
-}
-
+// NewTimedSilence creates a silence that lasts for a given duration.
+//
+// For example, Cage's 4'33" can be generated using:
+//  s := sounds.NewTimedSilence(273000)
 func NewTimedSilence(durationMs float64) Sound {
-  return NewTimedSound(NewSilence(), durationMs)
+	return NewTimedSound(NewSilence(), durationMs)
+}
+
+// Run generates the samples by continuously writing 0 (silence).
+func (s *silence) Run(base *BaseSound) {
+	for base.WriteSample(0) {
+		// No-op
+	}
+}
+
+// Stop cleans up the silence, in this case doing nothing.
+func (s *silence) Stop() {
+	// No-op
+}
+
+// Reset does nothing in the case of silence, as there is no state.
+func (s *silence) Reset() {
+	// No-op
 }

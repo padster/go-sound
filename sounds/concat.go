@@ -1,16 +1,27 @@
-// Runs multiple non-infinite sounds, one after the other.
 package sounds
 
 import (
 	"math"
 )
 
-type Concat struct {
+// A concat is parameters to the algorithm that concatenates multiple sounds
+// one after the other, to allow playing them in series.
+type concat struct {
 	wrapped []Sound
 
 	indexAt int
 }
 
+// ConcatSounds creates a sound by concatenating multiple sounds in series.
+//
+// For example, to create the 5-note sequence from Close Enounters:
+//	s := sounds.ConcatSounds(
+//		sounds.NewTimedSound(sounds.MidiToSound(74), 400),
+//		sounds.NewTimedSound(sounds.MidiToSound(76), 400),
+//		sounds.NewTimedSound(sounds.MidiToSound(72), 400),
+//		sounds.NewTimedSound(sounds.MidiToSound(60), 400),
+//		sounds.NewTimedSound(sounds.MidiToSound(67), 1200),
+//	)
 func ConcatSounds(wrapped ...Sound) Sound {
 	durationMs := uint64(0)
 	for _, child := range wrapped {
@@ -23,20 +34,23 @@ func ConcatSounds(wrapped ...Sound) Sound {
 		}
 	}
 
-	concat := Concat{
+	data := concat{
 		wrapped,
 		0, /* indexAt */
 	}
-	return NewBaseSound(&concat, durationMs)
+
+	return NewBaseSound(&data, durationMs)
 }
 
-func (s *Concat) Run(base *BaseSound) {
-	for s.indexAt < len(s.wrapped) {
+// Run generates the samples by copying each wrapped sound in turn.
+func (s *concat) Run(base *BaseSound) {
+	cease := false
+
+	for !cease && s.indexAt < len(s.wrapped) {
 		s.wrapped[s.indexAt].Start()
 		// TODO - merge with range statement?
 		samples := s.wrapped[s.indexAt].GetSamples()
 
-		cease := false
 		for sample := range samples {
 			if !base.WriteSample(sample) {
 				cease = true
@@ -45,20 +59,19 @@ func (s *Concat) Run(base *BaseSound) {
 		}
 		s.wrapped[s.indexAt].Stop()
 		s.indexAt++
-
-		if cease {
-			break
-		}
 	}
 }
 
-func (s *Concat) Stop() {
-	// No-op, handled inside Run
+// Stop cleans up the sound by stopping all underlying sounds.
+func (s *concat) Stop() {
+	for _, wrapped := range s.wrapped {
+		wrapped.Stop()
+	}
 }
 
-func (s *Concat) Reset() {
+// Reset resets the all underlying sounds, and lines up playing the first sound next.
+func (s *concat) Reset() {
 	for _, wrapped := range s.wrapped {
-		// TODO - needed? wrapped.Stop()
 		wrapped.Reset()
 	}
 	s.indexAt = 0

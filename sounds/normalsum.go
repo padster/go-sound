@@ -1,23 +1,33 @@
-// Adds sounds together in parallel, and normalizes to (-1, 1) by dividing by the input count.
 package sounds
 
 import (
-	"fmt"
 	"math"
 )
 
-type NormalSum struct {
+// A normalSum is parameters to the algorithm that adds together sounds in parallel,
+// normalized to avoid going outside [-1, 1]
+type normalSum struct {
 	wrapped    []Sound
 	normScalar float64
 }
 
+// SumSounds creates a sound by adding multiple sounds in parallel, playing them
+// at the same time and normalizing their volume.
+//
+// For example, to play a G7 chord for a second:
+//	s := sounds.SumSounds(
+//		sounds.NewTimedSound(sounds.MidiToSound(55), 1000),
+//		sounds.NewTimedSound(sounds.MidiToSound(59), 1000),
+//		sounds.NewTimedSound(sounds.MidiToSound(62), 1000),
+//		sounds.NewTimedSound(sounds.MidiToSound(65), 1000),
+//		sounds.NewTimedSound(sounds.MidiToSound(67), 1000),
+//	)
 func SumSounds(wrapped ...Sound) Sound {
 	if len(wrapped) == 0 {
-		panic("NormalSum can't take no sounds")
+		panic("SumSounds can't take no sounds")
 	}
 
-	// TODO - durationMs := math.MaxUint64 ?
-	var durationMs uint64 = math.MaxUint64
+	durationMs := uint64(math.MaxUint64)
 	for _, child := range wrapped {
 		childDurationMs := child.DurationMs()
 		if childDurationMs < durationMs {
@@ -25,19 +35,21 @@ func SumSounds(wrapped ...Sound) Sound {
 		}
 	}
 
-	sum := NormalSum{
+	data := normalSum{
 		wrapped,
 		1.0 / float64(len(wrapped)), /* normScalar */
 	}
-	return NewBaseSound(&sum, durationMs)
+
+	return NewBaseSound(&data, durationMs)
 }
-func (s *NormalSum) Run(base *BaseSound) {
+
+// Run generates the samples by summing all the wrapped samples and normalizing.
+func (s *normalSum) Run(base *BaseSound) {
 	// TODO - start children in calling thread or running thread?
 	for _, wrapped := range s.wrapped {
 		wrapped.Start()
 	}
 
-	fmt.Println("Running sum...")
 	for {
 		sum := 0.0
 		for _, wrapped := range s.wrapped {
@@ -50,23 +62,20 @@ func (s *NormalSum) Run(base *BaseSound) {
 		}
 
 		if !base.WriteSample(sum * s.normScalar) {
-			fmt.Println("Breaking sum")
 			break
 		}
 	}
-
-	fmt.Println("Sum stopping...")
 }
 
-func (s *NormalSum) Stop() {
-	fmt.Println("Stop sum")
+// Stop cleans up the sound by stopping all underlyings sound.
+func (s *normalSum) Stop() {
 	for _, wrapped := range s.wrapped {
 		wrapped.Stop()
 	}
 }
 
-func (s *NormalSum) Reset() {
-	fmt.Println("Reset sum")
+// Reset resets all underlying sounds.
+func (s *normalSum) Reset() {
 	for _, wrapped := range s.wrapped {
 		wrapped.Reset()
 	}
