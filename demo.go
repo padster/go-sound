@@ -9,6 +9,7 @@ import (
 
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
+	"github.com/padster/go-sound/util"
 )
 
 const (
@@ -78,6 +79,11 @@ func main() {
 	// clairDeLune.Reset()
 	// fmt.Println("Writing sound to file.")
 	// output.WriteSoundToWav(clairDeLune, "clairdelune.wav")
+
+	// Optional: Draw to screen:
+	// clairDeLune.Reset()
+	// fmt.Println("Drawing sound to screen.")
+	// output.Render(clairDeLune, 2000, 400)
 }
 
 // fs is a short way to write an array of floats.
@@ -127,7 +133,7 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 	if sharp > 0.1 {
 		midi++
 	}
-	midiToSound := s.NewTimedSound(s.MidiToSound(midi), quaverCount * q)
+	midiToSound := s.NewTimedSound(util.MidiToSound(midi), quaverCount * q)
 	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20) 
 }
 

@@ -1,4 +1,4 @@
-// Renders various data from a Muse headset to screen.
+// Renders various data from a channel of [-1, 1] onto screen.
 package util
 
 import (
@@ -10,6 +10,7 @@ import (
 	glfw "github.com/go-gl/glfw/v3.1/glfw"
 )
 
+// Screen is an on-screen opengl window that renders the channel.
 type Screen struct {
 	width           int
 	height          int
@@ -17,13 +18,13 @@ type Screen struct {
 	buffer          *Buffer
 }
 
-// NewScreen creates a new output screen of a given size.
-func NewScreen(width int, height int, squish int) *Screen {
+// NewScreen creates a new output screen of a given size and sample density.
+func NewScreen(width int, height int, samplesPerPixel int) *Screen {
 	s := Screen{
 		width,
 		height,
-		1.0 / float64(squish),
-		NewBuffer(width * squish),
+		1.0 / float64(samplesPerPixel),
+		NewBuffer(width * samplesPerPixel),
 	}
 	return &s
 }
@@ -32,7 +33,7 @@ func NewScreen(width int, height int, squish int) *Screen {
 func (s *Screen) Render(values <-chan float64, sampleRate int) {
 	runtime.LockOSThread()
 
-	// TODO - error callback
+	// TODO - error callback?
 	// glfw.SetErrorCallback(func(err glfw.ErrorCode, desc string) {
 	// log.Fatalf("%v: %s\n", err, desc)
 	// })
@@ -40,14 +41,9 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 		log.Fatalf("Can't init glfw!")
 	}
 	defer glfw.Terminate()
-
 	if err := gl.Init(); err != nil {
 		log.Fatalf("Can't init gl!")
 	}
-
-	// NOTE: Do not hint here, until fully migrated to -core.
-	// glfw.WindowHint(glfw.ContextVersionMajor, 3)
-	// glfw.WindowHint(glfw.ContextVersionMinor, 3)
 
 	window, err := glfw.CreateWindow(s.width, s.height, "Muse", nil, nil)
 	if err != nil {

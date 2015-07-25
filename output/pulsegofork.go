@@ -1,6 +1,7 @@
 package output
 
 // Fork of github.com/moriyoshi/pulsego with a bunch of modifications.
+// TODO: Move these upstream and use the moriyoshi version instead.
 
 /*
 #cgo LDFLAGS: -lpulse

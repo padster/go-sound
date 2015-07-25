@@ -1,10 +1,11 @@
-// Adds a circular buffer data type for floating point values.
+// A circular buffer data type for floating point values.
 package util
 
 import (
 	"sync"
 )
 
+// Buffer holds the values within the buffer plus a collection of metadata.
 type Buffer struct {
 	values   []float64
 	capacity int

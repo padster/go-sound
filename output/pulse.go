@@ -1,4 +1,3 @@
-// Plays a sound via pulseaudio
 package output
 
 import (
@@ -7,6 +6,7 @@ import (
 	"github.com/padster/go-sound/sounds"
 )
 
+// Play plays a sound to audio out via pulseaudio.
 func Play(s sounds.Sound) {
 	pa := NewPulseMainLoop()
 	defer pa.Dispose()
@@ -17,6 +17,7 @@ func Play(s sounds.Sound) {
 	<-sync_ch
 }
 
+// playSamples handles the writing of a sound's channel of samples to a pulse stream.
 func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	defer func() {
 		sync_ch <- 0

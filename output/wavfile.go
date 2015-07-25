@@ -15,6 +15,7 @@ const (
 	normScale = float64(math.MaxInt16)
 )
 
+// WriteSoundToWav creates a file at a path, and writes the given sound in the .wav format.
 func WriteSoundToWav(s sounds.Sound, path string) error {
 	// Create file first, only if it doesn't exist:
 	if _, err := os.Stat(path); err == nil {

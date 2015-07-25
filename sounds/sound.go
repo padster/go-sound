@@ -3,9 +3,8 @@ package sounds
 
 /**
  * Upcoming:
- *   - move parser into util
  *   - remove TODOs and PICKs
- *   - add documentation for Sound, and non sounds/ files.
+ *   - add documentation for Sound
  *   - proper README
  *   - fix static audio in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
