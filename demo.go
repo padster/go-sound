@@ -1,117 +1,134 @@
-// Demo usage of the go-sound Sounds library.
+// Demo usage of the go-sound Sounds library, to play Clair de Lune.
 package main
 
 import (
 	"fmt"
+	"math"
 	"runtime"
+	"strconv"
 
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
 
+const (
+	// ~65 bpm ~= 927 ms/b ~= 309 ms/quaver (in 9/8)
+	q = float64(309)
+)
+
+// Notes in a treble clef, centered on B (offset 8)
+var trebleMidi = [...]int{57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84}
+// Key is D♭-Major = five flats: A♭, B♭, D♭, E♭, G♭ 
+var trebleKey =  [...]int{-1, -1,  0, -1, -1,  0, -1, -1, -1,  0, -1, -1,  0, -1, -1, -1,  0}
+
 func main() {
-	// TODO - fix this here?
+	// NOTE: Not required, but shows how this can run on multiple threads.
 	runtime.GOMAXPROCS(4)
 
-	fmt.Println("Building sound...")
+	// Clair de Lune, Debussey, music from:
+	// http://www.piano-midi.de/noten/debussy/deb_clai.pdf
+	fmt.Println("Building sound.")
 
-	// TODO - fix it so it works at lower values (e.g. 215)
-	// mspb := 404 // ~= 148 bmp ~= 400 ms/b
-	// b := float64(mspb * 1)
-	// var chordC s.Sound = s.ConcatSounds(
-	// s.NewTimedSound(s.NewSineWave(523.25), b), // C
-	// s.NewTimedSound(s.NewSineWave(659.25), b), // E
-	// s.NewTimedSound(s.NewSineWave(783.99), b), // G
-	// )
-	// chordC = s.NewADSREnvelope(chordC, 50, 250, 0.3, 100)
-	// chordA := s.SumSounds(
-	// s.NewSineWave(440), s.NewSineWave(523.25), s.NewSineWave(659.25))
-	// sound := s.ConcatSounds(
-	// chordC,
-	// s.NewTimedSound(chordA, b * 2),
-	// )
+	finalNoteLength := float64(3 + 6) // 9 extra beats, just for effect
+	
+	// Left-hand split for a bit near the end.
+	rh1 := s.ConcatSounds(
+		notesT(7, fs(1)),
+		notesTQRun(0, 1, 0, 3, 0, -1, 0),
+		notesT(2, fs(-1)), notesTQRun(-2, -1), notesT(3, fs(-2)), notesT(finalNoteLength, fs(-3)),
+	)
+	rh2 := s.ConcatSounds(
+		notesT(6, fs(-1)),
+		notesT(6, fs(-2)), notesT(3, fs(-2)),
+		notesT(6, fs(-4)), notesT(finalNoteLength, fs(-4)),
+	)
 
-	// sound := s.ConcatSounds(
-	// s.NewADSREnvelope(
-	// s.NewTimedSound(s.NewSineWave(523.25), b), 25, 200, 0.3, 100),
-	// s.NewADSREnvelope(
-	// s.NewTimedSound(s.NewSineWave(659.25), b), 25, 200, 0.3, 100),
-	// s.NewADSREnvelope(
-	// s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100),
-	// )
+	// Split of couplets over long Bb
+	couplets := s.SumSounds(
+		s.ConcatSounds(notesT(1.5, fs(2)), notesT(3, fs(4)), notesT(2.5, fs(2))),
+		notesT(7, fs(0)),
+	)
 
-	// base := s.NewADSREnvelope(
-	// s.NewTimedSound(s.NewSineWave(440), b), 25, 200, 0.3, 100)
-	// sound := s.RepeatSound(chordC, 2)
-	// sound := s.ConcatSounds(base,
-	// s.NewADSREnvelope(s.NewTimedSound(s.NewSineWave(783.99), b), 25, 200, 0.3, 100))
+	// Top half of the score:
+	rightHand := s.ConcatSounds(
+		rest(2), notesT(4, fs(4, 6)), notesT(4, fs(2, 4)), 
+		notesT(1, fs(1, 3)), notesT(1, fs(2, 4)), notesT(7, fs(1, 3)),
+		notesT(1, fs(0, 2)), notesT(1, fs(1, 3)), couplets,
+		notesT(1, fs(-1, 1)), notesT(1, fs(0, 2)), s.SumSounds(rh1, rh2),
+	)
 
-	// piano := s.LoadWavAsSound("piano.wav", 0)
-	// chord := s.SumSounds(piano, s.NewTimedSound(s.NewSineWave(392.00), float64(piano.DurationMs())))
-	// sound := s.RepeatSound(chord, 3)
-	sound := s.LoadWavAsSound("piano.wav", 0)
+	// Bottom half.
+	leftHand := s.ConcatSounds(
+		rest(1), notesT(8, fs(-1, -3)),
+		notesT(9, fs(-0.5, -2)),
+		notesT(9, fs(-1, -3)),
+		notesT(9, fs(-2, -4)),
+		notesT(6, fs(-4, -5)),
+		notesT(3, fs(-4, -6)),
+		notesT(6, fs(-5, -7)), // HACK: Actually in bass clef, but rewritten in treble for these two chords.
+		notesT(finalNoteLength, fs(-6, -7.5)),
+	)
 
-	// sound := s.RepeatSound(s.ConcatSounds(
-	// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEbG", 4), b), 20, 100, 0.9, 20),
-	// s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 20, 100, 0.4, 20),
-	// ), 4)
+	clairDeLune := s.SumSounds(leftHand, rightHand)
 
-	// Hotel #1
-	/*
-		sound := s.ConcatSounds(
-			s.NewTimedSound(s.ParseChord("Bm", 3), b),
-			s.NewTimedSound(s.ParseChord("F#", 3), b),
-			s.NewTimedSound(s.ParseChord("A", 3), b),
-			s.NewTimedSound(s.ParseChord("E", 3), b),
-			s.NewTimedSound(s.ParseChord("G", 3), b),
-			s.NewTimedSound(s.ParseChord("D", 3), b),
-			s.NewTimedSound(s.ParseChord("Em", 3), b),
-			s.NewTimedSound(s.ParseChord("F#", 3), b),
-		)
-	*/
+	fmt.Println("Playing sound.")
+	output.Play(clairDeLune)
 
-	// Hotel #2
-	/*
-		sound := s.ConcatSounds(
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("224432"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("x02220"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("022100"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("320003"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("xx0232"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("022000"), b), 50, 250, 0.8, 50),
-			s.NewADSREnvelope(s.NewTimedSound(s.GuitarChord("244322"), b), 50, 250, 0.8, 50),
-		)
+	// Optional: Write to a .wav file:
+	// clairDeLune.Reset()
+	// fmt.Println("Writing sound to file.")
+	// output.WriteSoundToWav(clairDeLune, "clairdelune.wav")
+}
 
-		notes := s.SumSounds(
-			s.MidiToSound(54),
-			s.ConcatSounds(s.NewTimedSilence(1 * b), s.MidiToSound(57)),
-			s.ConcatSounds(s.NewTimedSilence(2 * b), s.MidiToSound(60)),
-			s.ConcatSounds(s.NewTimedSilence(3 * b), s.MidiToSound(63)),
-			s.ConcatSounds(s.NewTimedSilence(4 * b), s.MidiToSound(66)),
-			s.ConcatSounds(s.NewTimedSilence(5 * b), s.MidiToSound(69)),
-			s.ConcatSounds(s.NewTimedSilence(6 * b), s.MidiToSound(72)),
-			s.ConcatSounds(s.NewTimedSilence(7 * b), s.MidiToSound(75)),
-			s.ConcatSounds(s.NewTimedSilence(8 * b), s.MidiToSound(78)),
-		)
-		sound := s.NewTimedSound(notes, b * 12)
-	*/
+// fs is a short way to write an array of floats.
+func fs(fs ...float64) []float64 {
+	return fs
+}
 
-	output.Play(sound)
-	// output.Play(s.NewTimedSound(sound, b * 12))
-	// sound.Reset()
-	// output.WriteSoundToWav(sound, "hotcal.wav")
+// The Sound of silence for quaverCount quavers
+func rest(quaverCount float64) s.Sound {
+	return s.NewTimedSilence(q * quaverCount)
+}
 
-	// sound := s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 250, 250, 0.3, 250)
-	// sound.Reset()
+// A chord of notes in the treble clef, 0 = B, then notes up and down (e.g. -4 = E, 4 = F)
+// in the proper key (Db major), with +/- 0.5 signifying a sharp or flat.
+func notesT(quaverCount float64, notes []float64) s.Sound {
+	sounds := make([]s.Sound, len(notes), len(notes))
+	for i, note := range notes {
+		sounds[i] = noteTMidi(note, quaverCount)
+	}
+	return s.SumSounds(sounds...)
+}
 
-	// renderer := output.NewScreen(2000, 400)
-	// renderer.Render(sound)
-	// output.WriteSoundToWav(sound, "envelope.wav")
-	// fmt.Printf("Playing sound.\n")
-	// output.Play(sound)
+// A run of quavers in the treble clef
+func notesTQRun(notes ...float64) s.Sound {
+	sounds := make([]s.Sound, len(notes), len(notes))
+	for i, note := range notes {
+		sounds[i] = noteTMidi(note, 1.0)
+	}
+	return s.ConcatSounds(sounds...)
+}
 
-	// TODO - modem faker: 440 for 0.5s, pause for 1s, 440 for 0.5s, pause for 1s, 880 for 1.5s
+// Converts a treble note offset to a midi offset
+func noteTMidi(note float64, quaverCount float64) s.Sound {
+	if note < -8 || note >= 9 { // TODO - remove
+		panic("Can't play note " + strconv.FormatFloat(note, 'f', 2, 64))
+	}
+
+	bFloat, sharp := math.Modf(note)
+	base := int(bFloat)
+	if sharp < 0 {
+		sharp += 1.0
+		base--
+	}
+
+	// 0 = B = offset 8
+	midi := trebleMidi[base + 8] + trebleKey[base + 8]
+	if sharp > 0.1 {
+		midi++
+	}
+	midiToSound := s.NewTimedSound(s.MidiToSound(midi), quaverCount * q)
+	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20) 
 }
 
 // TODO - figure out why this fails the stop-before-reset panic:

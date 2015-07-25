@@ -3,7 +3,6 @@ package sounds
 
 /**
  * Upcoming:
- *   - Finalize overall demo with tune using lots of examples.
  *   - move parser into util
  *   - remove TODOs and PICKs
  *   - add documentation for Sound, and non sounds/ files.
