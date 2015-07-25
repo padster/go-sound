@@ -34,7 +34,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	// Create a single-channel pulse audio stream to write the sound to.
 	st := ctx.NewStream("default", &PulseSampleSpec{
 		Format:   SAMPLE_FLOAT32LE,
-		Rate:     int(sounds.CyclesPerSecond()),
+		Rate:     int(sounds.CyclesPerSecond),
 		Channels: 1,
 	})
 	if st == nil {
@@ -44,7 +44,6 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	defer st.Dispose()
 
 	// Starts the sound, and accesses its sample stream.
-	fmt.Printf("Playing sound for %d ms\n", s.DurationMs())
 	s.Start()
 	samples := s.GetSamples()
 	defer s.Stop()
@@ -73,7 +72,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 			st.Drain()
 			return
 		}
-		fmt.Printf("Writing %d samples\n", finishedAt)
+		fmt.Printf("  Writing %d samples\n", finishedAt)
 		st.Write(buffer[0:finishedAt], SEEK_RELATIVE)
 	}
 }

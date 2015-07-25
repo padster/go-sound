@@ -1,9 +1,5 @@
 package sounds
 
-import (
-	"math"
-)
-
 // A normalSum is parameters to the algorithm that adds together sounds in parallel,
 // normalized to avoid going outside [-1, 1]
 type normalSum struct {
@@ -27,11 +23,11 @@ func SumSounds(wrapped ...Sound) Sound {
 		panic("SumSounds can't take no sounds")
 	}
 
-	durationMs := uint64(math.MaxUint64)
+	sampleCount := MaxLength
 	for _, child := range wrapped {
-		childDurationMs := child.DurationMs()
-		if childDurationMs < durationMs {
-			durationMs = childDurationMs
+		childLength := child.Length()
+		if childLength < sampleCount {
+			sampleCount = childLength
 		}
 	}
 
@@ -40,7 +36,7 @@ func SumSounds(wrapped ...Sound) Sound {
 		1.0 / float64(len(wrapped)), /* normScalar */
 	}
 
-	return NewBaseSound(&data, durationMs)
+	return NewBaseSound(&data, sampleCount)
 }
 
 // Run generates the samples by summing all the wrapped samples and normalizing.

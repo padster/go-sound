@@ -17,7 +17,7 @@ type sineWave struct {
 // For example, to create a sound represeting A440:
 //	s := sounds.NewSineWave(440)
 func NewSineWave(hz float64) Sound {
-	timeDelta := (2.0 * math.Pi) * (hz * SecondsPerCycle())
+	timeDelta := (2.0 * math.Pi) * (hz * SecondsPerCycle)
 
 	data := sineWave{
 		hz,
@@ -25,7 +25,7 @@ func NewSineWave(hz float64) Sound {
 		0, /* timeAt */
 	}
 
-	return NewBaseSound(&data, math.MaxUint64)
+	return NewBaseSound(&data, MaxLength)
 }
 
 // Run generates the samples by creating a sine wave at the desired frequency.

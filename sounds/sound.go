@@ -1,10 +1,29 @@
 // API for the Sound type. TODO - proper package docs.
 package sounds
 
+import (
+	"time"
+)
+
+const (
+	// The sample rate of each sound stream.
+	CyclesPerSecond = 44100.0
+
+	// Inverse sample rate.
+	SecondsPerCycle = 1.0 / CyclesPerSecond
+
+	// The number of samples in the maximum duration.
+	MaxLength = uint64(406750706825295)
+	// HACK - Go doesn't allow uint64(float64(math.MaxInt64) * 0.000000001 * CyclesPerSecond) :(
+
+	// Maximum duration, used for unending sounds.
+	MaxDuration = time.Duration(int64(float64(MaxLength) * SecondsPerCycle * 1e9)) * time.Nanosecond
+)
+
 /**
  * Upcoming:
  *   - remove TODOs and PICKs
- *   - add documentation for Sound
+ *   - add documentation for Sound, BaseSound and packages
  *   - proper README
  *   - fix static audio in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
@@ -16,31 +35,31 @@ package sounds
  *   - reverb: https://christianfloisand.wordpress.com/2012/09/04/digital-reverberation
  */
 type Sound interface {
-	/* Sound wave samples for the sound */
+	// Sound wave samples for the sound - only valid after Start() and before Stop()
 	GetSamples() <-chan float64
+	
+	// Number of samples in this sound - MaxLength of unlimited. 
+	Length() uint64
 
-	/* How many milliseconds this sound goes for, or math.MaxUint64 if 'infinite'. */
-	DurationMs() uint64 // TODO: use time.Duration, and a const for 'infinite' (or nil)
+	// Length of time this goes for. Convenience method, should always be SamplesToDuration(Length())
+	Duration() time.Duration
 
-	/* Being writing the soundwave to the samples channel. */
+	// Start begins writing the sound wave to the samples channel.
 	Start()
 
-	/* Stop writing samples, and close the channel. */
+	// Stop ceases writing samples, and closes the channel.
 	Stop()
 
-	/* Reset back to the pre-start state. */
+	// Reset converts the sound back to the pre-Start() state.
 	Reset()
-
-	// PICK - Consider adding Pause()
 }
 
-// Global constant for the sample rate of each sound stream.
-func CyclesPerSecond() float64 {
-	// TODO - const?
-	return 44100.0
+
+// SamplesToDuration converts a sample count to a duration of time.
+func SamplesToDuration(sampleCount uint64) time.Duration {
+	return time.Duration(int64(float64(sampleCount) * 1e9 * SecondsPerCycle)) * time.Nanosecond
 }
 
-// Global constant for the inverse sample rate.
-func SecondsPerCycle() float64 {
-	return 1.0 / CyclesPerSecond()
+func DurationToSamples(duration time.Duration) uint64 {
+	return uint64(float64(duration.Nanoseconds()) * 1e-9 * CyclesPerSecond)
 }

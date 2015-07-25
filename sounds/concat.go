@@ -1,15 +1,9 @@
 package sounds
 
-import (
-	"math"
-)
-
 // A concat is parameters to the algorithm that concatenates multiple sounds
 // one after the other, to allow playing them in series.
 type concat struct {
 	wrapped []Sound
-
-	indexAt int
 }
 
 // ConcatSounds creates a sound by concatenating multiple sounds in series.
@@ -23,42 +17,40 @@ type concat struct {
 //		sounds.NewTimedSound(sounds.MidiToSound(67), 1200),
 //	)
 func ConcatSounds(wrapped ...Sound) Sound {
-	durationMs := uint64(0)
+	sampleCount := uint64(0)
 	for _, child := range wrapped {
-		wrappedLength := child.DurationMs()
-		if durationMs+wrappedLength < wrappedLength { // Overflow, so cap out at max.
-			durationMs = math.MaxUint64
+		childLength := child.Length()
+		if sampleCount + childLength < childLength { // Overflow, so cap out at max.
+			childLength = MaxLength
 			break
 		} else {
-			durationMs += wrappedLength
+			sampleCount += childLength
 		}
 	}
 
 	data := concat{
 		wrapped,
-		0, /* indexAt */
 	}
 
-	return NewBaseSound(&data, durationMs)
+	return NewBaseSound(&data, sampleCount)
 }
 
 // Run generates the samples by copying each wrapped sound in turn.
 func (s *concat) Run(base *BaseSound) {
 	cease := false
 
-	for !cease && s.indexAt < len(s.wrapped) {
-		s.wrapped[s.indexAt].Start()
-		// TODO - merge with range statement?
-		samples := s.wrapped[s.indexAt].GetSamples()
-
-		for sample := range samples {
+	for _, wrapped := range s.wrapped {
+		wrapped.Start()
+		for sample := range wrapped.GetSamples() {
 			if !base.WriteSample(sample) {
 				cease = true
 				break
 			}
 		}
-		s.wrapped[s.indexAt].Stop()
-		s.indexAt++
+		wrapped.Stop()
+		if cease {
+			break
+		}
 	}
 }
 
@@ -74,5 +66,4 @@ func (s *concat) Reset() {
 	for _, wrapped := range s.wrapped {
 		wrapped.Reset()
 	}
-	s.indexAt = 0
 }

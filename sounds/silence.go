@@ -1,16 +1,12 @@
 package sounds
 
-import (
-	"math"
-)
-
 // A silence is parameters to the algorithm that generates silence.
 type silence struct{}
 
 // NewSilence creates an unending sound that is inaudible.
 func NewSilence() Sound {
 	data := silence{}
-	return NewBaseSound(&data, math.MaxUint64)
+	return NewBaseSound(&data, MaxLength)
 }
 
 // NewTimedSilence creates a silence that lasts for a given duration.

@@ -1,9 +1,5 @@
 package sounds
 
-import (
-	"math"
-)
-
 // A repeater is parameters to the algorithm that repeats a sound a given number of times.
 type repeater struct {
 	wrapped   Sound
@@ -26,10 +22,14 @@ type repeater struct {
 //		s.NewTimedSound(s.MidiToSound(45), 800),
 //	), -1 /* repeat indefinitely */)
 func RepeatSound(wrapped Sound, loopCount int) Sound {
-	// TODO - support -1 == infinite loop
-	durationMs := wrapped.DurationMs()
-	if durationMs != math.MaxUint64 {
-		durationMs *= uint64(loopCount)
+	if loopCount < 0 {
+		// TODO - support -1 == infinite loop
+		panic("Can't have negative loop count for repeat")
+	}
+
+	sampleCount := wrapped.Length()
+	if sampleCount != MaxLength {
+		sampleCount *= uint64(loopCount)
 	}
 
 	data := repeater{
@@ -37,7 +37,7 @@ func RepeatSound(wrapped Sound, loopCount int) Sound {
 		loopCount,
 		0, /* loopAt */
 	}
-	return NewBaseSound(&data, durationMs)
+	return NewBaseSound(&data, sampleCount)
 }
 
 // Run generates the samples by copying from the wrapped sound multiple times.

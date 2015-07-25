@@ -32,7 +32,7 @@ func LoadWavAsSound(path string, channel uint16) Sound {
 	if meta.Channels <= channel {
 		panic("Unsupported channel number")
 	}
-	if meta.SampleRate != uint32(CyclesPerSecond()) {
+	if meta.SampleRate != uint32(CyclesPerSecond) {
 		panic("TODO: Support wav files that aren't 44.1kHz")
 	}
 	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))

@@ -1,6 +1,10 @@
 // Sound implementation that is a single pure sine wave.
 package sounds
 
+import (
+	"time"
+)
+
 type SoundDefinition interface {
 	// TODO - add documentation and requirements.
 	Run(base *BaseSound)
@@ -9,19 +13,22 @@ type SoundDefinition interface {
 }
 
 type BaseSound struct {
-	samples    chan float64
-	running    bool
-	durationMs uint64
-	definition SoundDefinition
+	samples     chan float64
+	running     bool
+	sampleCount uint64
+	duration    time.Duration
+	definition  SoundDefinition
 }
 
 // TODO - explain
-func NewBaseSound(def SoundDefinition, durationMs uint64) *BaseSound {
+// POIUY - sampleCount
+func NewBaseSound(def SoundDefinition, sampleCount uint64) *BaseSound {
 	ret := BaseSound{
 		// TODO - make the channel lazily
 		make(chan float64),
 		false, /* running */
-		durationMs,
+		sampleCount,
+		SamplesToDuration(sampleCount), /* duration */
 		def,
 	}
 	return &ret
@@ -31,8 +38,12 @@ func (s *BaseSound) GetSamples() <-chan float64 {
 	return s.samples
 }
 
-func (s *BaseSound) DurationMs() uint64 {
-	return s.durationMs
+func (s *BaseSound) Length() uint64 {
+	return s.sampleCount
+}
+
+func (s *BaseSound) Duration() time.Duration {
+	return s.duration
 }
 
 func (s *BaseSound) Start() {

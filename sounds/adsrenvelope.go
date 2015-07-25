@@ -1,18 +1,21 @@
 package sounds
 
+import (
+	"time"
+)
+
 // An adsrSound is parameters to the algorithm that applies an
 // Attack/Decay/Sustain/Release envelope over a sound.
 //
 // See https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope
 type adsrEnvelope struct {
 	wrapped        Sound
-	floatDuration  float64
-	attackMs       float64
-	sustainStartMs float64
-	sustainEndMs   float64
-	sustainLevel   float64
 
-	msAt float64
+	attackSamples uint64
+	sustainStartSamples uint64
+	sustainEndSamples uint64
+	sampleCount uint64
+	sustainLevel float64
 }
 
 // NewADSREnvelope wraps an existing sound with a parametric envelope.
@@ -25,48 +28,52 @@ type adsrEnvelope struct {
 //		50, 200, 0.5, 100)
 func NewADSREnvelope(wrapped Sound,
 	attackMs float64, delayMs float64, sustainLevel float64, releaseMs float64) Sound {
+	// NOTE: params are is Ms - time.Duration is possible, but likely more verbose.
 
-	durationMs := wrapped.DurationMs()
+	sampleCount := wrapped.Length()
+	attack := time.Duration(attackMs) * time.Millisecond
+	delay := time.Duration(delayMs) * time.Millisecond
+	release := time.Duration(releaseMs) * time.Millisecond
 
 	data := adsrEnvelope{
 		wrapped,
-		float64(durationMs),             /* floatDuration */
-		attackMs,                        /* attackMs */
-		attackMs + delayMs,              /* sustainStartMs */
-		float64(durationMs) - releaseMs, /* sustainEndMs */
+		DurationToSamples(attack), /* attackSamples */
+		DurationToSamples(attack + delay),              /* sustainStartMs */
+		sampleCount - DurationToSamples(release), /* sustainEndMs */
+		sampleCount,
 		sustainLevel,
-		0, /* msAt */
 	}
 
-	return NewBaseSound(&data, durationMs)
+	return NewBaseSound(&data, sampleCount)
 }
 
 // Run generates the samples by scaling the wrapped sound by the relevant envelope part.
 func (s *adsrEnvelope) Run(base *BaseSound) {
 	s.wrapped.Start()
 
-	for s.msAt < s.floatDuration {
+	attackDelta := 1.0 / float64(s.attackSamples)
+	decayDelta := 1.0 / float64(s.sustainStartSamples - s.attackSamples)
+	releaseDelta := 1.0 / float64(s.sampleCount - s.sustainEndSamples)
+
+	for at := uint64(0); at < s.sampleCount; at++ {
 		scale := float64(0) // [0, 1]
 
-		// PICK: pre-calculate denominators?
+		// NOTE: this could be split into multiple loops but it doesn't seem worth optimizing currently.
 		switch {
-		case s.msAt < s.attackMs:
-			scale = s.msAt / s.attackMs
-		case s.msAt < s.sustainStartMs:
-			scale = 1 - (1-s.sustainLevel)*
-				(s.msAt-s.attackMs)/(s.sustainStartMs-s.attackMs)
-		case s.msAt < s.sustainEndMs:
+		case at < s.attackSamples:
+			scale = float64(at) * attackDelta
+		case at < s.sustainStartSamples:
+			scale = 1 - (1-s.sustainLevel) * decayDelta * float64(at-s.attackSamples)
+		case at < s.sustainEndSamples:
 			scale = s.sustainLevel
 		default:
-			scale = s.sustainLevel *
-				(s.msAt - s.floatDuration) / (s.sustainEndMs - s.floatDuration)
+			scale = s.sustainLevel * releaseDelta * float64(s.sampleCount - at)
 		}
 
 		next, ok := <-s.wrapped.GetSamples()
 		if !ok || !base.WriteSample(next*scale) {
 			return
 		}
-		s.msAt += SecondsPerCycle() * 1000.0
 	}
 }
 
@@ -78,5 +85,4 @@ func (s *adsrEnvelope) Stop() {
 // Reset resets the underlying sound, and zeroes the position in the envelope.
 func (s *adsrEnvelope) Reset() {
 	s.wrapped.Reset()
-	s.msAt = float64(0)
 }

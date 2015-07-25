@@ -32,7 +32,7 @@ func WriteSoundToWav(s sounds.Sound, path string) error {
 
 	// Create a .wav writer for the file
 	var wf = wav.File{
-		SampleRate:      uint32(sounds.CyclesPerSecond()),
+		SampleRate:      uint32(sounds.CyclesPerSecond),
 		Channels:        1,
 		SignificantBits: 16,
 	}
@@ -43,7 +43,6 @@ func WriteSoundToWav(s sounds.Sound, path string) error {
 	defer writer.Close()
 
 	// Starts the sound, and accesses its sample stream.
-	fmt.Printf("Writing sound for %d ms\n", s.DurationMs())
 	s.Start()
 	samples := s.GetSamples()
 	defer s.Stop()
