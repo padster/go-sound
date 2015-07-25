@@ -22,8 +22,8 @@ const (
 
 /**
  * Upcoming:
- *   - remove TODOs and PICKs
  *   - add documentation for Sound, BaseSound and packages
+ *   - remove TODOs
  *   - proper README
  *   - fix static audio in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?

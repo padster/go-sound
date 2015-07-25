@@ -1,7 +1,7 @@
 package output
 
 // Fork of github.com/moriyoshi/pulsego with a bunch of modifications.
-// TODO: Move these upstream and use the moriyoshi version instead.
+// TODO(padster): Move these upstream and use the moriyoshi version instead.
 
 /*
 #cgo LDFLAGS: -lpulse
@@ -504,7 +504,6 @@ func (self *PulseStream) WritableSize() int {
 }
 
 func (self *PulseStream) Drain() {
-	// POIUY
 	C.stream_drain(self.Context.MainLoop.pa, self.st)
 }
 

@@ -50,7 +50,7 @@ func noteToMidi(note string, offset int) (int, int) {
 	}
 	offset++
 
-	// TODO: Support bb, ##, etc.
+	// TODO(padster): Support bb, ##, etc if useful.
 	if offset < len(note) {
 		switch note[offset] {
 		case 'b':

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"runtime"
-	"strconv"
 
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
@@ -117,10 +116,7 @@ func notesTQRun(notes ...float64) s.Sound {
 
 // Converts a treble note offset to a midi offset
 func noteTMidi(note float64, quaverCount float64) s.Sound {
-	if note < -8 || note >= 9 { // TODO - remove
-		panic("Can't play note " + strconv.FormatFloat(note, 'f', 2, 64))
-	}
-
+	// NOTE: Only [-8, 8] allowed for 'note'.
 	bFloat, sharp := math.Modf(note)
 	base := int(bFloat)
 	if sharp < 0 {

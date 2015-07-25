@@ -53,7 +53,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	for {
 		toAdd := st.WritableSize()
 		if toAdd == 0 {
-			// PICK: use toAdd < MIN_WRITE_SIZE instead, to avoid small writes?
+			// TODO(padster): maybe use toAdd < MIN_WRITE_SIZE instead to avoid small writes?
 			continue
 		}
 

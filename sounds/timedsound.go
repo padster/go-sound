@@ -8,7 +8,6 @@ import (
 type timedSound struct {
 	wrapped Sound
 	sampleCount uint64
-	sampleAt uint64
 }
 
 // NewSilence wraps an existing sound as something that stops after a given duration.
@@ -21,14 +20,13 @@ func NewTimedSound(wrapped Sound, durationMs float64) Sound {
 	sampleCount := DurationToSamples(duration)
 
 	if wrapped.Length() < sampleCount {
-		// TODO - perhaps pad with timed silence?
+		// TODO(padster) - perhaps instead pad out with timed silence?
 		panic("Can't time a sound longer than it starts out.")
 	}
 
 	data := timedSound{
 		wrapped,
 		sampleCount,
-		0, /* sampleAt */
 	}
 
 	return NewBaseSound(&data, sampleCount)
@@ -37,7 +35,7 @@ func NewTimedSound(wrapped Sound, durationMs float64) Sound {
 // Run generates the samples by copying the wrapped sound, stopping after the set time.
 func (s *timedSound) Run(base *BaseSound) {
 	s.wrapped.Start()
-	for ; s.sampleAt < s.sampleCount; s.sampleAt++ {
+	for at := uint64(0); at < s.sampleCount; at++ {
 		value, ok := <-s.wrapped.GetSamples()
 		if !ok {
 			// NOTE: should not happen.
@@ -57,5 +55,4 @@ func (s *timedSound) Stop() {
 // Reset resets the underlying sound, and restarts the sample tracker.
 func (s *timedSound) Reset() {
 	s.wrapped.Reset()
-	s.sampleAt = 0
 }

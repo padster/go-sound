@@ -21,7 +21,6 @@ type BaseSound struct {
 }
 
 // TODO - explain
-// POIUY - sampleCount
 func NewBaseSound(def SoundDefinition, sampleCount uint64) *BaseSound {
 	ret := BaseSound{
 		// TODO - make the channel lazily

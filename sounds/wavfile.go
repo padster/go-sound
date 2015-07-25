@@ -30,10 +30,11 @@ func LoadWavAsSound(path string, channel uint16) Sound {
 
 	meta := wavReader.GetFile()
 	if meta.Channels <= channel {
-		panic("Unsupported channel number")
+		panic("Unsupported channel number.")
 	}
 	if meta.SampleRate != uint32(CyclesPerSecond) {
-		panic("TODO: Support wav files that aren't 44.1kHz")
+		// TODO(padster): Support more if there's a need.
+		panic("Only wav files that are 44.1kHz are supported.")
 	}
 	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))
 
@@ -74,7 +75,7 @@ func (s *wavFileSound) Run(base *BaseSound) {
 
 // Stop cleans up this sound, in this case doing nothing.
 func (s *wavFileSound) Stop() {
-	// TODO: Close the reader?
+	// NOTE: It seems like the reader and file API have no Close cleanup.
 }
 
 // Reset reopens the file from the start.

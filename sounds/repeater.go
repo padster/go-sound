@@ -1,11 +1,13 @@
 package sounds
 
+import (
+	"math"
+)
+
 // A repeater is parameters to the algorithm that repeats a sound a given number of times.
 type repeater struct {
 	wrapped   Sound
-	loopCount int
-
-	loopAt int
+	loopCount int32
 }
 
 // RepeatSound forms a sound by repeating a given sound a number of times in series.
@@ -21,10 +23,10 @@ type repeater struct {
 //		s.NewTimedSound(s.MidiToSound(43), 800),
 //		s.NewTimedSound(s.MidiToSound(45), 800),
 //	), -1 /* repeat indefinitely */)
-func RepeatSound(wrapped Sound, loopCount int) Sound {
+func RepeatSound(wrapped Sound, loopCount int32) Sound {
+	// Negative loop count == loop indefinitely
 	if loopCount < 0 {
-		// TODO - support -1 == infinite loop
-		panic("Can't have negative loop count for repeat")
+		loopCount = math.MaxInt32
 	}
 
 	sampleCount := wrapped.Length()
@@ -35,7 +37,6 @@ func RepeatSound(wrapped Sound, loopCount int) Sound {
 	data := repeater{
 		wrapped,
 		loopCount,
-		0, /* loopAt */
 	}
 	return NewBaseSound(&data, sampleCount)
 }
@@ -44,22 +45,19 @@ func RepeatSound(wrapped Sound, loopCount int) Sound {
 func (s *repeater) Run(base *BaseSound) {
 	cease := false
 
-	for !cease && s.loopAt < s.loopCount {
-		if s.loopAt > 0 {
-			s.wrapped.Reset()
-		}
+	for loopAt := int32(0); !cease && loopAt < s.loopCount; loopAt++ {
 		s.wrapped.Start()
 
-		// TODO - merge with range statement?
-		samples := s.wrapped.GetSamples()
-		for sample := range samples {
+		for sample := range s.wrapped.GetSamples() {
 			if !base.WriteSample(sample) {
 				cease = true
 			}
 		}
 
 		s.wrapped.Stop()
-		s.loopAt++
+		if !cease {
+			s.wrapped.Reset()
+		}
 	}
 }
 
@@ -71,5 +69,4 @@ func (s *repeater) Stop() {
 // Reset resets the underlying sound, plus the loop count tracking.
 func (s *repeater) Reset() {
 	s.wrapped.Reset()
-	s.loopAt = 0
 }

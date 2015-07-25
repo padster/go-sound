@@ -5,7 +5,7 @@ import (
 	"log"
 	"runtime"
 
-	// TODO - migrate to core, not compat.
+	// TODO(padster) - migrate to core, not compat.
 	gl "github.com/go-gl/gl/v3.3-compatibility/gl"
 	glfw "github.com/go-gl/glfw/v3.1/glfw"
 )
