@@ -20,7 +20,7 @@ func ConcatSounds(wrapped ...Sound) Sound {
 	sampleCount := uint64(0)
 	for _, child := range wrapped {
 		childLength := child.Length()
-		if sampleCount + childLength < childLength { // Overflow, so cap out at max.
+		if sampleCount+childLength < childLength { // Overflow, so cap out at max.
 			childLength = MaxLength
 			break
 		} else {

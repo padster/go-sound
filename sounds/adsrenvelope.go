@@ -9,13 +9,13 @@ import (
 //
 // See https://en.wikipedia.org/wiki/Synthesizer#ADSR_envelope
 type adsrEnvelope struct {
-	wrapped        Sound
+	wrapped Sound
 
-	attackSamples uint64
+	attackSamples       uint64
 	sustainStartSamples uint64
-	sustainEndSamples uint64
-	sampleCount uint64
-	sustainLevel float64
+	sustainEndSamples   uint64
+	sampleCount         uint64
+	sustainLevel        float64
 }
 
 // NewADSREnvelope wraps an existing sound with a parametric envelope.
@@ -37,8 +37,8 @@ func NewADSREnvelope(wrapped Sound,
 
 	data := adsrEnvelope{
 		wrapped,
-		DurationToSamples(attack), /* attackSamples */
-		DurationToSamples(attack + delay),              /* sustainStartMs */
+		DurationToSamples(attack),                /* attackSamples */
+		DurationToSamples(attack + delay),        /* sustainStartMs */
 		sampleCount - DurationToSamples(release), /* sustainEndMs */
 		sampleCount,
 		sustainLevel,
@@ -52,8 +52,8 @@ func (s *adsrEnvelope) Run(base *BaseSound) {
 	s.wrapped.Start()
 
 	attackDelta := 1.0 / float64(s.attackSamples)
-	decayDelta := 1.0 / float64(s.sustainStartSamples - s.attackSamples)
-	releaseDelta := 1.0 / float64(s.sampleCount - s.sustainEndSamples)
+	decayDelta := 1.0 / float64(s.sustainStartSamples-s.attackSamples)
+	releaseDelta := 1.0 / float64(s.sampleCount-s.sustainEndSamples)
 
 	for at := uint64(0); at < s.sampleCount; at++ {
 		scale := float64(0) // [0, 1]
@@ -63,11 +63,11 @@ func (s *adsrEnvelope) Run(base *BaseSound) {
 		case at < s.attackSamples:
 			scale = float64(at) * attackDelta
 		case at < s.sustainStartSamples:
-			scale = 1 - (1-s.sustainLevel) * decayDelta * float64(at-s.attackSamples)
+			scale = 1 - (1-s.sustainLevel)*decayDelta*float64(at-s.attackSamples)
 		case at < s.sustainEndSamples:
 			scale = s.sustainLevel
 		default:
-			scale = s.sustainLevel * releaseDelta * float64(s.sampleCount - at)
+			scale = s.sustainLevel * releaseDelta * float64(s.sampleCount-at)
 		}
 
 		next, ok := <-s.wrapped.GetSamples()

@@ -6,7 +6,7 @@ import (
 
 // A timedSound is parameters to the algorithm that limits a sound to a given duration.
 type timedSound struct {
-	wrapped Sound
+	wrapped     Sound
 	sampleCount uint64
 }
 
@@ -16,7 +16,7 @@ type timedSound struct {
 //	s := sounds.NewTimedSound(sounds.NewSineWave(261.63), 1000)
 func NewTimedSound(wrapped Sound, durationMs float64) Sound {
 	// NOTE: duration is Ms - time.Duration is possible, but likely more verbose.
-	duration := time.Duration(int64(durationMs * 1e6)) * time.Nanosecond
+	duration := time.Duration(int64(durationMs*1e6)) * time.Nanosecond
 	sampleCount := DurationToSamples(duration)
 
 	if wrapped.Length() < sampleCount {

@@ -18,8 +18,9 @@ const (
 
 // Notes in a treble clef, centered on B (offset 8)
 var trebleMidi = [...]int{57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84}
-// Key is D♭-Major = five flats: A♭, B♭, D♭, E♭, G♭ 
-var trebleKey =  [...]int{-1, -1,  0, -1, -1,  0, -1, -1, -1,  0, -1, -1,  0, -1, -1, -1,  0}
+
+// Key is D♭-Major = five flats: A♭, B♭, D♭, E♭, G♭
+var trebleKeys = [...]int{-1, -1, 00, -1, -1, 00, -1, -1, -1, 00, -1, -1, 00, -1, -1, -1, 00}
 
 func main() {
 	// NOTE: Not required, but shows how this can run on multiple threads.
@@ -30,7 +31,7 @@ func main() {
 	fmt.Println("Building sound.")
 
 	finalNoteLength := float64(3 + 6) // 9 extra beats, just for effect
-	
+
 	// Left-hand split for a bit near the end.
 	rh1 := s.ConcatSounds(
 		notesT(7, fs(1)),
@@ -51,7 +52,7 @@ func main() {
 
 	// Top half of the score:
 	rightHand := s.ConcatSounds(
-		rest(2), notesT(4, fs(4, 6)), notesT(4, fs(2, 4)), 
+		rest(2), notesT(4, fs(4, 6)), notesT(4, fs(2, 4)),
 		notesT(1, fs(1, 3)), notesT(1, fs(2, 4)), notesT(7, fs(1, 3)),
 		notesT(1, fs(0, 2)), notesT(1, fs(1, 3)), couplets,
 		notesT(1, fs(-1, 1)), notesT(1, fs(0, 2)), s.SumSounds(rh1, rh2),
@@ -125,12 +126,12 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 	}
 
 	// 0 = B = offset 8
-	midi := trebleMidi[base + 8] + trebleKey[base + 8]
+	midi := trebleMidi[base+8] + trebleKeys[base+8]
 	if sharp > 0.1 {
 		midi++
 	}
-	midiToSound := s.NewTimedSound(util.MidiToSound(midi), quaverCount * q)
-	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20) 
+	midiToSound := s.NewTimedSound(util.MidiToSound(midi), quaverCount*q)
+	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20)
 }
 
 // TODO - figure out why this fails the stop-before-reset panic:

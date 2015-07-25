@@ -17,7 +17,7 @@ const (
 	// HACK - Go doesn't allow uint64(float64(math.MaxInt64) * 0.000000001 * CyclesPerSecond) :(
 
 	// Maximum duration, used for unending sounds.
-	MaxDuration = time.Duration(int64(float64(MaxLength) * SecondsPerCycle * 1e9)) * time.Nanosecond
+	MaxDuration = time.Duration(int64(float64(MaxLength)*SecondsPerCycle*1e9)) * time.Nanosecond
 )
 
 /**
@@ -37,8 +37,8 @@ const (
 type Sound interface {
 	// Sound wave samples for the sound - only valid after Start() and before Stop()
 	GetSamples() <-chan float64
-	
-	// Number of samples in this sound - MaxLength of unlimited. 
+
+	// Number of samples in this sound - MaxLength of unlimited.
 	Length() uint64
 
 	// Length of time this goes for. Convenience method, should always be SamplesToDuration(Length())
@@ -54,10 +54,9 @@ type Sound interface {
 	Reset()
 }
 
-
 // SamplesToDuration converts a sample count to a duration of time.
 func SamplesToDuration(sampleCount uint64) time.Duration {
-	return time.Duration(int64(float64(sampleCount) * 1e9 * SecondsPerCycle)) * time.Nanosecond
+	return time.Duration(int64(float64(sampleCount)*1e9*SecondsPerCycle)) * time.Nanosecond
 }
 
 func DurationToSamples(duration time.Duration) uint64 {
