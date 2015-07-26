@@ -23,15 +23,9 @@ const (
 
 /**
  * Upcoming:
- *   - proper README
  *   - fix static audio in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
  *   - push to github, make public and announce
- *   - sound forker
- *   - implement some of these: https://www.youtube.com/channel/UCchjpg1aaY91WubqAYRcNsg
- *   - implement instrument synthesizers
- *   - midi / wave input
- *   - reverb: https://christianfloisand.wordpress.com/2012/09/04/digital-reverberation
  */
 type Sound interface {
 	// Sound wave samples for the sound - only valid after Start() and before Stop()
