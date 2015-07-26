@@ -21,14 +21,15 @@ const (
 	MaxDuration = time.Duration(int64(float64(MaxLength)*SecondsPerCycle*1e9)) * time.Nanosecond
 )
 
-/**
- * Upcoming:
- *   - fix static audio in wav output
- *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
- *   - push to github, make public and announce
- */
+// A Sound is a model of a physical sound wave as a series of pressure changes over time.
+//
+// Each Sound contains a channel of samples in the range [-1, 1] of the intensity at each time step,
+// as well as a count of samples, which then also defines how long the sound lasts.
+//
+// Sounds also provide a way to start and stop when the samples are written, and reset to an initial state.
 type Sound interface {
 	// Sound wave samples for the sound - only valid after Start() and before Stop()
+	// NOTE: Only one sink should read from GetSamples()!! Otherwise it will not receive every sample.
 	GetSamples() <-chan float64
 
 	// Number of samples in this sound - MaxLength of unlimited.
@@ -40,13 +41,13 @@ type Sound interface {
 	// Start begins writing the sound wave to the samples channel.
 	Start()
 
-	// Running indicates whether a sound has Start()-ed but not yet Stop()-ed
+	// Running indicates whether a sound has Start()'d but not yet Stop()'d
 	Running() bool
 
 	// Stop ceases writing samples, and closes the channel.
 	Stop()
 
-	// Reset converts the sound back to the pre-Start() state.
+	// Reset converts the sound back to the pre-Start() state. Can only be called on a Stop()'d Sound.
 	Reset()
 }
 
@@ -58,3 +59,14 @@ func SamplesToDuration(sampleCount uint64) time.Duration {
 func DurationToSamples(duration time.Duration) uint64 {
 	return uint64(float64(duration.Nanoseconds()) * 1e-9 * CyclesPerSecond)
 }
+
+/*
+Likely TODO list order:
+ - Add String() for each sound type to assist debugging.
+ - Test suite and automated test execution
+ - Midi / Microphone input
+ - Synchronize to allow output.Play() and output.Render() at the same time.
+ - Mathematically simple effects (delay, pitch+tempo change)
+ - Sound based off cached float64 slice.
+ - (possibly): Replace Reset() with Clone(), and not allow anything post-Stop().
+*/

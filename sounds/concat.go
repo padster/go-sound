@@ -39,6 +39,8 @@ func ConcatSounds(wrapped ...Sound) Sound {
 func (s *concat) Run(base *BaseSound) {
 	cease := false
 
+	// TODO(padster): The trivial implementation leads to bad sounds at the changeover points.
+	// The sounds should be merged together more cleanly to avoid this.
 	for _, wrapped := range s.wrapped {
 		wrapped.Start()
 		for sample := range wrapped.GetSamples() {

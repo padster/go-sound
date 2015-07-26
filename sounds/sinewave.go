@@ -8,8 +8,6 @@ import (
 type sineWave struct {
 	hz        float64
 	timeDelta float64
-
-	timeAt float64
 }
 
 // NewSineWave creates an unending sound at a given pitch (in hz).
@@ -22,7 +20,6 @@ func NewSineWave(hz float64) Sound {
 	data := sineWave{
 		hz,
 		timeDelta,
-		0, /* timeAt */
 	}
 
 	return NewBaseSound(&data, MaxLength)
@@ -30,12 +27,11 @@ func NewSineWave(hz float64) Sound {
 
 // Run generates the samples by creating a sine wave at the desired frequency.
 func (s *sineWave) Run(base *BaseSound) {
-	for {
-		if !base.WriteSample(math.Sin(s.timeAt)) {
+	// NOTE: Will overflow if run too long.
+	for timeAt := float64(0); true; timeAt += s.timeDelta {
+		if !base.WriteSample(math.Sin(timeAt)) {
 			return
 		}
-		// NOTE: Will overflow if run too long.
-		s.timeAt += s.timeDelta
 	}
 }
 
@@ -46,5 +42,5 @@ func (s *sineWave) Stop() {
 
 // Reset sets the offset in the wavelength back to zero.
 func (s *sineWave) Reset() {
-	s.timeAt = 0
+	// No-op
 }

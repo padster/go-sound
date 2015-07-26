@@ -13,11 +13,13 @@ const (
 
 // A wavFileSound is parameters to the algorithm that converts a channel from a .wav file into a sound.
 type wavFileSound struct {
-	path      string
-	channel   uint16
-	wavReader *wav.Reader
-	meta      wav.File
+	path    string
+	channel uint16
 
+	// TODO(padster): Clean this up, sounds shouldn't have mutable state beyond child sounds.
+	// samplesLeft can be removed, the other two may require edits to the wav library.
+	wavReader   *wav.Reader
+	meta        wav.File
 	samplesLeft uint32
 }
 

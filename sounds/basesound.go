@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-// A SoundDefinition represents the simplified requirements that BaseSound converts into a Sound
+// A SoundDefinition represents the simplified requirements that BaseSound converts into a Sound.
+// If possible it is recommended that implementations be immutable, with all mutable state within Run().
 type SoundDefinition interface {
 	// Run executes the normal logic of the sound, writing to base.WriteSample until it is false.
 	Run(base *BaseSound)
@@ -31,7 +32,7 @@ func NewBaseSound(def SoundDefinition, sampleCount uint64) Sound {
 	duration := SamplesToDuration(sampleCount)
 
 	ret := BaseSound{
-		nil, /* samples */
+		nil,   /* samples */
 		false, /* running */
 		sampleCount,
 		duration,
@@ -42,6 +43,8 @@ func NewBaseSound(def SoundDefinition, sampleCount uint64) Sound {
 
 // GetSamples returns the samples for this sound, valid between a Start() and Stop()
 func (s *BaseSound) GetSamples() <-chan float64 {
+	// TODO(padster): Add some tracking here to make sure that GetSamples() is only called once
+	// between each Start() and Stop(), if possible, to avoid re-using sounds.
 	return s.samples
 }
 

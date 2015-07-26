@@ -45,6 +45,7 @@ func RepeatSound(wrapped Sound, loopCount int32) Sound {
 func (s *repeater) Run(base *BaseSound) {
 	cease := false
 
+	// NOTE: See concat, this leads to bad sounds at reset points.
 	for loopAt := int32(0); !cease && loopAt < s.loopCount; loopAt++ {
 		s.wrapped.Start()
 
