@@ -62,7 +62,6 @@ func DurationToSamples(duration time.Duration) uint64 {
 
 /*
 Likely TODO list order:
- - Add String() for each sound type to assist debugging.
  - Test suite and automated test execution
  - Midi / Microphone input
  - Synchronize to allow output.Play() and output.Render() at the same time.

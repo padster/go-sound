@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -70,4 +71,9 @@ func (s *repeater) Stop() {
 // Reset resets the underlying sound, plus the loop count tracking.
 func (s *repeater) Reset() {
 	s.wrapped.Reset()
+}
+
+// String returns the textual representation
+func (s *repeater) String() string {
+	return fmt.Sprintf("Repeat[%s, %d times]", s.wrapped, s.loopCount)
 }

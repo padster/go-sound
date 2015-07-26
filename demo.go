@@ -30,7 +30,7 @@ func main() {
 	// http://www.piano-midi.de/noten/debussy/deb_clai.pdf
 	fmt.Println("Building sound.")
 
-	finalNoteLength := float64(3 + 6) // 9 extra beats, just for effect
+	finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
 
 	// Left-hand split for a bit near the end.
 	rh1 := s.ConcatSounds(
@@ -72,7 +72,7 @@ func main() {
 
 	clairDeLune := s.SumSounds(leftHand, rightHand)
 
-	fmt.Println("Playing sound.")
+	fmt.Printf("Playing: \n\t%s\n", clairDeLune)
 	output.Play(clairDeLune)
 
 	// Optional: Write to a .wav file:

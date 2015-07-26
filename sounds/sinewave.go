@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -43,4 +44,9 @@ func (s *sineWave) Stop() {
 // Reset sets the offset in the wavelength back to zero.
 func (s *sineWave) Reset() {
 	// No-op
+}
+
+// String returns the textual representation
+func (s *sineWave) String() string {
+	return fmt.Sprintf("Hz[%.2f]", s.hz)
 }

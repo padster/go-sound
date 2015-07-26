@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -99,4 +100,9 @@ func (s *BaseSound) WriteSample(sample float64) bool {
 // Running returns whether Sound is still generating samples.
 func (s *BaseSound) Running() bool {
 	return s.running
+}
+
+// String returns the textual representation
+func (s *BaseSound) String() string {
+	return fmt.Sprintf("%s", s.definition) // Simply delegate.
 }

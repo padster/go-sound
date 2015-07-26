@@ -1,5 +1,9 @@
 package sounds
 
+import (
+	"fmt"
+)
+
 // A normalSum is parameters to the algorithm that adds together sounds in parallel,
 // normalized to avoid going outside [-1, 1]
 type normalSum struct {
@@ -74,4 +78,16 @@ func (s *normalSum) Reset() {
 	for _, wrapped := range s.wrapped {
 		wrapped.Reset()
 	}
+}
+
+// String returns the textual representation
+func (s *normalSum) String() string {
+	result := "Sum["
+	for i, wrapped := range s.wrapped {
+		if i > 0 {
+			result += " & "
+		}
+		result += fmt.Sprintf("%s", wrapped)
+	}
+	return result + "]"
 }

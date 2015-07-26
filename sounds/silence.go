@@ -33,3 +33,9 @@ func (s *silence) Stop() {
 func (s *silence) Reset() {
 	// No-op
 }
+
+// String returns the textual representation, in this case fixed.
+func (s *silence) String() string {
+  return "Silence"
+}
+

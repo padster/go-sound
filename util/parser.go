@@ -77,6 +77,8 @@ func midiToHz(midiNote int) float64 {
 
 // MidiToSound converts a midi note into a sound that plays its pitch.
 func MidiToSound(midiNote int) s.Sound {
+	// NOTE: You can substitute here something that reads from .wav files
+	// to synthesize the notes instead.
 	return s.NewSineWave(midiToHz(midiNote))
 }
 

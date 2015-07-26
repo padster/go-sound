@@ -1,5 +1,9 @@
 package sounds
 
+import (
+	"fmt"
+)
+
 // A concat is parameters to the algorithm that concatenates multiple sounds
 // one after the other, to allow playing them in series.
 type concat struct {
@@ -68,4 +72,16 @@ func (s *concat) Reset() {
 	for _, wrapped := range s.wrapped {
 		wrapped.Reset()
 	}
+}
+
+// String returns the textual representation
+func (s *concat) String() string {
+	result := "Concat["
+	for i, wrapped := range s.wrapped {
+		if i > 0 {
+			result += " + "
+		}
+		result += fmt.Sprintf("%s", wrapped)
+	}
+	return result + "]"
 }

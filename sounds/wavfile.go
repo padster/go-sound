@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"math"
 	"os"
 
@@ -26,7 +27,7 @@ type wavFileSound struct {
 // LoadWavAsSound loads a .wav file and converts one of its channels into a Sound.
 //
 // For example, to read the first channel from a local file at 'piano.wav':
-//	s.LoadWavAsSound("piano.wav", 0)
+//	sounds.LoadWavAsSound("piano.wav", 0)
 func LoadWavAsSound(path string, channel uint16) Sound {
 	wavReader := loadReaderOrPanic(path)
 
@@ -85,6 +86,11 @@ func (s *wavFileSound) Reset() {
 	s.wavReader = loadReaderOrPanic(s.path)
 	s.meta = s.wavReader.GetFile()
 	s.samplesLeft = s.wavReader.GetSampleCount()
+}
+
+// String returns the textual representation
+func (s *wavFileSound) String() string {
+	return fmt.Sprintf("Wav[channel %d from path %s]", s.channel, s.path)
 }
 
 // loadReaderOrPanic reads a wav file and handles failure cases.

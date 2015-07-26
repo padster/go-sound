@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -85,4 +86,10 @@ func (s *adsrEnvelope) Stop() {
 // Reset resets the underlying sound, and zeroes the position in the envelope.
 func (s *adsrEnvelope) Reset() {
 	s.wrapped.Reset()
+}
+
+// String returns the textual representation.
+func (s *adsrEnvelope) String() string {
+	// NOTE: omit the parameters for brevity.
+	return fmt.Sprintf("Adsr[%s]", s.wrapped)
 }

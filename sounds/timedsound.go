@@ -1,6 +1,7 @@
 package sounds
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -21,7 +22,9 @@ func NewTimedSound(wrapped Sound, durationMs float64) Sound {
 
 	if wrapped.Length() < sampleCount {
 		// TODO(padster) - perhaps instead pad out with timed silence?
-		panic("Can't time a sound longer than it starts out.")
+		panic(fmt.Sprintf(
+				"Can't time a sound longer than it starts out, %d < %d\n",
+				wrapped.Length(), sampleCount))
 	}
 
 	data := timedSound{
@@ -55,4 +58,10 @@ func (s *timedSound) Stop() {
 // Reset resets the underlying sound, and restarts the sample tracker.
 func (s *timedSound) Reset() {
 	s.wrapped.Reset()
+}
+
+// String returns the textual representation
+func (s *timedSound) String() string {
+	ms := float64(SamplesToDuration(s.sampleCount)) / float64(time.Millisecond)
+	return fmt.Sprintf("Timed[%s for %.2fms]", s.wrapped, ms)
 }

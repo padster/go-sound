@@ -1,5 +1,9 @@
 package sounds
 
+import (
+	"fmt"
+)
+
 // A linearSampler is parameters to the algorithm that forms a sound by
 // sampling a second sound, and linearly interpolating that to a different sample rate.
 type linearSampler struct {
@@ -26,7 +30,8 @@ func LinearSample(wrapped Sound, pitchScale float64) Sound {
 	return NewBaseSound(&data, newLength)
 }
 
-// TODO
+// Run generates the samples by iterating through the origin, and
+// resampling at the required rate, linearly interpolating to calculate the new samples.
 func (s *linearSampler) Run(base *BaseSound) {
 	s.wrapped.Start()
 
@@ -58,4 +63,9 @@ func (s *linearSampler) Stop() {
 // Reset resets the underlying sound, and restarts the sample tracker.
 func (s *linearSampler) Reset() {
 	s.wrapped.Reset()
+}
+
+// String returns the textual representation
+func (s *linearSampler) String() string {
+	return fmt.Sprintf("Sampled[%s at %.2f]", s.wrapped, s.pitchScale)
 }
