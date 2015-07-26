@@ -1,3 +1,5 @@
+// Package output it responsible for preparing the sounds for human consumption,
+// whether audio, visual or other means.
 package output
 
 import (

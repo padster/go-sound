@@ -33,7 +33,7 @@ func NewScreen(width int, height int, samplesPerPixel int) *Screen {
 func (s *Screen) Render(values <-chan float64, sampleRate int) {
 	runtime.LockOSThread()
 
-	// TODO - error callback?
+	// NOTE: It appears that glfw 3.1 uses its own internal error callback.
 	// glfw.SetErrorCallback(func(err glfw.ErrorCode, desc string) {
 	// log.Fatalf("%v: %s\n", err, desc)
 	// })

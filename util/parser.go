@@ -1,4 +1,5 @@
-// Parser provides a collection of String -> Sound conversions
+// Package util provides a collection of utilities for dealing with Sounds,
+// generating them, displaying them, calculating their samples etc...
 package util
 
 import (

@@ -1,4 +1,5 @@
-// API for the Sound type. TODO - proper package docs.
+// Package sounds provides the basic types for Sounds within this system,
+// plus multiple implementations of different sounds that can be used.
 package sounds
 
 import (
@@ -22,8 +23,6 @@ const (
 
 /**
  * Upcoming:
- *   - add documentation for Sound, BaseSound and packages
- *   - remove TODOs
  *   - proper README
  *   - fix static audio in wav output
  *   - golang cleanup - gofmt, toString, fix exported set, final variables, generate godoc, pointer vs. object to baseSound?
@@ -46,6 +45,9 @@ type Sound interface {
 
 	// Start begins writing the sound wave to the samples channel.
 	Start()
+
+	// Running indicates whether a sound has Start()-ed but not yet Stop()-ed
+	Running() bool
 
 	// Stop ceases writing samples, and closes the channel.
 	Stop()

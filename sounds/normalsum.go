@@ -41,7 +41,6 @@ func SumSounds(wrapped ...Sound) Sound {
 
 // Run generates the samples by summing all the wrapped samples and normalizing.
 func (s *normalSum) Run(base *BaseSound) {
-	// TODO - start children in calling thread or running thread?
 	for _, wrapped := range s.wrapped {
 		wrapped.Start()
 	}

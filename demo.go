@@ -133,7 +133,3 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 	midiToSound := s.NewTimedSound(util.MidiToSound(midi), quaverCount*q)
 	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20)
 }
-
-// TODO - figure out why this fails the stop-before-reset panic:
-//	sound := s.NewADSREnvelope(s.NewTimedSound(s.ParseNotesToChord("CEG", 4), b), 250, 250, 0.3, 250)
-//	output.Play(s.RepeatSound(sound, 4))
