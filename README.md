@@ -30,5 +30,7 @@ Additionally, some more complex instrument synthesizers could be added, and cont
 
 The example piano .wav C note came from: http://freewavesamples.com/ensoniq-sq-1-dyno-keys-c4
 
+Frequencies of notes are all obtained from: http://www.phy.mtu.edu/~suits/notefreqs.html
+
 Credit to [cryptix](//github.com/cryptix) and [moriyoshi](//github.com/moriyoshi) for their wavFile and pulseAudio implementations respectively, used by go-sound.
 

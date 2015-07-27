@@ -14,6 +14,7 @@ func main() {
   generate("test/silence.wav", test.SampleSilence())
   generate("test/concat.wav", test.SampleConcat())
   generate("test/normalsum.wav", test.SampleNormalSum())
+  generate("test/multiply.wav", test.SampleMultiply())
   generate("test/repeat.wav", test.SampleRepeater())
   generate("test/adsr.wav", test.SampleAdsrEnvelope())
   generate("test/sampler.wav", test.SampleSampler())

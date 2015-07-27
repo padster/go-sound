@@ -65,3 +65,12 @@ func SampleSampler() s.Sound {
   // Includes: TimedSound and SineWave
   return s.LinearSample(s.NewTimedSound(s.NewSineWave(392.00), 500), 2.0)
 }
+
+func SampleMultiply() s.Sound {
+  // Includes: TimedSound and SineWave
+  all := make([]s.Sound, 20)
+  for i := 0; i < len(all); i++ {
+    all[i] = s.MultiplyWithClip(s.NewTimedSound(s.NewSineWave(659.25), 200), 0.2 + float64(i) / 10.0)
+  }
+  return s.ConcatSounds(all...)
+}

@@ -30,6 +30,10 @@ func TestNormalSum(t *testing.T) {
   compareFile(t, "normalsum.wav", SampleNormalSum())
 }
 
+func TestMultiply(t *testing.T) {
+  compareFile(t, "multiply.wav", SampleMultiply())
+}
+
 func TestRepeater(t *testing.T) {
   compareFile(t, "repeat.wav", SampleRepeater())
 }

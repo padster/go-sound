@@ -63,8 +63,9 @@ func DurationToSamples(duration time.Duration) uint64 {
 /*
 Likely TODO list order:
  - Midi / Microphone input
- - Synchronize to allow output.Play() and output.Render() at the same time.
  - Mathematically simple effects (delay, pitch+tempo change)
+ - Synchronize to allow output.Play() and output.Render() at the same time.
  - Sound based off cached float64 slice.
+ - Add support for Travis CI or similar.
  - (possibly): Replace Reset() with Clone(), and not allow anything post-Stop().
 */
