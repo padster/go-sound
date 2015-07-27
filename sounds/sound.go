@@ -63,7 +63,7 @@ func DurationToSamples(duration time.Duration) uint64 {
 /*
 Likely TODO list order:
  - Midi / Microphone input
- - Mathematically simple effects (delay, pitch+tempo change)
+ - Mathematically simple effects (chorus & reverb, from http://www.ti.com/lit/an/spraaa5/spraaa5.pdf)
  - Synchronize to allow output.Play() and output.Render() at the same time.
  - Sound based off cached float64 slice.
  - Add support for Travis CI or similar.

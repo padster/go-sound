@@ -5,6 +5,8 @@ import (
 	"log"
 	"runtime"
 
+  "github.com/padster/go-sound/types"
+
 	// TODO(padster) - migrate to core, not compat.
 	gl "github.com/go-gl/gl/v3.3-compatibility/gl"
 	glfw "github.com/go-gl/glfw/v3.1/glfw"
@@ -15,7 +17,7 @@ type Screen struct {
 	width           int
 	height          int
 	pixelsPerSample float64
-	buffer          *Buffer
+	buffer          *types.Buffer
 }
 
 // NewScreen creates a new output screen of a given size and sample density.
@@ -24,7 +26,7 @@ func NewScreen(width int, height int, samplesPerPixel int) *Screen {
 		width,
 		height,
 		1.0 / float64(samplesPerPixel),
-		NewBuffer(width * samplesPerPixel),
+		types.NewBuffer(width * samplesPerPixel),
 	}
 	return &s
 }

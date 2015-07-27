@@ -1,5 +1,5 @@
 // A circular buffer data type for floating point values.
-package util
+package types
 
 import (
 	"sync"
@@ -29,18 +29,25 @@ func NewBuffer(capacity int) *Buffer {
 }
 
 // Push adds a new value at the end of the buffer.
-func (b *Buffer) Push(value float64) {
+func (b *Buffer) Push(value float64) float64 {
 	b.lock.Lock()
+
+	result := b.values[b.at]
 	b.values[b.at] = value
+
 	if b.size < b.capacity {
 		b.size++
+		result = 0.0
 	}
+
 	if b.at+1 < b.capacity {
 		b.at = b.at + 1
 	} else {
 		b.at = 0
 	}
+
 	b.lock.Unlock()
+	return result
 }
 
 // GoPushChannel constantly pushes values from a channel, in a separate thread,
@@ -90,6 +97,14 @@ func (b *Buffer) IsFull() bool {
 // IsFinished returns whether there is nothing more to be added to the buffer
 func (b *Buffer) IsFinished() bool {
 	return b.finished
+}
+
+// Clear resets the buffer to being empty
+func (b *Buffer) Clear() {
+	// Simply clamp the size back to zero, don't worry about the existing values.
+	b.lock.Lock()
+	b.size = 0
+	b.lock.Unlock()
 }
 
 // Each applies a given function to all the values in the buffer,

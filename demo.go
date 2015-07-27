@@ -71,9 +71,10 @@ func main() {
 	)
 
 	clairDeLune := s.SumSounds(leftHand, rightHand)
+	toPlay := s.AddDelay(clairDeLune, q / 4)
 
-	fmt.Printf("Playing: \n\t%s\n", clairDeLune)
-	output.Play(clairDeLune)
+	fmt.Printf("Playing: \n\t%s\n", toPlay)
+	output.Play(toPlay)
 
 	// Optional: Write to a .wav file:
 	// clairDeLune.Reset()

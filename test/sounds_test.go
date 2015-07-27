@@ -46,6 +46,10 @@ func TestSampler(t *testing.T) {
   compareFile(t, "sampler.wav", SampleSampler())
 }
 
+func TestDelay(t *testing.T) {
+  compareFile(t, "delay.wav", SampleAddDelay())
+}
+
 // TODO(padster): Add tests for util/parser.go
 
 // compareFile writes a sound to file, compares it to a golden file,
