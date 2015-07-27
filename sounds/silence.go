@@ -36,6 +36,5 @@ func (s *silence) Reset() {
 
 // String returns the textual representation, in this case fixed.
 func (s *silence) String() string {
-  return "Silence"
+	return "Silence"
 }
-

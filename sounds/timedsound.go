@@ -23,8 +23,8 @@ func NewTimedSound(wrapped Sound, durationMs float64) Sound {
 	if wrapped.Length() < sampleCount {
 		// TODO(padster) - perhaps instead pad out with timed silence?
 		panic(fmt.Sprintf(
-				"Can't time a sound longer than it starts out, %d < %d\n",
-				wrapped.Length(), sampleCount))
+			"Can't time a sound longer than it starts out, %d < %d\n",
+			wrapped.Length(), sampleCount))
 	}
 
 	data := timedSound{

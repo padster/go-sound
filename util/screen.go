@@ -5,7 +5,7 @@ import (
 	"log"
 	"runtime"
 
-  "github.com/padster/go-sound/types"
+	"github.com/padster/go-sound/types"
 
 	// TODO(padster) - migrate to core, not compat.
 	gl "github.com/go-gl/gl/v3.3-compatibility/gl"
