@@ -62,7 +62,6 @@ func DurationToSamples(duration time.Duration) uint64 {
 
 /*
 Likely TODO list order:
- - Test suite and automated test execution
  - Midi / Microphone input
  - Synchronize to allow output.Play() and output.Render() at the same time.
  - Mathematically simple effects (delay, pitch+tempo change)
