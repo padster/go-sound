@@ -83,3 +83,15 @@ func SampleAddDelay() s.Sound {
 		s.NewTimedSound(u.MidiToSound(62), 678),
 	), 123)
 }
+
+func SampleDenseIIR() s.Sound {
+	// Includes: TimedSound and SineWave
+	all := make([]s.Sound, 10)
+	for i := 0; i < len(all); i++ {
+		all[i] = s.NewTimedSound(s.NewSineWave(600*float64(i)/4), 200)
+	}
+	return s.NewDenseIIR(s.ConcatSounds(all...),
+		[]float64{0.8922, -2.677, 2.677, -0.8922},
+		[]float64{2.772, -2.57, 0.7961},
+	)
+}

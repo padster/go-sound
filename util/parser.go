@@ -11,6 +11,7 @@ import (
 
 // Frequencies of notes in scale 0 - see:
 // http://www.phy.mtu.edu/~suits/notefreqs.html
+// http://newt.phys.unsw.edu.au/jw/notes.html
 var freq = []float64{
 	16.35, // C
 	17.32, // C#/Db

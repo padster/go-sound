@@ -71,10 +71,14 @@ func main() {
 	)
 
 	clairDeLune := s.SumSounds(leftHand, rightHand)
-	toPlay := s.AddDelay(clairDeLune, q/4)
+	toPlay := s.NewDenseIIR(clairDeLune,
+		[]float64{0.8922, -2.677, 2.677, -0.8922},
+		[]float64{2.772, -2.57, 0.7961},
+	)
 
 	fmt.Printf("Playing: \n\t%s\n", toPlay)
-	output.Render(toPlay, 2000, 400)
+	// output.Render(toPlay, 2000, 400)
+	output.Play(toPlay)
 
 	// Optional: Write to a .wav file:
 	// clairDeLune.Reset()

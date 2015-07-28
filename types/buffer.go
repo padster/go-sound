@@ -76,15 +76,19 @@ func (b *Buffer) GoPushChannel(values <-chan float64, sampleRate int) {
 // 0 returns the most recently pushed, the least recent being b.size - 1
 func (b *Buffer) GetFromEnd(index int) float64 {
 	b.lock.Lock()
-	if index < 0 || index >= b.size {
+	defer b.lock.Unlock()
+	if index < 0 || index >= b.capacity {
 		panic("GetFromEnd index out of range")
+	} else if index >= b.size {
+		// Within range, just not filled yet, to default to zero.
+		return 0.0
 	}
+
 	index = b.at - index
 	if index < 0 {
 		index = index + b.capacity
 	}
 	result := b.values[index]
-	b.lock.Unlock()
 	return result
 }
 

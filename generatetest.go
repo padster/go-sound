@@ -19,6 +19,7 @@ func main() {
 	generate("test/adsr.wav", test.SampleAdsrEnvelope())
 	generate("test/sampler.wav", test.SampleSampler())
 	generate("test/delay.wav", test.SampleAddDelay())
+	generate("test/denseiir.wav", test.SampleDenseIIR())
 }
 
 func generate(path string, sound sounds.Sound) {

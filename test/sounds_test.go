@@ -50,6 +50,10 @@ func TestDelay(t *testing.T) {
 	compareFile(t, "delay.wav", SampleAddDelay())
 }
 
+func TestDenseIIR(t *testing.T) {
+	compareFile(t, "denseiir.wav", SampleDenseIIR())
+}
+
 // TODO(padster): Add tests for util/parser.go
 
 // compareFile writes a sound to file, compares it to a golden file,
