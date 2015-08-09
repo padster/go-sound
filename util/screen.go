@@ -40,12 +40,9 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 	// log.Fatalf("%v: %s\n", err, desc)
 	// })
 	if err := glfw.Init(); err != nil {
-		log.Fatalf("Can't init glfw!")
+		log.Fatalf("Can't init glfw: %v!", err)
 	}
 	defer glfw.Terminate()
-	if err := gl.Init(); err != nil {
-		log.Fatalf("Can't init gl!")
-	}
 
 	window, err := glfw.CreateWindow(s.width, s.height, "Muse", nil, nil)
 	if err != nil {
@@ -55,6 +52,11 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 		log.Fatalf("Window doesn't have the requested size: want %d,%d got %d,%d", s.width, s.height, aw, ah)
 	}
 	window.MakeContextCurrent()
+
+	// Must gl.Init() *after* MakeContextCurrent
+	if err := gl.Init(); err != nil {
+		log.Fatalf("Can't init gl: %v!", err)
+	}
 
 	// Set window up to be [0, -1.0] -> [width, 1.0], black.
 	gl.MatrixMode(gl.MODELVIEW)
