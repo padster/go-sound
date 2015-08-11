@@ -13,9 +13,10 @@ provided by each file in the [sounds](https://github.com/padster/go-sound/tree/m
  - Utilities for dealing with sounds (repeat sounds, generate from text, ...)
  - Implementations for various inputs (silence, sinusoidal wave, .wav file, ...)
  - Implementations for various outputs (play via pulse audio, draw to screen, .wav file, ...)
+ - Realtime input (via MIDI) - with delay though.
 
 ### Future plans:
- - Realtime input (e.g. midi controller or microphone)
+ - Realtime input from microphone, more efficient from MIDI
  - Effects algorithms (digitial processing like delay, reverb, ...)
  - UI for modifying sounds and applying the math/effects.
 
@@ -32,5 +33,15 @@ The example piano .wav C note came from: http://freewavesamples.com/ensoniq-sq-1
 
 Frequencies of notes are all obtained from: http://www.phy.mtu.edu/~suits/notefreqs.html
 
-Credit to [cryptix](//github.com/cryptix) and [moriyoshi](//github.com/moriyoshi) for their wavFile and pulseAudio implementations respectively, used by go-sound.
+For MIDI input, a number of things are required for portmidi:
+ - Instructions to test the midi input device: https://wiki.archlinux.org/index.php/USB_MIDI_keyboards
+ - Instructions to set linux up for realtime processing: http://tedfelix.com/linux/linux-midi.html
+ - ALSA dev library required (libasound2-dev)
+ - I needed to manually install portmidi: http://sourceforge.net/p/portmedia/wiki/Installing_portmidi_on_Linux/
+   - This also required removing the "WORKING_DIRECTORY pm_java)" in the ccmake configs
+   - And to link against /usr/local/lib/libportmidi.so instead of /usr/lib/libporttime.so
+
+Overall quite a pain and there's still a noticeable delay in the MIDI input, patches to reduce that are welcome!
+
+Credit to [cryptix](//github.com/cryptix), [moriyoshi](//github.com/moriyoshi) and [rakyll](//github.com/rakyll) for their wavFile, pulseAudio and portmidi implementations respectively, used by go-sound.
 

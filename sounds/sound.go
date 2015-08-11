@@ -13,6 +13,10 @@ const (
 	// Inverse sample rate.
 	SecondsPerCycle = 1.0 / CyclesPerSecond
 
+	// Inverse sample rate as a golang duration
+	// DurationPerCycle = int64(SecondsPerCycle * 1e9) * time.Nanosecond
+	DurationPerCycle = 22675 * time.Nanosecond // BIG HACK
+
 	// The number of samples in the maximum duration.
 	MaxLength = uint64(406750706825295)
 	// HACK - Go doesn't allow uint64(float64(math.MaxInt64) * 0.000000001 * CyclesPerSecond) :(
@@ -62,10 +66,13 @@ func DurationToSamples(duration time.Duration) uint64 {
 
 /*
 Likely TODO list order:
- - Midi / Microphone input
+ - Pulseaudio (mic) input
  - Mathematically simple effects (chorus & reverb, from http://www.ti.com/lit/an/spraaa5/spraaa5.pdf)
+ - Reduce MIDI input -> Wav output delay
  - Synchronize to allow output.Play() and output.Render() at the same time.
  - Sound based off cached float64 slice.
  - Add support for Travis CI or similar.
+ - Pitch shifter (phased vocoder): http://www.guitarpitchshifter.com/algorithm.html or http://www.ee.columbia.edu/ln/labrosa/matlab/pvoc/
+ - Duration changer: Resample + Pitch shifter? vs. Time-domain harmonic scaling / PSOLA (http://research.spa.aalto.fi/publications/theses/lemmetty_mst/thesis.pdf)
  - (possibly): Replace Reset() with Clone(), and not allow anything post-Stop().
 */

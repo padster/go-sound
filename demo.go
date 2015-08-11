@@ -9,6 +9,8 @@ import (
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/util"
+
+	pm "github.com/rakyll/portmidi"
 )
 
 const (
@@ -26,8 +28,40 @@ func main() {
 	// NOTE: Not required, but shows how this can run on multiple threads.
 	runtime.GOMAXPROCS(4)
 
-	// Clair de Lune, Debussey, music from:
-	// http://www.piano-midi.de/noten/debussy/deb_clai.pdf
+	// Switch on whichever demo you'd like here:
+	if true {
+		renderMidi()
+	} else {
+		playClairDeLune()
+	}
+}
+
+// renderMidi reads a midi device, converts it to a live sound, and renders the waveform to screen.
+func renderMidi() {
+	fmt.Println("Loading portmidi...")
+	pm.Initialize()
+
+	midi := s.NewMidiInput(pm.DeviceId(3)) // ++See below
+	fmt.Printf("Rendering midi...\n")
+
+	// Render the generated sine wave to screen:
+	output.Render(midi, 2000, 500)
+	// ...or, play it live:
+	// output.Play(midi)
+
+	/*
+		++ Note: to find your device id, use a version of this:
+		for i := 1; i <= pm.CountDevices(); i++ {
+			fmt.Printf("Reading device: %d\n", i)
+			di := pm.GetDeviceInfo(pm.DeviceId(i))
+			fmt.Printf("Info = %v\n", di)
+		}
+	*/
+}
+
+// playClairDeLune builds then plays Clair de Lune (Debussey)
+// music from http://www.piano-midi.de/noten/debussy/deb_clai.pdf
+func playClairDeLune() {
 	fmt.Println("Building sound.")
 
 	finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
