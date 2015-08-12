@@ -14,9 +14,24 @@ import (
 
 // Event is something that occurred at a single sample of the values.
 type Event struct {
+	// (r, g, b) colours for the event.
 	R float32
 	G float32
 	B float32
+}
+
+// Line is the samples channel for the line, plus their color.
+type Line struct {
+	Values <-chan float64
+	R float32
+	G float32
+	B float32
+	valueBuffer *types.Buffer
+}
+
+// NewLine creates a line from the exported fields.
+func NewLine(v <-chan float64, r float32, g float32, b float32) Line {
+	return Line{v, r, g, b, nil}
 }
 
 // Screen is an on-screen opengl window that renders the channel.
@@ -24,8 +39,10 @@ type Screen struct {
 	width           int
 	height          int
 	pixelsPerSample float64
-	valueBuffer     *types.Buffer
 	eventBuffer     *types.TypedBuffer
+
+	// TODO(padster): Move this into constructor, and call much later.
+	lines []Line
 }
 
 // NewScreen creates a new output screen of a given size and sample density.
@@ -34,20 +51,24 @@ func NewScreen(width int, height int, samplesPerPixel int) *Screen {
 		width,
 		height,
 		1.0 / float64(samplesPerPixel),
-		types.NewBuffer(width * samplesPerPixel),
 		types.NewTypedBuffer(width * samplesPerPixel),
+		nil, // lines
 	}
 	return &s
 }
 
 // Render starts rendering a channel of waves samples to screen.
 func (s *Screen) Render(values <-chan float64, sampleRate int) {
-	s.RenderWithEvents(values, nil, sampleRate)
+	s.RenderLinesWithEvents([]Line{
+		Line{values, 1.0, 1.0, 1.0, nil}, // Default to white
+	}, nil, sampleRate)
 }
 
 
-// RenderWithEvents renders a channel of samples to screen, and draws events as the occur.
-func (s *Screen) RenderWithEvents(values <- chan float64, events <- chan interface{}, sampleRate int) {
+// RenderLinesWithEvents renders multiple channels of samples to screen, and draws events.
+func (s *Screen) RenderLinesWithEvents(lines []Line, events <- chan interface{}, sampleRate int) {
+	s.lines = lines
+
 	runtime.LockOSThread()
 
 	// NOTE: It appears that glfw 3.1 uses its own internal error callback.
@@ -81,13 +102,16 @@ func (s *Screen) RenderWithEvents(values <- chan float64, events <- chan interfa
 	gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 
 	// Actually start writing data to the buffer
-	s.valueBuffer.GoPushChannel(values, sampleRate)
+	for i, _ := range s.lines {
+		s.lines[i].valueBuffer = types.NewBuffer(int(float64(s.width) / s.pixelsPerSample))
+		s.lines[i].valueBuffer.GoPushChannel(s.lines[i].Values, sampleRate)
+	}
 	if events != nil {
 		s.eventBuffer.GoPushChannel(events, sampleRate)
 	}
 
 	// Keep drawing while we still can (and should).
-	for !window.ShouldClose() && !s.valueBuffer.IsFinished() {
+	for !window.ShouldClose() && !s.bufferFinished() {
 		if window.GetKey(glfw.KeyEscape) == glfw.Press {
 			break
 		}
@@ -101,6 +125,20 @@ func (s *Screen) RenderWithEvents(values <- chan float64, events <- chan interfa
 	for !window.ShouldClose() && window.GetKey(glfw.KeyEscape) != glfw.Press {
 		glfw.PollEvents()
 	}
+}
+
+
+// bufferFinished returns whether any of the input channels have closed.
+func (s *Screen) bufferFinished() bool {
+	if s.eventBuffer.IsFinished() {
+		return true
+	}
+	for _, l := range s.lines {
+		if l.valueBuffer.IsFinished() {
+			return true
+		}
+	}
+	return false
 }
 
 // drawSignal writes the input wave form(s) out to screen.
@@ -117,10 +155,12 @@ func (s *Screen) drawSignal() {
 		}
 	})
 
-	gl.Color3f(1.0, 1.0, 1.0)
-	gl.Begin(gl.LINE_STRIP)
-	s.valueBuffer.Each(func(index int, value float64) {
-		gl.Vertex2d(float64(index)*s.pixelsPerSample, value)
-	})
-	gl.End()
+	for _, l := range s.lines {
+		gl.Color3f(l.R, l.G, l.B)
+		gl.Begin(gl.LINE_STRIP)
+		l.valueBuffer.Each(func(index int, value float64) {
+			gl.Vertex2d(float64(index)*s.pixelsPerSample, value)
+		})
+		gl.End()
+	}
 }
