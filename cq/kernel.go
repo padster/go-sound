@@ -1,10 +1,14 @@
 package cq 
 
 import (
-	// "fmt"
+	"fmt"
 	"math"
 	"math/cmplx"
+
+	"github.com/mjibson/go-dsp/fft"
 )
+
+const DEBUG = true
 
 type Properties struct {
 	sampleRate float64
@@ -26,7 +30,7 @@ type Kernel struct {
 }
 
 type CQKernel struct {
-	properties Properties
+	Properties Properties
 	kernel Kernel
 }
 
@@ -61,8 +65,18 @@ func NewCQKernel(params CQParams) CQKernel {
 	p.fftSize = NextPowerOf2(p.firstCentre + int(math.Ceil(maxNK / 2.0)))
 	p.atomsPerFrame = int(math.Floor(
 		1.0 + (float64(p.fftSize) - math.Ceil(maxNK / 2.0) - float64(p.firstCentre)) / float64(p.atomSpacing)))
+
+	if DEBUG {
+		fmt.Printf("atomsPerFrame = %v (q = %v, Q = %v, atomHopFactor = %v, atomSpacing = %v, fftSize = %v, maxNK = %v, firstCentre = %v)\n",
+			p.atomsPerFrame, q, p.Q, atomHopFactor, p.atomSpacing, p.fftSize, maxNK, p.firstCentre)
+	}
+
 	p.lastCentre = p.firstCentre + (p.atomsPerFrame - 1) * p.atomSpacing
 	p.fftHop = (p.lastCentre + p.atomSpacing) - p.firstCentre
+
+	if DEBUG {
+		fmt.Printf("fftHop = %v\n", p.fftHop)
+	}
 
 	// POIUY
 	// FFT := New FFT(p.fftSize)
@@ -77,7 +91,7 @@ func NewCQKernel(params CQParams) CQKernel {
 	for k := 1; k <= p.binsPerOctave; k++ {
 		nk := int(p.Q * p.sampleRate / (p.minFrequency * math.Pow(2, ((float64(k) - 1.0) / float64(bpo)))) + 0.5)
 
-		win := makeWindow(nk)
+		win := makeWindow(params.window, nk)
 
 		fk := float64(p.minFrequency * math.Pow(2, ((float64(k) - 1.0) / float64(bpo))))
 
@@ -100,11 +114,21 @@ func NewCQKernel(params CQParams) CQKernel {
 				iin[j + shift] = imags[j];
 			}
 
-			rout, iout := make([]float64, p.fftSize, p.fftSize), make([]float64, p.fftSize, p.fftSize)
-
+			// HACK - converts real -> imag -> FFT -> imag -> real :/
+			cin := make([]complex128, p.fftSize, p.fftSize)
+			for j := 0; j < p.fftSize; j++ {
+				cin[j] = complex(rin[j], iin[j])
+			}
+			
 			// TODO - process FFT
 			// m_fft->process(false, rin.data(), iin.data(), rout.data(),
 					// iout.data());
+			cout := fft.FFT(cin)
+			rout, iout := make([]float64, p.fftSize, p.fftSize), make([]float64, p.fftSize, p.fftSize)
+			for j := 0; j < p.fftSize; j++ {
+				rout[j] = real(cout[j])
+				iout[j] = imag(cout[j])
+			}
 
 			// Keep this dense for the moment (until after normalisation calculations)
 			row := make([]complex128, p.fftSize, p.fftSize)
@@ -123,11 +147,17 @@ func NewCQKernel(params CQParams) CQKernel {
 		}
 	}
 
+	if DEBUG {
+		fmt.Printf("size = %v * %v (fft size = %v)\n", len(kernel.data), len(kernel.data[0]), p.fftSize)
+		// fmt.Printf("density = %v (%v of %v)\n", nnz / (p.binsPerOctave * p.atomsPerFrame * p.fftSize), (p.binsPerOctave * p.atomsPerFrame * p.fftSize))
+	}
+
 	// finalizeKernel
 
 	// calculate weight for normalisation
 	wx1 := maxidx(kernel.data[0]);
 	wx2 := maxidx(kernel.data[len(kernel.data) - 1]);
+	fmt.Printf("wx1/wx2 = %v/%v\n", wx1, wx2)
 
 	subset := make([][]complex128, len(kernel.data), len(kernel.data))
 	for i := 0; i < len(kernel.data); i++ {
@@ -167,6 +197,11 @@ func NewCQKernel(params CQParams) CQKernel {
 		weight /= mean(wK)
 	}
 	weight = math.Sqrt(weight)
+
+	if DEBUG {
+		fmt.Printf("weight = %v (from %v elements in wK, ncols = %v, q = %v)\n",
+				weight, len(wK), ncols, q)
+	}
 
 
 	// apply normalisation weight, make sparse, and store conjugate
@@ -214,7 +249,7 @@ func (k CQKernel) processForward(cv []complex128) []complex128 {
 		panic("Whoops - return empty array? is this even possible?")
 	}
 
-	nrows := k.properties.binsPerOctave * k.properties.atomsPerFrame
+	nrows := k.Properties.binsPerOctave * k.Properties.atomsPerFrame
 
 	rv := make([]complex128, nrows, nrows)
 	for i := 0; i < nrows; i++ {
@@ -236,8 +271,8 @@ func (k CQKernel) processInverse(cv []complex128) []complex128 {
 		panic("Whoops - return empty array? is this even possible?")
 	}
 
-	ncols := k.properties.binsPerOctave * k.properties.atomsPerFrame
-	nrows := k.properties.fftSize;
+	ncols := k.Properties.binsPerOctave * k.Properties.atomsPerFrame
+	nrows := k.Properties.fftSize;
 
 	rv := make([]complex128, nrows, nrows)
 	for j := 0; j < ncols; j++ {
@@ -250,10 +285,47 @@ func (k CQKernel) processInverse(cv []complex128) []complex128 {
 	return rv;
 }
 
-func makeWindow(len int) []float64 {
-	// HACK - need to do
-	result := make([]float64, len, len)
-	return result
+func makeWindow(window Window, len int) []float64 {
+	if window != SqrtBlackmanHarris {
+		// HACK - support more?
+		panic("Only SqrtBlackmanHarris window supported currently")
+	}
+
+	win := make([]float64, len - 1, len - 1)
+	for i := 0; i < len - 1; i++ {
+		win[i] = 1.0
+	}
+
+	// Blackman Harris
+
+	n := float64(len - 1)
+	for i := 0; i < len - 1; i++ {
+		win[i] = win[i] * (0.35875 -
+				0.48829 * math.Cos(2.0 * math.Pi * float64(i) / n) +
+			  0.14128 * math.Cos(4.0 * math.Pi * float64(i) / n) -
+			  0.01168 * math.Cos(6.0 * math.Pi * float64(i) / n))
+	}
+
+
+	win = append(win, win[0]);
+
+	switch (window) {
+		case SqrtBlackmanHarris: fallthrough;
+		case SqrtBlackman: fallthrough;
+		case SqrtHann:
+			for i, v := range win {
+				win[i] = math.Sqrt(v) / float64(len)
+			}
+
+		case BlackmanHarris: fallthrough;
+		case Blackman: fallthrough;
+		case Hann:
+			for i, v := range win {
+				win[i] = v / float64(len)
+			}
+	}
+
+	return win
 }
 
 

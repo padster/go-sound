@@ -21,14 +21,17 @@ func main() {
 	fmt.Printf("Building parameters\n")
 
 	sampleRate := 44100.0
-	minFreq, maxFreq, bpo := 100.0, sampleRate / 3.0, 24
+	minFreq, maxFreq, bpo := 110.0, 14080.0, 24
 	params := cq.NewCQParams(sampleRate, minFreq, maxFreq, bpo)
 
 	fmt.Printf("Params = %v\n", params)
-	fmt.Printf("Building Kernel... %v\n", params)
+	fmt.Printf("Building CQ... %v\n", params)
 
-	kernel := cq.NewCQKernel(params)
+	constantQ := cq.NewConstantQ(params)
 
-	fmt.Printf("Done! Kernel = %v\n", kernel)
+	fmt.Printf("Done!\n")
+	if false {
+		fmt.Printf("CQ! %v\n", constantQ)
+	}
 }
 
