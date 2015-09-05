@@ -263,7 +263,7 @@ func (cq ConstantQ) processOctaveBlock(octave int) [][]complex128 {
   // ro, io := make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize), make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize)
 
   // HACK
-  cv := fft.FFT(cq.buffers[octave])
+  cv := fft.FFTReal(cq.buffers[octave])
   // cv := m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
   lshift := len(cq.buffers[octave]) - cq.kernel.Properties.fftHop
