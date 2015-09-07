@@ -36,7 +36,7 @@ type CQKernel struct {
 
 
 // TODO - clean up a lot.
-func NewCQKernel(params CQParams) CQKernel {
+func NewCQKernel(params CQParams) *CQKernel {
 	// Constructor
 	p := Properties{}
 	p.sampleRate = params.sampleRate
@@ -238,10 +238,10 @@ func NewCQKernel(params CQParams) CQKernel {
 		}
 	}
 
-	return CQKernel {p, sk}
+	return &CQKernel {p, sk}
 }
 
-func (k CQKernel) processForward(cv []complex128) []complex128 {
+func (k *CQKernel) processForward(cv []complex128) []complex128 {
 	// straightforward matrix multiply (taking into account m_kernel's
 	// slightly-sparse representation)
 
@@ -262,7 +262,7 @@ func (k CQKernel) processForward(cv []complex128) []complex128 {
 }
 
 
-func (k CQKernel) processInverse(cv []complex128) []complex128 {
+func (k *CQKernel) processInverse(cv []complex128) []complex128 {
 	// matrix multiply by conjugate transpose of m_kernel. This is
 	// actually the original kernel as calculated, we just stored the
 	// conjugate-transpose of the kernel because we expect to be doing

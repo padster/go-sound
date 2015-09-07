@@ -8,10 +8,10 @@ import (
 
 )
 
-const DEBUG_CQ = true
+const DEBUG_CQ = false
 
 type ConstantQ struct {
-  kernel CQKernel
+  kernel *CQKernel
 
 	octaves int
   bigBlockSize int
@@ -19,12 +19,12 @@ type ConstantQ struct {
   buffers [][]float64
 
   latencies []int
-  decimators []Resampler
+  decimators []*Resampler
 
 }
 
 
-func NewConstantQ(params CQParams) ConstantQ {
+func NewConstantQ(params CQParams) *ConstantQ {
   octaves := int(math.Ceil(math.Log(params.maxFrequency / params.minFrequency) / math.Log(2))); // TODO: math.Log2
   if octaves < 1 {
     panic("Need at least one octave")
@@ -41,11 +41,11 @@ func NewConstantQ(params CQParams) ConstantQ {
   // risk getting non-integer rates for lower octaves
   sourceRate := unsafeShift(octaves)
   latencies := make([]int, octaves, octaves)
-  decimators := make([]Resampler, octaves, octaves)
+  decimators := make([]*Resampler, octaves, octaves)
 
   // top octave, no resampling
   latencies[0] = 0
-  decimators[0] = Resampler{} // HACK
+  decimators[0] = nil
 
   for i := 1; i < octaves; i++ {
     factor := unsafeShift(i)
@@ -160,10 +160,6 @@ func NewConstantQ(params CQParams) ConstantQ {
       rounded := float64(round(octaveLatency))
       fmt.Printf("octave %d: resampler latency = %v, drop = %v, (/factor = %v), octaveLatency = %v -> %v (diff * factor = %v * %v = %v)\n",
           i, latencies[i], drops[i], drops[i] / factor, octaveLatency, rounded, octaveLatency - rounded, factor, (octaveLatency - rounded) * float64(factor))
-
-      fmt.Printf("num(%v - %v - %v + %v) / %v = %v\n",
-        totalLatency, latencies[i], drops[i], bigBlockSize, factor, octaveLatency)
-
     }
 
     sz := int(octaveLatency + 0.5)
@@ -171,7 +167,7 @@ func NewConstantQ(params CQParams) ConstantQ {
   }
 
   // m_fft = new FFTReal(m_p.fftSize);
-  return ConstantQ {
+  return &ConstantQ {
     // params,
     kernel,
 
@@ -189,16 +185,22 @@ func round(v float64) int {
   return int(v + 0.5)
 }
 
-func (cq ConstantQ) process(td []float64) [][]complex128 {
+func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
   for _, v := range td {
     // TODO - faster array append in golang?
     cq.buffers[0] = append(cq.buffers[0], v)
+  }
+  if (print) {
+    fmt.Printf("buffer 0 size: %d\n", len(cq.buffers[0]))
   }
 
   for i := 1; i < cq.octaves; i++ {
     dec := cq.decimators[i].Process(td)
     for _, v := range dec {
       cq.buffers[i] = append(cq.buffers[i], v)
+    }
+    if (print) {
+      fmt.Printf("Buffer %d size: %d\n", i, len(cq.buffers[i]))
     }
   }
 
@@ -224,6 +226,10 @@ func (cq ConstantQ) process(td []float64) [][]complex128 {
     base := len(out)
     totalColumns := unsafeShift(cq.octaves - 1) * cq.kernel.Properties.atomsPerFrame
 
+    if (print) {
+      fmt.Printf("TOTAL COLUMNS = %d\n", totalColumns)
+    }
+
     for i := 0; i < totalColumns; i++ {
       out = append(out, []complex128{})
     }
@@ -232,10 +238,14 @@ func (cq ConstantQ) process(td []float64) [][]complex128 {
       blocksThisOctave := unsafeShift(cq.octaves - octave - 1)
 
       for b := 0; b < blocksThisOctave; b++ {
-        block := cq.processOctaveBlock(octave)
+        block := cq.processOctaveBlock(octave, print && octave == 0 && b == 63)
 
         for j := 0; j < cq.kernel.Properties.atomsPerFrame; j++ {
           target := base + (b * (totalColumns / blocksThisOctave) + (j * ((totalColumns / blocksThisOctave) / cq.kernel.Properties.atomsPerFrame)))
+
+          if (print && target == 127) {
+            fmt.Printf("Adding to 127, octave = %d, block = %d, atom = %d\n", octave, b, j);
+          }
 
           for len(out[target]) < cq.kernel.Properties.binsPerOctave * (octave + 1) {
             out[target] = append(out[target], complex(0, 0))
@@ -251,19 +261,32 @@ func (cq ConstantQ) process(td []float64) [][]complex128 {
   return out
 }
 
-func (cq ConstantQ) getRemainingOutput() [][]complex128 {
+func (cq *ConstantQ) GetRemainingOutput() [][]complex128 {
   // Same as padding added at start, though rounded up
   pad := int(math.Ceil(float64(cq.outputLatency) / float64(cq.bigBlockSize))) * cq.bigBlockSize
   zeros := make([]float64, pad, pad)
-  return cq.process(zeros);
+  return cq.Process(zeros, false);
 }
 
-func (cq ConstantQ) processOctaveBlock(octave int) [][]complex128 {
+func (cq *ConstantQ) processOctaveBlock(octave int, print bool) [][]complex128 {
   // TODO - merge real pairs into complex array
   // ro, io := make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize), make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize)
 
+  if (print) {
+    fmt.Printf("~~ Octave data = %d values: ", len(cq.buffers[octave]));
+    for i := 0; i < 20; i++ {
+      fmt.Printf("%.4f, ", cq.buffers[octave][i]);      
+    }
+    fmt.Printf("\n");
+  }
+
+
   // HACK
   cv := fft.FFTReal(cq.buffers[octave])
+
+  // if octave == 1 && blockCount == 31 {
+    // fmt.Printf("---- %v\n", cq.buffers[octave])
+  // }
   // cv := m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
   lshift := len(cq.buffers[octave]) - cq.kernel.Properties.fftHop
