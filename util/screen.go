@@ -22,10 +22,10 @@ type Event struct {
 
 // Line is the samples channel for the line, plus their color.
 type Line struct {
-	Values <-chan float64
-	R float32
-	G float32
-	B float32
+	Values      <-chan float64
+	R           float32
+	G           float32
+	B           float32
 	valueBuffer *types.Buffer
 }
 
@@ -64,9 +64,8 @@ func (s *Screen) Render(values <-chan float64, sampleRate int) {
 	}, nil, sampleRate)
 }
 
-
 // RenderLinesWithEvents renders multiple channels of samples to screen, and draws events.
-func (s *Screen) RenderLinesWithEvents(lines []Line, events <- chan interface{}, sampleRate int) {
+func (s *Screen) RenderLinesWithEvents(lines []Line, events <-chan interface{}, sampleRate int) {
 	s.lines = lines
 
 	runtime.LockOSThread()
@@ -127,7 +126,6 @@ func (s *Screen) RenderLinesWithEvents(lines []Line, events <- chan interface{},
 	}
 }
 
-
 // bufferFinished returns whether any of the input channels have closed.
 func (s *Screen) bufferFinished() bool {
 	if s.eventBuffer.IsFinished() {
@@ -147,7 +145,7 @@ func (s *Screen) drawSignal() {
 		if value != nil {
 			e := value.(Event)
 			gl.Color3f(e.R, e.G, e.B)
-			x := float64(index)*s.pixelsPerSample
+			x := float64(index) * s.pixelsPerSample
 			gl.Begin(gl.LINE_STRIP)
 			gl.Vertex2d(x, -1.0)
 			gl.Vertex2d(x, 1.0)

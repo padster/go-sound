@@ -2,7 +2,7 @@ package main
 
 // NOTE: Don't use yet, not ready.
 
-// TODO: 
+// TODO:
 // - Finish kernel
 //   - window functions
 //   - hook up FFT
@@ -19,46 +19,40 @@ import (
 
 	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
-  // "github.com/mjibson/go-dsp/fft"
+	// "github.com/mjibson/go-dsp/fft"
 )
-
-
 
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
-	
+
 	fmt.Printf("Parsing flags\n")
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
 	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 	remainingArgs := flag.Args()
-	
-
 
 	//  BIG HACK - need to get FFT agreeing.
 	/*
-	SZ := 16
-	VALS := 16
+		SZ := 16
+		VALS := 16
 
-	test := make([]float64, VALS, VALS)
-	for i := 0; i < VALS; i++ {
-		test[i] = float64(i - VALS / 2) / float64(SZ)
-	}
+		test := make([]float64, VALS, VALS)
+		for i := 0; i < VALS; i++ {
+			test[i] = float64(i - VALS / 2) / float64(SZ)
+		}
 
-	co := fft.FFTReal(test[:SZ])
-	for i, v := range co {
-		fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
-	}
-	
-	co2 := fft.IFFT(co)
-	fmt.Printf("#2: %v\n", co2)
-	for i, v := range co2 {
-		fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
-	}
+		co := fft.FFTReal(test[:SZ])
+		for i, v := range co {
+			fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
+		}
+
+		co2 := fft.IFFT(co)
+		fmt.Printf("#2: %v\n", co2)
+		for i, v := range co2 {
+			fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
+		}
 	*/
-
-	
 
 	if len(remainingArgs) != 2 {
 		panic("Required: <input> <output> filename arguments")
@@ -122,7 +116,7 @@ func main() {
 		total := 0.0
 		for i := 0; i < count; i++ {
 			v := 0.0
-			for _, c := range frame.Buffer[i * frame.Channels:(i+1) * frame.Channels] {
+			for _, c := range frame.Buffer[i*frame.Channels : (i+1)*frame.Channels] {
 				v += floatFrom24bit(c)
 			}
 			v = v / float64(frame.Channels)
@@ -162,7 +156,7 @@ func main() {
 			fmt.Printf("Sum of cqi out: %.6f\n", s)
 		}
 
-		if (frameAt == PRINT_FRAME) {
+		if frameAt == PRINT_FRAME {
 			panic("DONE")
 		}
 
@@ -173,13 +167,13 @@ func main() {
 				cqout[i] = 1.0
 			} else if cqout[i] < -1.0 {
 				cqout[i] = -1.0
-			} 
+			}
 		}
 
-		if (outframe >= latency) {	
+		if outframe >= latency {
 			writeFrame(fileWriter, cqout)
 
-		} else if (outframe + len(cqout) >= latency) {
+		} else if outframe+len(cqout) >= latency {
 			offset := latency - outframe
 			writeFrame(fileWriter, cqout[offset:])
 		}
@@ -205,22 +199,22 @@ func main() {
 	writeFrame(fileWriter, r)
 	outframe += len(r)
 
-	fmt.Printf("in: %d, out: %d\n", inframe, outframe - latency)
-	// TODO: latency	
+	fmt.Printf("in: %d, out: %d\n", inframe, outframe-latency)
+	// TODO: latency
 }
 
 func floatFrom24bit(input int32) float64 {
-	return float64(input) / (float64(1 << 23) - 1.0) // Hmmm..doesn't seem right?
+	return float64(input) / (float64(1<<23) - 1.0) // Hmmm..doesn't seem right?
 }
 func int24FromFloat(input float64) int32 {
-	return int32(input * (float64(1 << 23) - 1.0))
+	return int32(input * (float64(1<<23) - 1.0))
 }
 
 func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [-1, 1]
 	n := len(samples)
-	frame := goflac.Frame {
-		1, /* channels */
-		24, /* depth */
+	frame := goflac.Frame{
+		1,     /* channels */
+		24,    /* depth */
 		44100, /* rate */
 		make([]int32, n, n),
 	}
