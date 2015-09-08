@@ -31,7 +31,7 @@ type Kernel struct {
 
 type CQKernel struct {
 	Properties Properties
-	kernel Kernel
+	kernel *Kernel
 }
 
 
@@ -238,12 +238,20 @@ func NewCQKernel(params CQParams) *CQKernel {
 		}
 	}
 
-	return &CQKernel {p, sk}
+	return &CQKernel {p, &sk}
 }
 
-func (k *CQKernel) processForward(cv []complex128) []complex128 {
+func (k *CQKernel) processForward(cv []complex128, print bool) []complex128 {
 	// straightforward matrix multiply (taking into account m_kernel's
 	// slightly-sparse representation)
+
+	// if (print) {
+	//   fmt.Printf("INSIDE\n&cv[0] = %p\n", &cv[0])
+	//   for i := 0; i < 10; i++ {
+	//     fmt.Printf("cv[%d] = %v\n", i, cv[i])
+	//   }
+	// }
+
 
 	if len(k.kernel.data) == 0 {
 		panic("Whoops - return empty array? is this even possible?")
@@ -253,9 +261,15 @@ func (k *CQKernel) processForward(cv []complex128) []complex128 {
 
 	rv := make([]complex128, nrows, nrows)
 	for i := 0; i < nrows; i++ {
-		rv[i] = complex(0, 0)
+		// rv[i] = complex(0, 0)
 		for j := 0; j < len(k.kernel.data[i]); j++ {
 			rv[i] += cv[j + k.kernel.origin[i]] * k.kernel.data[i][j];
+			if (print && i < 2) {
+				fmt.Printf("rv[%d] += cv[%d + %d] (= %.4f, %.4f) * (%.4f, %.4f)\n", 
+					i, j, k.kernel.origin[i], 
+					real(cv[j + k.kernel.origin[i]]), imag(cv[j + k.kernel.origin[i]]),
+					real(k.kernel.data[i][j]), imag(k.kernel.data[i][j]));
+			}
 		}
 	}
 	return rv;

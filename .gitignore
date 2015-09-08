@@ -25,3 +25,8 @@ _testmain.go
 # Personal scripts
 Makefile
 demo
+
+# Sound files
+*.wav
+*.mp3
+*.flac

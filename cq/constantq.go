@@ -167,6 +167,8 @@ func NewConstantQ(params CQParams) *ConstantQ {
   }
 
   // m_fft = new FFTReal(m_p.fftSize);
+  fmt.Printf("~~~~~~FFT Size = %d\n", kernel.Properties.fftSize)
+
   return &ConstantQ {
     // params,
     kernel,
@@ -238,19 +240,25 @@ func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
       blocksThisOctave := unsafeShift(cq.octaves - octave - 1)
 
       for b := 0; b < blocksThisOctave; b++ {
-        block := cq.processOctaveBlock(octave, print && octave == 0 && b == 63)
+        block := cq.processOctaveBlock(octave, print && octave == 0 && b == 0)
 
         for j := 0; j < cq.kernel.Properties.atomsPerFrame; j++ {
           target := base + (b * (totalColumns / blocksThisOctave) + (j * ((totalColumns / blocksThisOctave) / cq.kernel.Properties.atomsPerFrame)))
 
-          if (print && target == 127) {
-            fmt.Printf("Adding to 127, octave = %d, block = %d, atom = %d\n", octave, b, j);
+          if (print && target == 1) {
+            fmt.Printf("Adding to 1, octave = %d, block = %d, atom = %d\n", octave, b, j);
           }
 
           for len(out[target]) < cq.kernel.Properties.binsPerOctave * (octave + 1) {
             out[target] = append(out[target], complex(0, 0))
           }
+
+          bpo := cq.kernel.Properties.binsPerOctave
           for i := 0; i < cq.kernel.Properties.binsPerOctave; i++ {
+            if (print && target == 1) {
+              fmt.Printf("out[%d][%d * %d + %d] = block[%d][%d - %d - 1] = (%.4f, %.4f)\n",
+                target, bpo, octave, i, j, bpo, i, real(block[j][bpo - i - 1]), imag(block[j][bpo - i - 1]));
+            }
             out[target][cq.kernel.Properties.binsPerOctave * octave + i] = block[j][cq.kernel.Properties.binsPerOctave - i - 1]
           }
         }
@@ -274,33 +282,83 @@ func (cq *ConstantQ) processOctaveBlock(octave int, print bool) [][]complex128 {
 
   if (print) {
     fmt.Printf("~~ Octave data = %d values: ", len(cq.buffers[octave]));
+    maxidx := 0
+    for i, v := range cq.buffers[octave] {
+      if cq.buffers[octave][maxidx] < v {
+        maxidx = i
+      }
+    }
+    fmt.Printf("Max value = buffer[%d] = %.5f\n", maxidx, cq.buffers[octave][maxidx])
     for i := 0; i < 20; i++ {
       fmt.Printf("%.4f, ", cq.buffers[octave][i]);      
     }
     fmt.Printf("\n");
+    sum := 0.0
+    for _, v := range cq.buffers[octave] {
+      sum += v
+    }
+    fmt.Printf("Sum is %.5f\n", sum);
   }
 
 
   // HACK
-  cv := fft.FFTReal(cq.buffers[octave])
+  cv := fft.FFTReal(cq.buffers[octave][:cq.kernel.Properties.fftSize])
+  // cv := make([]complex128, len(cvFrom))
+  // copy(cv, cvFrom)
+  if (print) {
+    csum := complex(0, 0)
+    for _, v := range cv {
+      csum += v
+    }
+    fmt.Printf("FFT result sum = (%.4f, %.4f)\n", real(csum), imag(csum))
+    fmt.Printf("First 10 = ");
+    for i := 0; i < 10; i++ {
+      fmt.Printf("(%.4f, %.4f), ", real(cv[i]), imag(cv[i]));
+    }
+    fmt.Printf("\n")
+  }
+
 
   // if octave == 1 && blockCount == 31 {
     // fmt.Printf("---- %v\n", cq.buffers[octave])
   // }
   // cv := m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
 
-  lshift := len(cq.buffers[octave]) - cq.kernel.Properties.fftHop
-  shifted := make([]float64, lshift, lshift)
-  for i := 0; i < lshift; i++ {
-    shifted[i] = cq.buffers[octave][i + cq.kernel.Properties.fftHop]
+  lshift := cq.kernel.Properties.fftHop
+  // shifted := make([]float64, lshift, lshift)
+  // for i := 0; i < lshift; i++ {
+    // shifted[i] = cq.buffers[octave][i + cq.kernel.Properties.fftHop]
+  // }
+  // cq.buffers[octave] = shifted
+  if (print) {
+    fmt.Printf("hop = %d, Before / after length = %d / ", lshift, len(cq.buffers[octave]))
   }
-  cq.buffers[octave] = shifted
+  cq.buffers[octave] = cq.buffers[octave][lshift:] 
+  if (print) {
+    fmt.Printf("%d\n", len(cq.buffers[octave]))
+  }
 
   // ComplexSequence cv;
   // for (int i = 0; i < m_p.fftSize; ++i) {
     // cv.push_back(Complex(ro[i], io[i]));
   // }
-  cqrowvec := cq.kernel.processForward(cv)
+  // if (print) {
+  //   fmt.Printf("&cv[0] = %p\n", &cv[0])
+  //   for i := 0; i < 10; i++ {
+  //     fmt.Printf("cv[%d] = %v\n", i, cv[i])
+  //   }
+  // }
+  cqrowvec := cq.kernel.processForward(cv, print)
+  if (print) {
+    fmt.Printf("Kernel process, %d values\n", len(cqrowvec));
+    reval, imval := 0.0, 0.0;
+    for _, v := range cqrowvec {
+      reval += real(v);
+      imval += imag(v);
+    }
+    fmt.Printf("Kernel sum = (%.4f, %.4f)\n", reval, imval);
+  }
+
 
   // Reform into a column matrix
   cqblock := make([][]complex128, cq.kernel.Properties.atomsPerFrame, cq.kernel.Properties.atomsPerFrame)

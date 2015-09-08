@@ -11,6 +11,7 @@ package main
 // - Inverse CQ transform.
 
 import (
+	// "bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ import (
 
 	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
+  // "github.com/mjibson/go-dsp/fft"
 )
 
 
@@ -25,12 +27,28 @@ import (
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
 	fmt.Printf("Parsing flags\n")
-
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
 	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 	remainingArgs := flag.Args()
+
+
+	//  BIG HACK - need to get FFT agreeing.
+	/*
+	SZ := 32
+	VALS := 64
+
+	test := make([]float64, VALS, VALS)
+	for i := 0; i < VALS; i++ {
+		test[i] = float64(i - VALS / 2) / float64(SZ)
+	}
+
+	co := fft.FFTReal(test[:SZ])
+	for i, v := range co {
+		fmt.Printf("v[%d] = %.4f %.4f\n", i, real(v), imag(v));
+	}
+	*/
 
 	if len(remainingArgs) != 1 {
 		panic("Required: <input> filename argument")
@@ -60,7 +78,11 @@ func main() {
 	}
 	defer fileReader.Close()
 
+	// HACK - serialize results for now
+	// resultBuffer := new(bytes.Buffer)
+
 	frame, err := fileReader.ReadFrame()
+	PRINT_FRAME := -1
 	frameAt := 0
 	for err != io.EOF {
 		if frame.Depth != 24 {
@@ -82,19 +104,20 @@ func main() {
 			samples[i] = v
 			total += v
 		}
-		fmt.Printf("Frame %d has total %.8f\n", frameAt, total)
 
-		result := constantQ.Process(samples, frameAt == 10)
-		fmt.Printf("%d values returned\n", len(result))
+		result := constantQ.Process(samples, frameAt == PRINT_FRAME)
+
+		// cq.WriteComplexBlock(resultBuffer, result)
+
 		for i, v := range result {
 			c := complex(0, 0)
 			for _, w := range v {
 				c = c + w
 			}
-			if frameAt == 10 {
+			if frameAt == PRINT_FRAME {
 				fmt.Printf("result[%d], size = %d, sum = (%.4f, %.4f)\n", i, len(v), real(c), imag(c));
 			}
-			if (frameAt == 10 && i == 127) {
+			if (frameAt == PRINT_FRAME && i == 1) {
 				for j := 1; j < len(v); j++ {
 					fmt.Printf("(%.3f,%.3f), ", real(v[j]), imag(v[j]));
 				}
@@ -102,17 +125,15 @@ func main() {
 			}
 		}
 
-		frame, err = fileReader.ReadFrame()
-		if (frameAt == 5) {
-			break
+		if (frameAt == PRINT_FRAME) {
+			panic("DONE")
 		}
+
+		frame, err = fileReader.ReadFrame()
 		frameAt++
 	}
 
-	fmt.Printf("Done!\n")
-	if false {
-		fmt.Printf("CQ! %v\n", constantQ)
-	}
+	// fmt.Printf("Done! - %d bytes written\n", resultBuffer.Len())
 }
 
 func floatFrom24bit(input int32) float64 {
