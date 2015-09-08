@@ -5,7 +5,6 @@ import (
   "math"
 
   "github.com/mjibson/go-dsp/fft"
-
 )
 
 const DEBUG_CQ = false
@@ -15,7 +14,7 @@ type ConstantQ struct {
 
 	octaves int
   bigBlockSize int
-  outputLatency int
+  OutputLatency int
   buffers [][]float64
 
   latencies []int
@@ -271,7 +270,7 @@ func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
 
 func (cq *ConstantQ) GetRemainingOutput() [][]complex128 {
   // Same as padding added at start, though rounded up
-  pad := int(math.Ceil(float64(cq.outputLatency) / float64(cq.bigBlockSize))) * cq.bigBlockSize
+  pad := int(math.Ceil(float64(cq.OutputLatency) / float64(cq.bigBlockSize))) * cq.bigBlockSize
   zeros := make([]float64, pad, pad)
   return cq.Process(zeros, false);
 }

@@ -276,7 +276,7 @@ func (k *CQKernel) processForward(cv []complex128, print bool) []complex128 {
 }
 
 
-func (k *CQKernel) processInverse(cv []complex128) []complex128 {
+func (k *CQKernel) ProcessInverse(cv []complex128) []complex128 {
 	// matrix multiply by conjugate transpose of m_kernel. This is
 	// actually the original kernel as calculated, we just stored the
 	// conjugate-transpose of the kernel because we expect to be doing

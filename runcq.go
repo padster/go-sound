@@ -26,18 +26,20 @@ import (
 
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
+	
 	fmt.Printf("Parsing flags\n")
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
 	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 	remainingArgs := flag.Args()
+	
 
 
 	//  BIG HACK - need to get FFT agreeing.
 	/*
-	SZ := 32
-	VALS := 64
+	SZ := 16
+	VALS := 16
 
 	test := make([]float64, VALS, VALS)
 	for i := 0; i < VALS; i++ {
@@ -46,14 +48,23 @@ func main() {
 
 	co := fft.FFTReal(test[:SZ])
 	for i, v := range co {
-		fmt.Printf("v[%d] = %.4f %.4f\n", i, real(v), imag(v));
+		fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
+	}
+	
+	co2 := fft.IFFT(co)
+	fmt.Printf("#2: %v\n", co2)
+	for i, v := range co2 {
+		fmt.Printf("v[%d] = %.6f %.6f\n", i, real(v), imag(v));
 	}
 	*/
 
-	if len(remainingArgs) != 1 {
-		panic("Required: <input> filename argument")
+	
+
+	if len(remainingArgs) != 2 {
+		panic("Required: <input> <output> filename arguments")
 	}
 	inputFile := remainingArgs[0]
+	outputFile := remainingArgs[1]
 
 	fmt.Printf("Building parameters\n")
 
@@ -62,9 +73,10 @@ func main() {
 	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
 
 	fmt.Printf("Params = %v\n", params)
-	fmt.Printf("Building CQ... %v\n", params)
+	fmt.Printf("Building CQ and inverse... %v\n", params)
 
 	constantQ := cq.NewConstantQ(params)
+	cqInverse := cq.NewCQInverse(params)
 
 	fmt.Printf("Loading file from %v\n", inputFile)
 	if !strings.HasSuffix(inputFile, ".flac") {
@@ -78,8 +90,21 @@ func main() {
 	}
 	defer fileReader.Close()
 
+	fileWriter, err := goflac.NewEncoder(outputFile, 1, 24, int(sampleRate))
+	if err != nil {
+		fmt.Printf("Error opening file to write to! %v\n", err)
+		panic("Can't write file")
+	}
+	defer fileWriter.Close()
+
 	// HACK - serialize results for now
 	// resultBuffer := new(bytes.Buffer)
+
+	inframe := 0
+	outframe := 0
+	latency := constantQ.OutputLatency + cqInverse.OutputLatency
+
+	fmt.Printf("forward latency = %d, inverse latency = %d, total = %d\n", constantQ.OutputLatency, cqInverse.OutputLatency, latency)
 
 	frame, err := fileReader.ReadFrame()
 	PRINT_FRAME := -1
@@ -105,43 +130,105 @@ func main() {
 			total += v
 		}
 
-		result := constantQ.Process(samples, frameAt == PRINT_FRAME)
+		result := constantQ.Process(samples, false /* TODO - remove */)
+		fmt.Printf("%d values returned from CQ\n", len(result))
+
+		cqout := cqInverse.Process(result, frameAt == PRINT_FRAME)
+		fmt.Printf("%d values returned from CQI\n", len(cqout))
 
 		// cq.WriteComplexBlock(resultBuffer, result)
 
-		for i, v := range result {
-			c := complex(0, 0)
-			for _, w := range v {
-				c = c + w
+		// for i, v := range result {
+		// 	c := complex(0, 0)
+		// 	for _, w := range v {
+		// 		c = c + w
+		// 	}
+		// 	if frameAt == PRINT_FRAME {
+		// 		fmt.Printf("result[%d], size = %d, sum = (%.4f, %.4f)\n", i, len(v), real(c), imag(c));
+		// 	}
+		// 	if (frameAt == PRINT_FRAME && i == 1) {
+		// 		for j := 1; j < len(v); j++ {
+		// 			fmt.Printf("(%.3f,%.3f), ", real(v[j]), imag(v[j]));
+		// 		}
+		// 		fmt.Printf("\n");
+		// 	}
+		// }
+
+		if frameAt == PRINT_FRAME {
+			s := 0.0
+			for _, v := range cqout {
+				s += v
 			}
-			if frameAt == PRINT_FRAME {
-				fmt.Printf("result[%d], size = %d, sum = (%.4f, %.4f)\n", i, len(v), real(c), imag(c));
-			}
-			if (frameAt == PRINT_FRAME && i == 1) {
-				for j := 1; j < len(v); j++ {
-					fmt.Printf("(%.3f,%.3f), ", real(v[j]), imag(v[j]));
-				}
-				fmt.Printf("\n");
-			}
+			fmt.Printf("Sum of cqi out: %.6f\n", s)
 		}
 
 		if (frameAt == PRINT_FRAME) {
 			panic("DONE")
 		}
 
-		frame, err = fileReader.ReadFrame()
 		frameAt++
+
+		for i := 0; i < len(cqout); i++ {
+			if cqout[i] > 1.0 {
+				cqout[i] = 1.0
+			} else if cqout[i] < -1.0 {
+				cqout[i] = -1.0
+			} 
+		}
+
+		if (outframe >= latency) {	
+			writeFrame(fileWriter, cqout)
+
+		} else if (outframe + len(cqout) >= latency) {
+			offset := latency - outframe
+			writeFrame(fileWriter, cqout[offset:])
+		}
+
+		inframe += count
+		outframe += len(cqout)
+		frame, err = fileReader.ReadFrame()
 	}
 
-	// fmt.Printf("Done! - %d bytes written\n", resultBuffer.Len())
+	r := cqInverse.Process(constantQ.GetRemainingOutput(), false)
+	r2 := cqInverse.GetRemainingOutput()
+	r = append(r, r2...)
+
+	for i := 0; i < len(r); i++ {
+		if r[i] > 1.0 {
+			r[i] = 1.0
+		}
+		if r[i] < -1.0 {
+			r[i] = -1.0
+		}
+	}
+
+	writeFrame(fileWriter, r)
+	outframe += len(r)
+
+	fmt.Printf("in: %d, out: %d\n", inframe, outframe - latency)
+	// TODO: latency	
 }
 
 func floatFrom24bit(input int32) float64 {
 	return float64(input) / (float64(1 << 23) - 1.0) // Hmmm..doesn't seem right?
 }
+func int24FromFloat(input float64) int32 {
+	return int32(input * (float64(1 << 23) - 1.0))
+}
 
-
-// Frame 685:
-// C: 							3.96983290
-// Go without - 1: 	3.96982783
-// Go with -1: 			3.96982830
+func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [-1, 1]
+	n := len(samples)
+	frame := goflac.Frame {
+		1, /* channels */
+		24, /* depth */
+		44100, /* rate */
+		make([]int32, n, n),
+	}
+	for i, v := range samples {
+		frame.Buffer[i] = int24FromFloat(v)
+	}
+	if err := file.WriteFrame(frame); err != nil {
+		fmt.Printf("Error writing frame to file :( %v\n", err)
+		panic("Can't write to file")
+	}
+}
