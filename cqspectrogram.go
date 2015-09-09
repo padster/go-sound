@@ -1,7 +1,5 @@
 package main
 
-// NOTE: Don't use yet, not quite ready.
-
 import (
 	"bytes"
 	"flag"

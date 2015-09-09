@@ -116,13 +116,13 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 		}
 	} else {
 		// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
-		out := spec.interpolateInPlace(spec.buffer[:secondFullHeight + 1])
+		out := spec.fullInterpolate(spec.buffer[:secondFullHeight + 1])
 		spec.buffer = spec.buffer[secondFullHeight:]
 		return append(out, spec.fetchInterpolated(insist)...)
 	}
 }
 
-func (spec *Spectrogram) interpolateInPlace(values [][]complex128) [][]complex128 {
+func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 	// Last entry is the interpolation end boundary, hence the -1
 	width, height := len(values) - 1, len(values[0]) 
 
