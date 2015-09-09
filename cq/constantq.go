@@ -261,3 +261,7 @@ func (cq *ConstantQ) processOctaveBlock(octave int) [][]complex128 {
 
 	return cqblock
 }
+
+func (cq *ConstantQ) binCount() int {
+	return cq.octaves * cq.kernel.Properties.binsPerOctave
+}

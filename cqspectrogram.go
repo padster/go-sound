@@ -1,10 +1,13 @@
 package main
 
+// NOTE: Don't use yet, not quite ready.
+
 import (
-	// "bytes"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"runtime"
 	"strings"
 	"time"
@@ -25,11 +28,11 @@ func main() {
 	flag.Parse()
 	remainingArgs := flag.Args()
 
-	if len(remainingArgs) != 2 {
-		panic("Required: <input> <output> filename arguments")
+	if len(remainingArgs) != 1 {
+		panic("Required: <input> filename argument")
 	}
 	inputFile := remainingArgs[0]
-	outputFile := remainingArgs[1]
+	outputFile := "out.raw"
 
 	fmt.Printf("Building parameters\n")
 
@@ -38,10 +41,9 @@ func main() {
 	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
 
 	fmt.Printf("Params = %v\n", params)
-	fmt.Printf("Building CQ and inverse... %v\n", params)
+	fmt.Printf("Building Spectrogram... %v\n", params)
 
-	constantQ := cq.NewConstantQ(params)
-	cqInverse := cq.NewCQInverse(params)
+	spectrogram := cq.NewSpectrogram(params)
 
 	fmt.Printf("Loading file from %v\n", inputFile)
 	if !strings.HasSuffix(inputFile, ".flac") {
@@ -55,23 +57,13 @@ func main() {
 	}
 	defer fileReader.Close()
 
-	fileWriter, err := goflac.NewEncoder(outputFile, 1, 24, int(sampleRate))
-	if err != nil {
-		fmt.Printf("Error opening file to write to! %v\n", err)
-		panic("Can't write file")
-	}
-	defer fileWriter.Close()
+	outputBuffer := bytes.NewBuffer(make([]byte, 0, 1024))
 
 	inframe := 0
-	outframe := 0
-	latency := constantQ.OutputLatency + cqInverse.OutputLatency
-
-	fmt.Printf("forward latency = %d, inverse latency = %d, total = %d\n", constantQ.OutputLatency, cqInverse.OutputLatency, latency)
 
 	startTime := time.Now()
 
 	frame, err := fileReader.ReadFrame()
-	frameAt := 0
 	for err != io.EOF {
 		if frame.Depth != 24 {
 			fmt.Printf("Only depth 24-bit flac supported for now, file is %d. TODO: support more...", frame.Depth)
@@ -95,31 +87,25 @@ func main() {
 			total += v
 		}
 
-		result := constantQ.Process(samples)
-		cqout := cqInverse.Process(result)
-
-		if outframe >= latency {
-			writeFrame(fileWriter, cqout)
-
-		} else if outframe+len(cqout) >= latency {
-			offset := latency - outframe
-			writeFrame(fileWriter, cqout[offset:])
+		spectrogramBlock := spectrogram.Process(samples)
+		for _, col := range spectrogramBlock {
+			for _, c := range col {
+				cq.WriteComplex(outputBuffer, c)
+			}
 		}
 
-		frameAt++
 		inframe += count
-		outframe += len(cqout)
 		frame, err = fileReader.ReadFrame()
 	}
 
-	r := append(
-		cqInverse.Process(constantQ.GetRemainingOutput()),
-		cqInverse.GetRemainingOutput()...)
+	spectrogramBlock := spectrogram.GetRemainingOutput()
+	for _, col := range spectrogramBlock {
+		for _, c := range col {
+			cq.WriteComplex(outputBuffer, c)
+		}
+	}
 
-	writeFrame(fileWriter, r)
-	outframe += len(r)
-
-	fmt.Printf("in: %d, out: %d\n", inframe, outframe-latency)
+	ioutil.WriteFile(outputFile, outputBuffer.Bytes(), 0644)
 
 	elapsedSeconds := time.Since(startTime).Seconds()
 	fmt.Printf("elapsed time (not counting init): %f sec, frames/sec = %f\n",

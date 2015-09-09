@@ -130,7 +130,6 @@ func NewCQKernel(params CQParams) *CQKernel {
 	// calculate weight for normalisation
 	wx1 := maxidx(kernel.data[0])
 	wx2 := maxidx(kernel.data[len(kernel.data)-1])
-	fmt.Printf("wx1/wx2 = %v/%v\n", wx1, wx2)
 
 	subset := make([][]complex128, len(kernel.data), len(kernel.data))
 	for i := 0; i < len(kernel.data); i++ {
