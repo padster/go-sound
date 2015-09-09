@@ -8,7 +8,7 @@ import (
 	"github.com/mjibson/go-dsp/fft"
 )
 
-const DEBUG_CQI = true
+const DEBUG_CQI = false
 
 type CQInverse struct {
 	kernel *CQKernel
@@ -23,7 +23,7 @@ type CQInverse struct {
 }
 
 func NewCQInverse(params CQParams) *CQInverse {
-	octaves := int(math.Ceil(math.Log(params.maxFrequency/params.minFrequency) / math.Log(2))) // TODO: math.Log2
+	octaves := roundUp(math.Log2(params.maxFrequency / params.minFrequency))
 	if octaves < 1 {
 		panic("Need at least one octave")
 	}
@@ -129,8 +129,11 @@ func NewCQInverse(params CQParams) *CQInverse {
 	}
 }
 
-func (cqi *CQInverse) Process(block [][]complex128, print bool) []float64 {
+// Return clamped!
+func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 	octaves := cqi.octaves
+	apf := cqi.kernel.Properties.atomsPerFrame
+	bpo := cqi.kernel.Properties.binsPerOctave
 
 	// The input data is of the form produced by ConstantQ::process --
 	// an unknown number N of columns of varying height. We assert
@@ -142,10 +145,10 @@ func (cqi *CQInverse) Process(block [][]complex128, print bool) []float64 {
 		return cqi.drawFromBuffers()
 	}
 
-	blockWidth := cqi.kernel.Properties.atomsPerFrame * unsafeShift(cqi.octaves-1)
+	blockWidth := apf * unsafeShift(cqi.octaves-1)
 	if widthProvided%blockWidth != 0 {
 		fmt.Printf("ERROR: inverse process block size (%d) must be a multiple of atoms * 2^(octaves - 1) = %d * 2^(%d - 1) = %d\n",
-			widthProvided, cqi.kernel.Properties.atomsPerFrame, cqi.octaves, blockWidth)
+			widthProvided, apf, cqi.octaves, blockWidth)
 		panic("CQI process block size incorrect")
 	}
 
@@ -169,7 +172,6 @@ func (cqi *CQInverse) Process(block [][]complex128, print bool) []float64 {
 	// rate
 	//
 	// 6. Sum the resampled streams and return
-	bpo := cqi.kernel.Properties.binsPerOctave
 	for i := 0; i < octaves; i++ {
 		// Step 1
 		oct := make([][]complex128, 0)
@@ -177,66 +179,68 @@ func (cqi *CQInverse) Process(block [][]complex128, print bool) []float64 {
 		for j := 0; j < widthProvided; j++ {
 			h := len(block[j])
 			if h < bpo*(i+1) {
+				// TODO: Figure if j loop can be done with steps to only those J needed.
 				continue
 			}
 
-			col := make([]complex128, bpo, bpo)
-			copy(col, block[j][bpo*i:bpo*(i+1)])
-			oct = append(oct, col)
+			oct = append(oct, block[j][bpo*i:bpo*(i+1)])
 		}
 
 		// Steps 2, 3, 4, 5
-		cqi.processOctave(i, oct, print)
+		cqi.processOctave(i, oct)
 	}
 
 	// Step 6
 	return cqi.drawFromBuffers()
 }
 
+// Return clamped!
 func (cqi *CQInverse) drawFromBuffers() []float64 {
 	octaves := cqi.octaves
 
 	// 6. Sum the resampled streams and return
-	available := 0
-	for i := 0; i < octaves; i++ {
-		if i == 0 || len(cqi.buffers[i]) < available {
-			available = len(cqi.buffers[i])
-		}
+	available := len(cqi.buffers[0])
+	for i := 1; i < octaves; i++ {
+		available = minInt(available, len(cqi.buffers[i]))
 	}
 
 	result := make([]float64, available, available)
-	if available == 0 {
-		return result
-	}
-
-	for i := 0; i < octaves; i++ {
-		for j := 0; j < available; j++ {
-			result[j] += cqi.buffers[i][j]
+	if available > 0 {
+		for i := 0; i < octaves; i++ {
+			for j := 0; j < available; j++ {
+				result[j] += cqi.buffers[i][j]
+			}
+			cqi.buffers[i] = cqi.buffers[i][available:]
 		}
-		cqi.buffers[i] = cqi.buffers[i][available:]
+		for i, v := range result {
+			result[i] = clampUnit(v)
+		}
 	}
 	return result
 }
 
+// Return clamped!
 func (cqi *CQInverse) GetRemainingOutput() []float64 {
 	octaves := cqi.octaves
+	bpo := cqi.kernel.Properties.binsPerOctave
+	fftHop := cqi.kernel.Properties.fftHop
 
 	for j := 0; j < octaves; j++ {
 		factor := unsafeShift(j)
 		latency := 0
 		if j > 0 {
-			// TODO - read from cqi.latencies instead
 			latency = cqi.upsamplers[j].GetLatency() / factor
 		}
 
-		for i := 0; i < (latency+cqi.kernel.Properties.binsPerOctave)/cqi.kernel.Properties.fftHop; i++ {
-			cqi.overlapAddAndResample(j, make([]float64, len(cqi.olaBufs[j]), len(cqi.olaBufs[j])), false)
+		for i := 0; i < (latency+bpo)/fftHop; i++ {
+			padding := make([]float64, len(cqi.olaBufs[j]), len(cqi.olaBufs[j]))
+			cqi.overlapAddAndResample(j, padding)
 		}
 	}
 	return cqi.drawFromBuffers()
 }
 
-func (cqi *CQInverse) processOctave(octave int, columns [][]complex128, print bool) {
+func (cqi *CQInverse) processOctave(octave int, columns [][]complex128) {
 	// 2. Group each octave list by atomsPerFrame columns at a time,
 	// and stack these so as to achieve a list, for each octave, of
 	// taller columns of height binsPerOctave * atomsPerFrame
@@ -260,11 +264,11 @@ func (cqi *CQInverse) processOctave(octave int, columns [][]complex128, print bo
 			}
 		}
 
-		cqi.processOctaveColumn(octave, tallCol, print && (i == 0))
+		cqi.processOctaveColumn(octave, tallCol)
 	}
 }
 
-func (cqi *CQInverse) processOctaveColumn(octave int, column []complex128, print bool) {
+func (cqi *CQInverse) processOctaveColumn(octave int, column []complex128) {
 	// 3. For each taller column, take the product with the inverse CQ
 	// kernel (which is the conjugate of the forward kernel) and
 	// perform an inverse FFT
@@ -278,73 +282,18 @@ func (cqi *CQInverse) processOctaveColumn(octave int, column []complex128, print
 		panic("Invalid argument to inverse processOctaveColumn")
 	}
 
-	if print {
-		fmt.Printf("Input to POC has size %d\n", len(column))
-		c := complex(0, 0)
-		for _, v := range column {
-			c += v
-		}
-		fmt.Printf("Input to POC has sum: %.4f, %.4f\n", real(c), imag(c))
-	}
-
 	transformed := cqi.kernel.ProcessInverse(column)
-	// halfLen := fftSize / 2 + 1
 
-	if print {
-		c := complex(0, 0)
-		for _, v := range transformed {
-			c += v
-		}
-		fmt.Printf("kernel-transformed POC has sum %.4f, %.4f\n", real(c), imag(c))
-	}
-	if print {
-		maxr := 0
-		for i, v := range transformed {
-			if real(v) > real(transformed[maxr]) {
-				maxr = i
-			}
-		}
-		for i := 0; i < 10; i++ {
-			fmt.Printf("transformed[%d] = %.6f, %.6f\n", i+maxr, real(transformed[i+maxr]), imag(transformed[i+maxr]))
-		}
+	// For inverse real transforms, force symmetric conjugate representation first.
+	for i := fftSize/2 + 1; i < fftSize; i++ {
+		transformed[i] = cmplx.Conj(transformed[fftSize-i])
 	}
 
-	halfLen := fftSize/2 + 1
-	if print {
-		fmt.Printf("result[0] / result[%d] = %v / %v\n", halfLen-1, transformed[0], transformed[halfLen-1])
-	}
-
-	bigDiff := 0.0
-	for i := halfLen; i < fftSize; i++ {
-		next := complex(real(transformed[fftSize-i]), -imag(transformed[fftSize-i]))
-		nextDiff := cmplx.Abs(next - transformed[i])
-		if nextDiff > bigDiff {
-			bigDiff = nextDiff
-		}
-		transformed[i] = next
-	}
-	if print {
-		fmt.Printf("Biggest diff was %.4f\n", bigDiff)
-	}
-
-	// fmt.Printf("Transformed length = %d\n", len(transformed))
-	result := fft.IFFT(transformed)
-	asFloat := make([]float64, fftSize, fftSize)
-
-	if print {
-		for i := 0; i < 10; i++ {
-			fmt.Printf("timeDomain[%d] = %.9f, %.9f\n", i, real(result[i]), imag(result[i]))
-		}
-	}
-
-	for i := 0; i < fftSize; i++ {
-		asFloat[i] = real(result[i])
-	}
-	cqi.overlapAddAndResample(octave, asFloat, print)
-
+	inverse := fft.IFFT(transformed)
+	cqi.overlapAddAndResample(octave, realParts(inverse))
 }
 
-func (cqi *CQInverse) overlapAddAndResample(octave int, seq []float64, print bool) {
+func (cqi *CQInverse) overlapAddAndResample(octave int, seq []float64) {
 	// 4. Overlap-add each octave's resynthesised blocks (unwindowed)
 	//
 	// and
@@ -353,6 +302,7 @@ func (cqi *CQInverse) overlapAddAndResample(octave int, seq []float64, print boo
 	// rate
 
 	fftHop := cqi.kernel.Properties.fftHop
+	fftSize := cqi.kernel.Properties.fftSize
 
 	if len(seq) != len(cqi.olaBufs[octave]) {
 		fmt.Printf("Error: inverse overlap add sequence size %d, expected to be OLA buffer size %d\n",
@@ -361,18 +311,19 @@ func (cqi *CQInverse) overlapAddAndResample(octave int, seq []float64, print boo
 	}
 
 	toResample := cqi.olaBufs[octave][:fftHop]
+
 	resampled := toResample
 	if octave > 0 {
 		resampled = cqi.upsamplers[octave].Process(toResample)
 	}
 
 	cqi.buffers[octave] = append(cqi.buffers[octave], resampled...)
+	cqi.olaBufs[octave] = append(
+		cqi.olaBufs[octave][fftHop:],
+		make([]float64, fftHop, fftHop)...,
+	)
 
-	cqi.olaBufs[octave] = cqi.olaBufs[octave][fftHop:]
-	pad := make([]float64, fftHop, fftHop)
-	cqi.olaBufs[octave] = append(cqi.olaBufs[octave], pad...)
-
-	for i := 0; i < cqi.kernel.Properties.fftSize; i++ {
+	for i := 0; i < fftSize; i++ {
 		cqi.olaBufs[octave][i] += seq[i]
 	}
 }

@@ -59,11 +59,10 @@ func NewCQKernel(params CQParams) *CQKernel {
 		panic("Kernal minNK or maxNK is 0, can't make kernel")
 	}
 
-	p.atomSpacing = int(minNK*atomHopFactor + 0.5)
-	p.firstCentre = p.atomSpacing * int(math.Ceil(math.Ceil(maxNK/2.0)/float64(p.atomSpacing)))
-	p.fftSize = NextPowerOf2(p.firstCentre + int(math.Ceil(maxNK/2.0)))
-	p.atomsPerFrame = int(math.Floor(
-		1.0 + (float64(p.fftSize)-math.Ceil(maxNK/2.0)-float64(p.firstCentre))/float64(p.atomSpacing)))
+	p.atomSpacing = round(minNK*atomHopFactor + 0.5)
+	p.firstCentre = p.atomSpacing * roundUp(math.Ceil(maxNK/2.0)/float64(p.atomSpacing))
+	p.fftSize = nextPowerOf2(p.firstCentre + roundUp(maxNK/2.0))
+	p.atomsPerFrame = roundDown(1.0 + (float64(p.fftSize)-math.Ceil(maxNK/2.0)-float64(p.firstCentre))/float64(p.atomSpacing))
 
 	if DEBUG {
 		fmt.Printf("atomsPerFrame = %v (q = %v, Q = %v, atomHopFactor = %v, atomSpacing = %v, fftSize = %v, maxNK = %v, firstCentre = %v)\n",
@@ -76,9 +75,6 @@ func NewCQKernel(params CQParams) *CQKernel {
 	if DEBUG {
 		fmt.Printf("fftHop = %v\n", p.fftHop)
 	}
-
-	// POIUY
-	// FFT := New FFT(p.fftSize)
 
 	dataSize := p.binsPerOctave * p.atomsPerFrame
 
@@ -94,60 +90,39 @@ func NewCQKernel(params CQParams) *CQKernel {
 
 		fk := float64(p.minFrequency * math.Pow(2, ((float64(k)-1.0)/float64(bpo))))
 
-		reals, imags := make([]float64, nk, nk), make([]float64, nk, nk)
+		cmplxs := make([]complex128, nk, nk)
 		for i := 0; i < nk; i++ {
-			arg := float64((2.0 * math.Pi * fk * float64(i)) / p.sampleRate)
-			reals[i] = win[i] * math.Cos(arg)
-			imags[i] = win[i] * math.Sin(arg)
+			arg := (2.0 * math.Pi * fk * float64(i)) / p.sampleRate
+			cmplxs[i] = cmplx.Rect(win[i], arg)
 		}
 
-		atomOffset := int(p.firstCentre - int(math.Ceil(float64(nk)/2.0)))
+		atomOffset := p.firstCentre - roundUp(float64(nk)/2.0)
 
 		for i := 0; i < p.atomsPerFrame; i++ {
 			shift := atomOffset + (i * p.atomSpacing)
-
-			// TODO - verify these are zero outside.
-			rin, iin := make([]float64, p.fftSize, p.fftSize), make([]float64, p.fftSize, p.fftSize)
-			for j := 0; j < nk; j++ {
-				rin[j+shift] = reals[j]
-				iin[j+shift] = imags[j]
-			}
-
-			// HACK - converts real -> imag -> FFT -> imag -> real :/
 			cin := make([]complex128, p.fftSize, p.fftSize)
-			for j := 0; j < p.fftSize; j++ {
-				cin[j] = complex(rin[j], iin[j])
+			for j := 0; j < nk; j++ {
+				cin[j+shift] = cmplxs[j]
 			}
 
-			// TODO - process FFT
-			// m_fft->process(false, rin.data(), iin.data(), rout.data(),
-			// iout.data());
 			cout := fft.FFT(cin)
-			rout, iout := make([]float64, p.fftSize, p.fftSize), make([]float64, p.fftSize, p.fftSize)
-			for j := 0; j < p.fftSize; j++ {
-				rout[j] = real(cout[j])
-				iout[j] = imag(cout[j])
-			}
 
 			// Keep this dense for the moment (until after normalisation calculations)
-			row := make([]complex128, p.fftSize, p.fftSize)
 			for j := 0; j < p.fftSize; j++ {
-				// TODO - simplify
-				if math.Sqrt(rout[j]*rout[j]+iout[j]*iout[j]) < thresh {
-					row[j] = complex(0, 0)
+				if cmplx.Abs(cout[j]) < thresh {
+					cout[j] = complex(0, 0)
 				} else {
-					row[j] = complex(rout[j]/float64(p.fftSize), iout[j]/float64(p.fftSize))
+					cout[j] = complexTimes(cout[j], 1.0/float64(p.fftSize))
 				}
 			}
 
 			kernel.origin = append(kernel.origin, 0)
-			kernel.data = append(kernel.data, row)
+			kernel.data = append(kernel.data, cout)
 		}
 	}
 
 	if DEBUG {
 		fmt.Printf("size = %v * %v (fft size = %v)\n", len(kernel.data), len(kernel.data[0]), p.fftSize)
-		// fmt.Printf("density = %v (%v of %v)\n", nnz / (p.binsPerOctave * p.atomsPerFrame * p.fftSize), (p.binsPerOctave * p.atomsPerFrame * p.fftSize))
 	}
 
 	// finalizeKernel
@@ -238,16 +213,9 @@ func NewCQKernel(params CQParams) *CQKernel {
 	return &CQKernel{p, &sk}
 }
 
-func (k *CQKernel) processForward(cv []complex128, print bool) []complex128 {
+func (k *CQKernel) processForward(cv []complex128) []complex128 {
 	// straightforward matrix multiply (taking into account m_kernel's
 	// slightly-sparse representation)
-
-	// if (print) {
-	//   fmt.Printf("INSIDE\n&cv[0] = %p\n", &cv[0])
-	//   for i := 0; i < 10; i++ {
-	//     fmt.Printf("cv[%d] = %v\n", i, cv[i])
-	//   }
-	// }
 
 	if len(k.kernel.data) == 0 {
 		panic("Whoops - return empty array? is this even possible?")
@@ -260,12 +228,6 @@ func (k *CQKernel) processForward(cv []complex128, print bool) []complex128 {
 		// rv[i] = complex(0, 0)
 		for j := 0; j < len(k.kernel.data[i]); j++ {
 			rv[i] += cv[j+k.kernel.origin[i]] * k.kernel.data[i][j]
-			if print && i < 2 {
-				fmt.Printf("rv[%d] += cv[%d + %d] (= %.4f, %.4f) * (%.4f, %.4f)\n",
-					i, j, k.kernel.origin[i],
-					real(cv[j+k.kernel.origin[i]]), imag(cv[j+k.kernel.origin[i]]),
-					real(k.kernel.data[i][j]), imag(k.kernel.data[i][j]))
-			}
 		}
 	}
 	return rv
@@ -338,42 +300,4 @@ func makeWindow(window Window, len int) []float64 {
 	}
 
 	return win
-}
-
-// Utilities - TODO split?
-func mean(fs []float64) float64 {
-	s := 0.0
-	for _, v := range fs {
-		s += v
-	}
-	return s / float64(len(fs))
-}
-
-func maxidx(row []complex128) int {
-	idx, max := 0, cmplx.Abs(row[0])
-	for i, v := range row {
-		vAbs := cmplx.Abs(v)
-		if vAbs > max {
-			idx, max = i, vAbs
-		}
-	}
-	return idx
-}
-
-func complexTimes(c complex128, f float64) complex128 {
-	return complex(real(c)*f, imag(c)*f)
-}
-
-// IsPowerOf2 returns true if x is a power of 2, else false.
-func IsPowerOf2(x int) bool {
-	return x&(x-1) == 0
-}
-
-// NextPowerOf2 returns the next power of 2 >= x.
-func NextPowerOf2(x int) int {
-	if IsPowerOf2(x) {
-		return x
-	}
-
-	return int(math.Pow(2, math.Ceil(math.Log2(float64(x)))))
 }

@@ -22,7 +22,7 @@ type ConstantQ struct {
 }
 
 func NewConstantQ(params CQParams) *ConstantQ {
-	octaves := int(math.Ceil(math.Log(params.maxFrequency/params.minFrequency) / math.Log(2))) // TODO: math.Log2
+	octaves := roundUp(math.Log2(params.maxFrequency / params.minFrequency))
 	if octaves < 1 {
 		panic("Need at least one octave")
 	}
@@ -112,7 +112,7 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	totalLatency := maxLatPlusDrop
 
 	lat0 := totalLatency - latencies[0] - drops[0]
-	totalLatency = int(math.Ceil(float64((lat0/p.fftHop)*p.fftHop))) + latencies[0] + drops[0]
+	totalLatency = roundUp(float64((lat0/p.fftHop)*p.fftHop)) + latencies[0] + drops[0]
 
 	// We want (totalLatency - latencies[i]) to be a multiple of 2^i
 	// for each octave i, so that we do not end up with fractional
@@ -161,9 +161,6 @@ func NewConstantQ(params CQParams) *ConstantQ {
 		buffers[i] = make([]float64, sz, sz)
 	}
 
-	// m_fft = new FFTReal(m_p.fftSize);
-	fmt.Printf("~~~~~~FFT Size = %d\n", kernel.Properties.fftSize)
-
 	return &ConstantQ{
 		// params,
 		kernel,
@@ -178,31 +175,17 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	}
 }
 
-func round(v float64) int {
-	return int(v + 0.5)
-}
+func (cq *ConstantQ) Process(td []float64) [][]complex128 {
+	apf := cq.kernel.Properties.atomsPerFrame
+	bpo := cq.kernel.Properties.binsPerOctave
+	fftSize := cq.kernel.Properties.fftSize
 
-func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
-	for _, v := range td {
-		// TODO - faster array append in golang?
-		cq.buffers[0] = append(cq.buffers[0], v)
-	}
-	if print {
-		fmt.Printf("buffer 0 size: %d\n", len(cq.buffers[0]))
-	}
-
+	cq.buffers[0] = append(cq.buffers[0], td...)
 	for i := 1; i < cq.octaves; i++ {
-		dec := cq.decimators[i].Process(td)
-		for _, v := range dec {
-			cq.buffers[i] = append(cq.buffers[i], v)
-		}
-		if print {
-			fmt.Printf("Buffer %d size: %d\n", i, len(cq.buffers[i]))
-		}
+		cq.buffers[i] = append(cq.buffers[i], cq.decimators[i].Process(td)...)
 	}
 
 	out := [][]complex128{}
-
 	for {
 		// We could have quite different remaining sample counts in
 		// different octaves, because (apart from the predictable
@@ -210,7 +193,7 @@ func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
 		// have variable additional latency per octave
 		enough := true
 		for i := 0; i < cq.octaves; i++ {
-			required := cq.kernel.Properties.fftSize * unsafeShift(cq.octaves-i-1)
+			required := fftSize * unsafeShift(cq.octaves-i-1)
 			if len(cq.buffers[i]) < required {
 				enough = false
 			}
@@ -220,40 +203,27 @@ func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
 		}
 
 		base := len(out)
-		totalColumns := unsafeShift(cq.octaves-1) * cq.kernel.Properties.atomsPerFrame
+		totalColumns := unsafeShift(cq.octaves-1) * apf
 
-		if print {
-			fmt.Printf("TOTAL COLUMNS = %d\n", totalColumns)
-		}
-
-		for i := 0; i < totalColumns; i++ {
-			out = append(out, []complex128{})
-		}
+		// Pre-fill totalColumns number of empty arrays
+		out = append(out, make([][]complex128, totalColumns, totalColumns)...)
 
 		for octave := 0; octave < cq.octaves; octave++ {
 			blocksThisOctave := unsafeShift(cq.octaves - octave - 1)
 
 			for b := 0; b < blocksThisOctave; b++ {
-				block := cq.processOctaveBlock(octave, print && octave == 0 && b == 0)
+				block := cq.processOctaveBlock(octave)
 
-				for j := 0; j < cq.kernel.Properties.atomsPerFrame; j++ {
-					target := base + (b*(totalColumns/blocksThisOctave) + (j * ((totalColumns / blocksThisOctave) / cq.kernel.Properties.atomsPerFrame)))
+				for j := 0; j < apf; j++ {
+					target := base + (b*(totalColumns/blocksThisOctave) + (j * ((totalColumns / blocksThisOctave) / apf)))
 
-					if print && target == 1 {
-						fmt.Printf("Adding to 1, octave = %d, block = %d, atom = %d\n", octave, b, j)
+					toAppend := bpo*(octave+1) - len(out[target])
+					if toAppend > 0 {
+						out[target] = append(out[target], make([]complex128, toAppend, toAppend)...)
 					}
 
-					for len(out[target]) < cq.kernel.Properties.binsPerOctave*(octave+1) {
-						out[target] = append(out[target], complex(0, 0))
-					}
-
-					bpo := cq.kernel.Properties.binsPerOctave
-					for i := 0; i < cq.kernel.Properties.binsPerOctave; i++ {
-						if print && target == 1 {
-							fmt.Printf("out[%d][%d * %d + %d] = block[%d][%d - %d - 1] = (%.4f, %.4f)\n",
-								target, bpo, octave, i, j, bpo, i, real(block[j][bpo-i-1]), imag(block[j][bpo-i-1]))
-						}
-						out[target][cq.kernel.Properties.binsPerOctave*octave+i] = block[j][cq.kernel.Properties.binsPerOctave-i-1]
+					for i := 0; i < bpo; i++ {
+						out[target][bpo*octave+i] = block[j][bpo-i-1]
 					}
 				}
 			}
@@ -265,104 +235,29 @@ func (cq *ConstantQ) Process(td []float64, print bool) [][]complex128 {
 
 func (cq *ConstantQ) GetRemainingOutput() [][]complex128 {
 	// Same as padding added at start, though rounded up
-	pad := int(math.Ceil(float64(cq.OutputLatency)/float64(cq.bigBlockSize))) * cq.bigBlockSize
+	pad := roundUp(float64(cq.OutputLatency)/float64(cq.bigBlockSize)) * cq.bigBlockSize
 	zeros := make([]float64, pad, pad)
-	return cq.Process(zeros, false)
+	return cq.Process(zeros)
 }
 
-func (cq *ConstantQ) processOctaveBlock(octave int, print bool) [][]complex128 {
-	// TODO - merge real pairs into complex array
-	// ro, io := make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize), make([]float64, cq.kernel.Properties.fftSize, cq.kernel.Properties.fftSize)
+func (cq *ConstantQ) processOctaveBlock(octave int) [][]complex128 {
+	apf := cq.kernel.Properties.atomsPerFrame
+	bpo := cq.kernel.Properties.binsPerOctave
+	fftHop := cq.kernel.Properties.fftHop
+	fftSize := cq.kernel.Properties.fftSize
 
-	if print {
-		fmt.Printf("~~ Octave data = %d values: ", len(cq.buffers[octave]))
-		maxidx := 0
-		for i, v := range cq.buffers[octave] {
-			if cq.buffers[octave][maxidx] < v {
-				maxidx = i
-			}
-		}
-		fmt.Printf("Max value = buffer[%d] = %.5f\n", maxidx, cq.buffers[octave][maxidx])
-		for i := 0; i < 20; i++ {
-			fmt.Printf("%.4f, ", cq.buffers[octave][i])
-		}
-		fmt.Printf("\n")
-		sum := 0.0
-		for _, v := range cq.buffers[octave] {
-			sum += v
-		}
-		fmt.Printf("Sum is %.5f\n", sum)
-	}
+	cv := fft.FFTReal(cq.buffers[octave][:fftSize])
+	cq.buffers[octave] = cq.buffers[octave][fftHop:]
 
-	// HACK
-	cv := fft.FFTReal(cq.buffers[octave][:cq.kernel.Properties.fftSize])
-	// cv := make([]complex128, len(cvFrom))
-	// copy(cv, cvFrom)
-	if print {
-		csum := complex(0, 0)
-		for _, v := range cv {
-			csum += v
-		}
-		fmt.Printf("FFT result sum = (%.4f, %.4f)\n", real(csum), imag(csum))
-		fmt.Printf("First 10 = ")
-		for i := 0; i < 10; i++ {
-			fmt.Printf("(%.4f, %.4f), ", real(cv[i]), imag(cv[i]))
-		}
-		fmt.Printf("\n")
-	}
-
-	// if octave == 1 && blockCount == 31 {
-	// fmt.Printf("---- %v\n", cq.buffers[octave])
-	// }
-	// cv := m_fft->forward(m_buffers[octave].data(), ro.data(), io.data());
-
-	lshift := cq.kernel.Properties.fftHop
-	// shifted := make([]float64, lshift, lshift)
-	// for i := 0; i < lshift; i++ {
-	// shifted[i] = cq.buffers[octave][i + cq.kernel.Properties.fftHop]
-	// }
-	// cq.buffers[octave] = shifted
-	if print {
-		fmt.Printf("hop = %d, Before / after length = %d / ", lshift, len(cq.buffers[octave]))
-	}
-	cq.buffers[octave] = cq.buffers[octave][lshift:]
-	if print {
-		fmt.Printf("%d\n", len(cq.buffers[octave]))
-	}
-
-	// ComplexSequence cv;
-	// for (int i = 0; i < m_p.fftSize; ++i) {
-	// cv.push_back(Complex(ro[i], io[i]));
-	// }
-	// if (print) {
-	//   fmt.Printf("&cv[0] = %p\n", &cv[0])
-	//   for i := 0; i < 10; i++ {
-	//     fmt.Printf("cv[%d] = %v\n", i, cv[i])
-	//   }
-	// }
-	cqrowvec := cq.kernel.processForward(cv, print)
-	if print {
-		fmt.Printf("Kernel process, %d values\n", len(cqrowvec))
-		reval, imval := 0.0, 0.0
-		for _, v := range cqrowvec {
-			reval += real(v)
-			imval += imag(v)
-		}
-		fmt.Printf("Kernel sum = (%.4f, %.4f)\n", reval, imval)
-	}
-
+	cqrowvec := cq.kernel.processForward(cv)
 	// Reform into a column matrix
-	cqblock := make([][]complex128, cq.kernel.Properties.atomsPerFrame, cq.kernel.Properties.atomsPerFrame)
-	for j := 0; j < cq.kernel.Properties.atomsPerFrame; j++ {
-		cqblock[j] = make([]complex128, cq.kernel.Properties.binsPerOctave, cq.kernel.Properties.binsPerOctave)
-		for i := 0; i < cq.kernel.Properties.binsPerOctave; i++ {
-			cqblock[j][i] = cqrowvec[i*cq.kernel.Properties.atomsPerFrame+j]
+	cqblock := make([][]complex128, apf, apf)
+	for j := 0; j < apf; j++ {
+		cqblock[j] = make([]complex128, bpo, bpo)
+		for i := 0; i < bpo; i++ {
+			cqblock[j][i] = cqrowvec[i*apf+j]
 		}
 	}
 
 	return cqblock
-}
-
-func unsafeShift(s int) int {
-	return 1 << uint(s)
 }

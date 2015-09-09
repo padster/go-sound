@@ -34,10 +34,6 @@ type Resampler struct {
 }
 
 func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64) *Resampler {
-	// HACK - customize?
-	// snr := float64(100.0)
-	// bandwidth := float64(0.02)
-
 	higher, lower := sourceRate, targetRate
 	if higher < lower {
 		higher, lower = lower, higher
@@ -54,36 +50,17 @@ func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64
 	if params.length%2 == 0 {
 		params.length++
 	}
-	if params.length > 200001 {
-		params.length = 200001
-	}
+	params.length = minInt(params.length, 200001)
 	filterLength := params.length
 
 	filter := make([]float64, filterLength, filterLength)
-	for i := 0; i < filterLength; i++ {
-		filter[i] = 1.0
-	}
-
-	// cut with sinc window
 	sincWindow := buildSincWindow(filterLength, peakToPole*2)
-	for i, v := range sincWindow {
-		if math.IsNaN(v) {
-			panic("NAN in sincWindow")
-		}
-		filter[i] *= v
-	}
-
-	// cut with Kaiser Window
 	kWindow := buildKaiserWindow(params)
-	for i, v := range kWindow {
-		if math.IsNaN(v) {
-			panic("NAN in kWindow")
-		}
-		filter[i] *= v
+	for i := 0; i < filterLength; i++ {
+		filter[i] = sincWindow[i] * kWindow[i]
 	}
 
-	inputSpacing := targetRate / gcd
-	outputSpacing := sourceRate / gcd
+	inputSpacing, outputSpacing := targetRate/gcd, sourceRate/gcd
 
 	if DEBUG_R {
 		fmt.Printf("resample %v -> %v: inputSpacing %v, outputSpacing %v: filter length %v\n",
@@ -168,18 +145,18 @@ func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64
 			nextPhase += inputSpacing
 		}
 		nextPhase = nextPhase % inputSpacing
-		drop := int(math.Ceil(math.Max(0.0, float64(outputSpacing-phase)/float64(inputSpacing))))
-		filtZipLength := int(math.Ceil(float64(filterLength-phase) / float64(inputSpacing)))
+		filtZipLength := roundUp(float64(filterLength-phase) / float64(inputSpacing))
+		drop := roundUp(math.Max(0.0, float64(outputSpacing-phase)/float64(inputSpacing)))
 
-		p := Phase{
+		phaseData[phase] = Phase{
 			nextPhase,
 			make([]float64, filtZipLength, filtZipLength),
 			drop,
 		}
 		for i := 0; i < filtZipLength; i++ {
-			p.filter[i] = filter[i*inputSpacing+phase]
+			phaseData[phase].filter[i] = filter[i*inputSpacing+phase]
 		}
-		phaseData[phase] = p
+
 	}
 
 	if DEBUG_R {
@@ -241,18 +218,13 @@ func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64
 	// and j will appear before the one in which input sample a is at
 	// the centre of the filter.
 
-	h := int(filterLength / 2)
-	n := int(math.Ceil(float64(filterLength-h) / float64(outputSpacing)))
+	h := filterLength / 2
+	n := roundUp(float64(filterLength-h) / float64(outputSpacing))
 
-	phase := (h + n*outputSpacing) % inputSpacing
-	fill := (h + n*outputSpacing) / inputSpacing
-
-	latency := n
-	buffer := make([]float64, fill, fill)
-	bufferOrigin := 0
+	phase, fill := (h+n*outputSpacing)%inputSpacing, (h+n*outputSpacing)/inputSpacing
 
 	if DEBUG_R {
-		fmt.Printf("initial phase %v (as %v %% %v), latency %v\n", phase, filterLength/2, inputSpacing, latency)
+		fmt.Printf("initial phase %v (as %v %% %v), latency %v\n", phase, filterLength/2, inputSpacing, n)
 	}
 
 	return &Resampler{
@@ -263,11 +235,11 @@ func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64
 
 		filterLength,
 		phase,
-		latency,
+		n, /* latency */
 		phaseData,
 
-		buffer,
-		bufferOrigin,
+		make([]float64, fill, fill), /* buffer */
+		0, /* bufferOrigin */
 	}
 }
 
@@ -277,11 +249,9 @@ func (r *Resampler) GetLatency() int {
 
 func (r *Resampler) Process(src []float64) []float64 {
 	n := len(src)
-	for i := 0; i < n; i++ {
-		r.buffer = append(r.buffer, src[i])
-	}
+	r.buffer = append(r.buffer, src...)
 
-	maxout := int(math.Ceil(float64(n) * float64(r.targetRate) / float64(r.sourceRate)))
+	maxout := roundUp(float64(n) * float64(r.targetRate) / float64(r.sourceRate))
 	outidx := 0
 	dst := make([]float64, maxout, maxout)
 
@@ -291,16 +261,12 @@ func (r *Resampler) Process(src []float64) []float64 {
 
 	scaleFactor := float64(r.targetRate/r.gcd) / r.peakToPole
 
-	print := false
 	for outidx < maxout && len(r.buffer) >= len(r.phaseData[r.phase].filter)+r.bufferOrigin {
-		dst[outidx] = scaleFactor * r.reconstructOne(print)
-		print = false
+		dst[outidx] = scaleFactor * r.reconstructOne()
 		outidx++
 	}
 
 	r.buffer = r.buffer[r.bufferOrigin:]
-	// fmt.Printf("Buffer size end: %d\n", len(r.buffer))
-
 	r.bufferOrigin = 0
 
 	if outidx < maxout {
@@ -310,52 +276,34 @@ func (r *Resampler) Process(src []float64) []float64 {
 	return dst
 }
 
-// HACK
-func calcGcd(a int, b int) int {
-	if b == 0 {
-		return a
-	}
-	return calcGcd(b, a%b)
-}
-
 func kaiserForBandwidth(attenuation float64, bandwidth float64, sampleRate float64) KaiserWindow {
 	transition := bandwidth * 2.0 * math.Pi / sampleRate
 	length, beta := 0, 0.0
 
 	if attenuation > 21.0 {
-		length = 1 + int(math.Ceil((attenuation-7.95)/(2.285*transition)))
+		length = 1 + roundUp((attenuation-7.95)/(2.285*transition))
 		if attenuation > 50.0 {
 			beta = 0.1102 * (attenuation - 8.7)
 		} else {
 			beta = 0.5842*math.Pow(attenuation-21.0, 0.4) + 0.07886*(attenuation-21.0)
 		}
 	} else {
-		length = 1 + int(math.Ceil(5.79/transition))
+		length = 1 + roundUp(5.79/transition)
 		beta = 0
 	}
 	return KaiserWindow{length, beta}
 }
 
-func (r *Resampler) reconstructOne(print bool) float64 {
+func (r *Resampler) reconstructOne() float64 {
 	v, n := 0.0, len(r.phaseData[r.phase].filter)
-	print = print && (n == 3751)
 
 	if n+r.bufferOrigin > len(r.buffer) {
 		panic("Ooops, can't reconstruct resampler phase")
 	}
 
-	if print {
-		fmt.Printf("Buffer has size %d, origin = %d\n", len(r.buffer), r.bufferOrigin)
-	}
-
 	for i := 0; i < n; i++ {
 		// TODO - do as a for-each loop over r.phaseData[r.phase]
 		v += r.buffer[r.bufferOrigin+i] * r.phaseData[r.phase].filter[i]
-	}
-
-	if print {
-		fmt.Printf("ReconstructOne with n = %d, origin before/after = %d/%d, phase before/after = %d/%d, v = %.6f\n",
-			n, r.bufferOrigin, r.bufferOrigin+r.phaseData[r.phase].drop, r.phase, r.phaseData[r.phase].nextPhase, v)
 	}
 
 	r.bufferOrigin += r.phaseData[r.phase].drop
@@ -380,29 +328,6 @@ func buildKaiserWindow(params KaiserWindow) []float64 {
 		window[i+upperBound1] = window[params.length/2-i-1]
 	}
 	return window
-}
-
-func bessel0(x float64) float64 {
-	b := 0.0
-	for i := 0; i < 20; i++ {
-		b += besselTerm(x, i)
-	}
-	return b
-}
-
-func besselTerm(x float64, i int) float64 {
-	if i == 0 {
-		return 1.0
-	}
-	f := float64(factorial(i))
-	return math.Pow(x/2.0, float64(i)*2.0) / (f * f)
-}
-
-func factorial(i int) int {
-	if i == 0 {
-		return 1
-	}
-	return i * factorial(i-1)
 }
 
 func buildSincWindow(length int, p float64) []float64 {

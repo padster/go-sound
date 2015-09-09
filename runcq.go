@@ -101,7 +101,6 @@ func main() {
 	fmt.Printf("forward latency = %d, inverse latency = %d, total = %d\n", constantQ.OutputLatency, cqInverse.OutputLatency, latency)
 
 	frame, err := fileReader.ReadFrame()
-	PRINT_FRAME := -1
 	frameAt := 0
 	for err != io.EOF {
 		if frame.Depth != 24 {
@@ -124,51 +123,8 @@ func main() {
 			total += v
 		}
 
-		result := constantQ.Process(samples, false /* TODO - remove */)
-		fmt.Printf("%d values returned from CQ\n", len(result))
-
-		cqout := cqInverse.Process(result, frameAt == PRINT_FRAME)
-		fmt.Printf("%d values returned from CQI\n", len(cqout))
-
-		// cq.WriteComplexBlock(resultBuffer, result)
-
-		// for i, v := range result {
-		// 	c := complex(0, 0)
-		// 	for _, w := range v {
-		// 		c = c + w
-		// 	}
-		// 	if frameAt == PRINT_FRAME {
-		// 		fmt.Printf("result[%d], size = %d, sum = (%.4f, %.4f)\n", i, len(v), real(c), imag(c));
-		// 	}
-		// 	if (frameAt == PRINT_FRAME && i == 1) {
-		// 		for j := 1; j < len(v); j++ {
-		// 			fmt.Printf("(%.3f,%.3f), ", real(v[j]), imag(v[j]));
-		// 		}
-		// 		fmt.Printf("\n");
-		// 	}
-		// }
-
-		if frameAt == PRINT_FRAME {
-			s := 0.0
-			for _, v := range cqout {
-				s += v
-			}
-			fmt.Printf("Sum of cqi out: %.6f\n", s)
-		}
-
-		if frameAt == PRINT_FRAME {
-			panic("DONE")
-		}
-
-		frameAt++
-
-		for i := 0; i < len(cqout); i++ {
-			if cqout[i] > 1.0 {
-				cqout[i] = 1.0
-			} else if cqout[i] < -1.0 {
-				cqout[i] = -1.0
-			}
-		}
+		result := constantQ.Process(samples)
+		cqout := cqInverse.Process(result)
 
 		if outframe >= latency {
 			writeFrame(fileWriter, cqout)
@@ -178,23 +134,19 @@ func main() {
 			writeFrame(fileWriter, cqout[offset:])
 		}
 
+		frameAt++
 		inframe += count
 		outframe += len(cqout)
 		frame, err = fileReader.ReadFrame()
 	}
 
-	r := cqInverse.Process(constantQ.GetRemainingOutput(), false)
-	r2 := cqInverse.GetRemainingOutput()
-	r = append(r, r2...)
+	r := append(
+		cqInverse.Process(constantQ.GetRemainingOutput()),
+		cqInverse.GetRemainingOutput()...)
 
-	for i := 0; i < len(r); i++ {
-		if r[i] > 1.0 {
-			r[i] = 1.0
-		}
-		if r[i] < -1.0 {
-			r[i] = -1.0
-		}
-	}
+	// for i, v := range r {
+	// r[i] = cq.ClampUnit(v)
+	// }
 
 	writeFrame(fileWriter, r)
 	outframe += len(r)
