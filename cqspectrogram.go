@@ -63,8 +63,8 @@ func main() {
 
 	frame, err := fileReader.ReadFrame()
 	for err != io.EOF {
-		if frame.Depth != 24 {
-			fmt.Printf("Only depth 24-bit flac supported for now, file is %d. TODO: support more...", frame.Depth)
+		if frame.Depth != 16 {
+			fmt.Printf("Only depth 16-bit flac supported for now, file is %d. TODO: support more...", frame.Depth)
 			panic("Unsupported input file format")
 		}
 		if frame.Rate != 44100 {
@@ -78,7 +78,7 @@ func main() {
 		for i := 0; i < count; i++ {
 			v := 0.0
 			for _, c := range frame.Buffer[i*frame.Channels : (i+1)*frame.Channels] {
-				v += floatFrom24bit(c)
+				v += floatFrom16bit(c)
 			}
 			v = v / float64(frame.Channels)
 			samples[i] = v
@@ -110,26 +110,17 @@ func main() {
 		elapsedSeconds, float64(inframe)/elapsedSeconds)
 }
 
+// HACK - move to utils, support in both main apps.
+func floatFrom16bit(input int32) float64 {
+	return float64(input) / (float64(1<<15) - 1.0) // Hmmm..doesn't seem right?
+}
+func int16FromFloat(input float64) int32 {
+	return int32(input * (float64(1<<15) - 1.0))
+}
+
 func floatFrom24bit(input int32) float64 {
 	return float64(input) / (float64(1<<23) - 1.0) // Hmmm..doesn't seem right?
 }
 func int24FromFloat(input float64) int32 {
 	return int32(input * (float64(1<<23) - 1.0))
-}
-
-func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [-1, 1]
-	n := len(samples)
-	frame := goflac.Frame{
-		1,     /* channels */
-		24,    /* depth */
-		44100, /* rate */
-		make([]int32, n, n),
-	}
-	for i, v := range samples {
-		frame.Buffer[i] = int24FromFloat(v)
-	}
-	if err := file.WriteFrame(frame); err != nil {
-		fmt.Printf("Error writing frame to file :( %v\n", err)
-		panic("Can't write to file")
-	}
 }

@@ -55,7 +55,7 @@ func main() {
 	}
 	defer fileReader.Close()
 
-	fileWriter, err := goflac.NewEncoder(outputFile, 1, 24, int(sampleRate))
+	fileWriter, err := goflac.NewEncoder(outputFile, 1, fileReader.Depth, int(sampleRate))
 	if err != nil {
 		fmt.Printf("Error opening file to write to! %v\n", err)
 		panic("Can't write file")
@@ -73,8 +73,8 @@ func main() {
 	frame, err := fileReader.ReadFrame()
 	frameAt := 0
 	for err != io.EOF {
-		if frame.Depth != 24 {
-			fmt.Printf("Only depth 24-bit flac supported for now, file is %d. TODO: support more...", frame.Depth)
+		if frame.Depth > 32 {
+			fmt.Printf("Flac should be <32-bit, file hs depth %d. TODO: support more...", frame.Depth)
 			panic("Unsupported input file format")
 		}
 		if frame.Rate != 44100 {
@@ -84,15 +84,13 @@ func main() {
 
 		count := len(frame.Buffer) / frame.Channels
 		samples := make([]float64, count, count)
-		total := 0.0
 		for i := 0; i < count; i++ {
 			v := 0.0
 			for _, c := range frame.Buffer[i*frame.Channels : (i+1)*frame.Channels] {
-				v += floatFrom24bit(c)
+				v += floatFromBitWithDepth(c, frame.Depth)
 			}
 			v = v / float64(frame.Channels)
 			samples[i] = v
-			total += v
 		}
 
 		result := constantQ.Process(samples)
@@ -126,26 +124,31 @@ func main() {
 		elapsedSeconds, float64(inframe)/elapsedSeconds)
 }
 
-func floatFrom24bit(input int32) float64 {
-	return float64(input) / (float64(1<<23) - 1.0) // Hmmm..doesn't seem right?
+func floatFromBitWithDepth(input int32, depth int) float64 {
+	return float64(input) / (float64(unsafeShift(depth)) - 1.0) // Hmmm..doesn't seem right?
 }
-func int24FromFloat(input float64) int32 {
-	return int32(input * (float64(1<<23) - 1.0))
+func intFromFloatWithDepth(input float64, depth int) int32 {
+	return int32(input * (float64(unsafeShift(depth)) - 1.0))
 }
 
 func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [-1, 1]
 	n := len(samples)
 	frame := goflac.Frame{
-		1,     /* channels */
-		24,    /* depth */
-		44100, /* rate */
+		1,             /* channels */
+		file.Depth,    /* depth */
+		44100,         /* rate */
 		make([]int32, n, n),
 	}
 	for i, v := range samples {
-		frame.Buffer[i] = int24FromFloat(v)
+		frame.Buffer[i] = intFromFloatWithDepth(v, file.Depth)
 	}
 	if err := file.WriteFrame(frame); err != nil {
 		fmt.Printf("Error writing frame to file :( %v\n", err)
 		panic("Can't write to file")
 	}
+}
+
+
+func unsafeShift(s int) int {
+	return 1 << uint(s)
 }

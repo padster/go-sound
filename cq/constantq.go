@@ -175,6 +175,34 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	}
 }
 
+func (cq *ConstantQ) ProcessChannel(samples <-chan float64) <-chan []complex128 {
+	result := make(chan complex128)
+	required := cq.kernel.Properties.fftSize * unsafeShift(cq.octaves- i - 1)
+
+	go func() {
+		buffer := make([]float64, required, required)
+		at := 0 
+		for s := range samples {
+			if at == required {
+				for _, c := range cq.Process(buffer) {
+					result <- c
+				}
+				at = 0;
+			}
+			buffer[at] = s
+			at++
+		}
+		for _, c := range cq.Process(buffer[:at]) {
+			result <- c
+		}
+		for _, c := range cq.GetRemainingOutput() {
+			result <- c
+		}
+	}()
+
+	return result
+}
+
 func (cq *ConstantQ) Process(td []float64) [][]complex128 {
 	apf := cq.kernel.Properties.atomsPerFrame
 	bpo := cq.kernel.Properties.binsPerOctave
@@ -182,7 +210,8 @@ func (cq *ConstantQ) Process(td []float64) [][]complex128 {
 
 	cq.buffers[0] = append(cq.buffers[0], td...)
 	for i := 1; i < cq.octaves; i++ {
-		cq.buffers[i] = append(cq.buffers[i], cq.decimators[i].Process(td)...)
+		decimated := cq.decimators[i].Process(td)
+		cq.buffers[i] = append(cq.buffers[i], decimated...)
 	}
 
 	out := [][]complex128{}

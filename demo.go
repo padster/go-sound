@@ -29,7 +29,7 @@ func main() {
 	runtime.GOMAXPROCS(4)
 
 	// Switch on whichever demo you'd like here:
-	if true {
+	if false {
 		renderMidi()
 	} else {
 		playClairDeLune()
@@ -63,6 +63,7 @@ func renderMidi() {
 // music from http://www.piano-midi.de/noten/debussy/deb_clai.pdf
 func playClairDeLune() {
 	fmt.Println("Building sound.")
+	/*
 
 	finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
 
@@ -109,6 +110,11 @@ func playClairDeLune() {
 		[]float64{0.8922, -2.677, 2.677, -0.8922},
 		[]float64{2.772, -2.57, 0.7961},
 	)
+	*/
+	// s1 := s.NewTimedSound(s.NewSineWave(10), 1000)
+	// s2 := s.NewTimedSound(s.NewSineWave(13), 1000)
+	// toPlay := s.SumSounds(s1, s2)
+	toPlay := s.LoadFlacAsSound("jeeves.flac")
 
 	fmt.Printf("Playing: \n\t%s\n", toPlay)
 	// output.Render(toPlay, 2000, 400)

@@ -3,33 +3,63 @@
 # writes that to out.raw, and then draws the result using matplotlib.
 
 import matplotlib.pylab
-import numpy
+import numpy as np
 import sys
 import subprocess
 
-bins = 24
+bins = 120
 octaves = 7
 # TODO: Pass bins to go run
-subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
-ys1 = numpy.memmap("out.raw", dtype=numpy.complex64, mode="r").reshape((-1, bins*octaves)).T
-ys1 = numpy.nan_to_num(ys1.copy())
+# subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
+ys1 = np.memmap("out.raw", dtype=np.complex64, mode="r").reshape((-1, bins*octaves)).T
+ys1 = np.nan_to_num(ys1.copy())
 # ys1[numpy.abs(ys1) < 1e-6] = 0
 
-def plot_complex_spectrogram(ys, ax0, ax1):
-    ax0.imshow(numpy.log(numpy.abs(ys)+1e-8), vmin=-12, vmax=5, cmap='gray')
-    ax1.imshow(numpy.angle(ys), cmap='gist_rainbow')
+def running_mean(x, N):
+    cumsum = np.cumsum(np.insert(x, 0, 0)) 
+    return (cumsum[N:] - cumsum[:-N]) / N 
 
-ys1 = ys1[:,::8]
+def plot_complex_spectrogram(ys, ax0, ax1):
+    values = np.log(np.abs(ys) + 1e-8)
+    # values = np.abs(ys)
+    ax0.imshow(values, vmin=-12, vmax=5, cmap='gray')
+
+    colSum = np.std(values, axis=0)
+    colSumD = np.diff(colSum)
+    ax1.plot(running_mean(colSum, 5))
+    # notes = np.where((colSumD > 250) & (colSumD < 600))[0]
+    # notes = np.insert(notes, 0, 0)
+    # dupes = np.diff(notes)
+    # notes = notes[np.where(dupes > 50)[0] + 1]
+    # notes = notes[np.where(notes < 10500)[0]] + 18
+    notes = np.concatenate((
+        np.arange(50, 300, 52),
+        np.arange(328, 600, 60),
+        np.arange(670, 1380, 54)
+    ))
+    # print notes
+    # i = 0
+    # for note in notes[0:5]:
+        # ax0.plot(values[:, note])
+        # i += 9
+        # ax0.axvline(note, color='r')
+        # ax1.axvline(note, color='r')
+    # print "# notes = %d" % len(notes)
+    # 50 changes
+    # ax1.imshow(np.angle(ys), cmap='gist_rainbow')
+
+ys1 = ys1[:,::32]
 if len(sys.argv) < 3:
     fig, (ax0, ax1) = matplotlib.pylab.subplots(nrows=2, sharex=True)
     plot_complex_spectrogram(ys1, ax0, ax1)
 # else:
     # TODO: Support drawing two at a time
     # subprocess.call(["./makeSpectrogram", "-b %d" % bins] + sys.argv[2:3])
-    # ys2 = numpy.memmap("out.raw", dtype=numpy.complex64, mode="r").reshape((-1, bins*8)).T
+    # ys2 = np.memmap("out.raw", dtype=np.complex64, mode="r").reshape((-1, bins*8)).T
     # ys2 = ys2[:, ::32]
 
     # fig, (ax0, ax1, ax2, ax3) = matplotlib.pylab.subplots(nrows=4, sharex=True)
     # plot_complex_spectrogram(ys1, ax0, ax2)
-    # plot_complex_spectrogram(ys2, ax1, ax3)
+    # plot_complex_spectrogram(ys2, ax1, ax3).
 matplotlib.pylab.show()
+

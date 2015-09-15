@@ -29,7 +29,7 @@ type wavFileSound struct {
 // For example, to read the first channel from a local file at 'piano.wav':
 //	sounds.LoadWavAsSound("piano.wav", 0)
 func LoadWavAsSound(path string, channel uint16) Sound {
-	wavReader := loadReaderOrPanic(path)
+	wavReader := loadWavReaderOrPanic(path)
 
 	meta := wavReader.GetFile()
 	if meta.Channels <= channel {
@@ -39,7 +39,6 @@ func LoadWavAsSound(path string, channel uint16) Sound {
 		// TODO(padster): Support more if there's a need.
 		panic("Only wav files that are 44.1kHz are supported.")
 	}
-	durationMs := uint64(1000.0 * float64(wavReader.GetSampleCount()) / float64(meta.SampleRate))
 
 	data := wavFileSound{
 		path,
@@ -49,7 +48,7 @@ func LoadWavAsSound(path string, channel uint16) Sound {
 		wavReader.GetSampleCount(), /* samplesLeft */
 	}
 
-	return NewBaseSound(&data, durationMs)
+	return NewBaseSound(&data, uint64(wavReader.GetSampleCount()))
 }
 
 // Run generates the samples by extracting them out of the .wav file.
@@ -83,7 +82,7 @@ func (s *wavFileSound) Stop() {
 
 // Reset reopens the file from the start.
 func (s *wavFileSound) Reset() {
-	s.wavReader = loadReaderOrPanic(s.path)
+	s.wavReader = loadWavReaderOrPanic(s.path)
 	s.meta = s.wavReader.GetFile()
 	s.samplesLeft = s.wavReader.GetSampleCount()
 }
@@ -93,8 +92,8 @@ func (s *wavFileSound) String() string {
 	return fmt.Sprintf("Wav[channel %d from path %s]", s.channel, s.path)
 }
 
-// loadReaderOrPanic reads a wav file and handles failure cases.
-func loadReaderOrPanic(path string) *wav.Reader {
+// loadWavReaderOrPanic reads a wav file and handles failure cases.
+func loadWavReaderOrPanic(path string) *wav.Reader {
 	testInfo, err := os.Stat(path)
 	if err != nil {
 		panic(err)
