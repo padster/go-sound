@@ -176,8 +176,9 @@ func NewConstantQ(params CQParams) *ConstantQ {
 }
 
 func (cq *ConstantQ) ProcessChannel(samples <-chan float64) <-chan []complex128 {
-	result := make(chan complex128)
-	required := cq.kernel.Properties.fftSize * unsafeShift(cq.octaves- i - 1)
+	result := make(chan []complex128)
+	// required := cq.kernel.Properties.fftSize * unsafeShift(cq.octaves - 1)
+	required := 4096 // HACK - actually figure this out properly.
 
 	go func() {
 		buffer := make([]float64, required, required)
@@ -198,6 +199,7 @@ func (cq *ConstantQ) ProcessChannel(samples <-chan float64) <-chan []complex128 
 		for _, c := range cq.GetRemainingOutput() {
 			result <- c
 		}
+		close(result)
 	}()
 
 	return result

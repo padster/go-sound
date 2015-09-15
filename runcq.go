@@ -1,16 +1,15 @@
 package main
 
 import (
-	// "bytes"
 	"flag"
 	"fmt"
-	"io"
 	"runtime"
 	"strings"
 	"time"
 
 	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
+	s "github.com/padster/go-sound/sounds"
 )
 
 // Generates the golden files. See test/sounds_test.go for actual test.
@@ -48,80 +47,43 @@ func main() {
 		panic("Input file must be .flac")
 	}
 
-	fileReader, err := goflac.NewDecoder(inputFile)
-	if err != nil {
-		fmt.Printf("Error reading file! %v\n", err)
-		panic("Can't read file")
-	}
-	defer fileReader.Close()
+	flacSound := s.LoadFlacAsSound(inputFile)
 
-	fileWriter, err := goflac.NewEncoder(outputFile, 1, fileReader.Depth, int(sampleRate))
+	// TODO: Flac output writer for sound library.
+	depth := 24
+	fileWriter, err := goflac.NewEncoder(outputFile, 1, depth, int(sampleRate))
 	if err != nil {
 		fmt.Printf("Error opening file to write to! %v\n", err)
 		panic("Can't write file")
 	}
 	defer fileWriter.Close()
 
-	inframe := 0
-	outframe := 0
 	latency := constantQ.OutputLatency + cqInverse.OutputLatency
 
 	fmt.Printf("forward latency = %d, inverse latency = %d, total = %d\n", constantQ.OutputLatency, cqInverse.OutputLatency, latency)
 
 	startTime := time.Now()
 
-	frame, err := fileReader.ReadFrame()
-	frameAt := 0
-	for err != io.EOF {
-		if frame.Depth > 32 {
-			fmt.Printf("Flac should be <32-bit, file hs depth %d. TODO: support more...", frame.Depth)
-			panic("Unsupported input file format")
+	flacSound.Start()
+	defer flacSound.Stop()
+
+	// TODO: Make a common utility for this, it's used here and in both CQ and CQI.
+	samples := cqInverse.ProcessChannel(constantQ.ProcessChannel(flacSound.GetSamples()))
+	frameSize := 44100
+	buffer := make([]float64, frameSize, frameSize)
+	at := 0 
+	for s := range samples {
+		if at == frameSize {
+			writeFrame(fileWriter, buffer)
+			at = 0;
 		}
-		if frame.Rate != 44100 {
-			fmt.Printf("Only 44.1khz flac supported for now, file is %d. TODO: support more...", frame.Rate)
-			panic("Unsupported input file format")
-		}
-
-		count := len(frame.Buffer) / frame.Channels
-		samples := make([]float64, count, count)
-		for i := 0; i < count; i++ {
-			v := 0.0
-			for _, c := range frame.Buffer[i*frame.Channels : (i+1)*frame.Channels] {
-				v += floatFromBitWithDepth(c, frame.Depth)
-			}
-			v = v / float64(frame.Channels)
-			samples[i] = v
-		}
-
-		result := constantQ.Process(samples)
-		cqout := cqInverse.Process(result)
-
-		if outframe >= latency {
-			writeFrame(fileWriter, cqout)
-
-		} else if outframe+len(cqout) >= latency {
-			offset := latency - outframe
-			writeFrame(fileWriter, cqout[offset:])
-		}
-
-		frameAt++
-		inframe += count
-		outframe += len(cqout)
-		frame, err = fileReader.ReadFrame()
+		buffer[at] = s
+		at++
 	}
-
-	r := append(
-		cqInverse.Process(constantQ.GetRemainingOutput()),
-		cqInverse.GetRemainingOutput()...)
-
-	writeFrame(fileWriter, r)
-	outframe += len(r)
-
-	fmt.Printf("in: %d, out: %d\n", inframe, outframe-latency)
+	writeFrame(fileWriter, buffer[:at])
 
 	elapsedSeconds := time.Since(startTime).Seconds()
-	fmt.Printf("elapsed time (not counting init): %f sec, frames/sec = %f\n",
-		elapsedSeconds, float64(inframe)/elapsedSeconds)
+	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)
 }
 
 func floatFromBitWithDepth(input int32, depth int) float64 {
@@ -147,7 +109,6 @@ func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [
 		panic("Can't write to file")
 	}
 }
-
 
 func unsafeShift(s int) int {
 	return 1 << uint(s)

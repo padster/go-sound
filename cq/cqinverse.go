@@ -130,6 +130,39 @@ func NewCQInverse(params CQParams) *CQInverse {
 }
 
 // Return clamped!
+func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 {
+	result := make(chan float64)
+
+	octaves := cqi.octaves
+	apf := cqi.kernel.Properties.atomsPerFrame
+	required := apf * unsafeShift(octaves-1) // * some integer multiple?
+
+	go func() {
+		buffer := make([][]complex128, required, required)
+		at := 0 
+		for s := range blocks {
+			if at == required {
+				for _, c := range cqi.Process(buffer) {
+					result <- c
+				}
+				at = 0;
+			}
+			buffer[at] = s
+			at++
+		}
+		for _, c := range cqi.Process(buffer[:at]) {
+			result <- c
+		}
+		for _, c := range cqi.GetRemainingOutput() {
+			result <- c
+		}
+		close(result)
+	}()
+
+	return result
+}
+
+// Return clamped!
 func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 	octaves := cqi.octaves
 	apf := cqi.kernel.Properties.atomsPerFrame
@@ -145,7 +178,7 @@ func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 		return cqi.drawFromBuffers()
 	}
 
-	blockWidth := apf * unsafeShift(cqi.octaves-1)
+	blockWidth := apf * unsafeShift(octaves-1)
 	if widthProvided%blockWidth != 0 {
 		fmt.Printf("ERROR: inverse process block size (%d) must be a multiple of atoms * 2^(octaves - 1) = %d * 2^(%d - 1) = %d\n",
 			widthProvided, apf, cqi.octaves, blockWidth)
