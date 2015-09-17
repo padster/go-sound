@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
@@ -63,32 +62,4 @@ func main() {
 
 	elapsedSeconds := time.Since(startTime).Seconds()
 	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)
-}
-
-func floatFromBitWithDepth(input int32, depth int) float64 {
-	return float64(input) / (float64(unsafeShift(depth)) - 1.0) // Hmmm..doesn't seem right?
-}
-func intFromFloatWithDepth(input float64, depth int) int32 {
-	return int32(input * (float64(unsafeShift(depth)) - 1.0))
-}
-
-func writeFrame(file *goflac.Encoder, samples []float64) { // samples in range [-1, 1]
-	n := len(samples)
-	frame := goflac.Frame{
-		1,             /* channels */
-		file.Depth,    /* depth */
-		44100,         /* rate */
-		make([]int32, n, n),
-	}
-	for i, v := range samples {
-		frame.Buffer[i] = intFromFloatWithDepth(v, file.Depth)
-	}
-	if err := file.WriteFrame(frame); err != nil {
-		fmt.Printf("Error writing frame to file :( %v\n", err)
-		panic("Can't write to file")
-	}
-}
-
-func unsafeShift(s int) int {
-	return 1 << uint(s)
 }
