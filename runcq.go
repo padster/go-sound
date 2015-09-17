@@ -9,6 +9,7 @@ import (
 
 	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
+	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
 
@@ -17,70 +18,48 @@ func main() {
 	// Singlethreaded for now...
 	runtime.GOMAXPROCS(1)
 
-	fmt.Printf("Parsing flags\n")
+	// Parse flags...
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
 	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
-	remainingArgs := flag.Args()
 
-	if len(remainingArgs) != 2 {
-		panic("Required: <input> <output> filename arguments")
+	remainingArgs := flag.Args()
+	if len(remainingArgs) < 1 || len(remainingArgs) > 2 {
+		panic("Required: <input> [<output>] filename arguments")
 	}
 	inputFile := remainingArgs[0]
-	outputFile := remainingArgs[1]
+	outputFile := ""
+	if len(remainingArgs) == 2 {
+		outputFile = remainingArgs[1]
+	}
 
-	fmt.Printf("Building parameters\n")
-
-	sampleRate := 44100.0
-	// minFreq, maxFreq, bpo := 110.0, 14080.0, 24
-	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
-
-	fmt.Printf("Params = %v\n", params)
-	fmt.Printf("Building CQ and inverse... %v\n", params)
-
-	constantQ := cq.NewConstantQ(params)
-	cqInverse := cq.NewCQInverse(params)
-
-	fmt.Printf("Loading file from %v\n", inputFile)
+	// TODO: Better custom load method, to support more filetypes.
 	if !strings.HasSuffix(inputFile, ".flac") {
 		panic("Input file must be .flac")
 	}
+	inputSound := s.LoadFlacAsSound(inputFile)
+	inputSound.Start()
+	defer inputSound.Stop()
 
-	flacSound := s.LoadFlacAsSound(inputFile)
-
-	// TODO: Flac output writer for sound library.
-	depth := 24
-	fileWriter, err := goflac.NewEncoder(outputFile, 1, depth, int(sampleRate))
-	if err != nil {
-		fmt.Printf("Error opening file to write to! %v\n", err)
-		panic("Can't write file")
-	}
-	defer fileWriter.Close()
-
+	// minFreq, maxFreq, bpo := 110.0, 14080.0, 24
+	sampleRate := 44100.0
+	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+	constantQ := cq.NewConstantQ(params)
+	cqInverse := cq.NewCQInverse(params)
 	latency := constantQ.OutputLatency + cqInverse.OutputLatency
 
-	fmt.Printf("forward latency = %d, inverse latency = %d, total = %d\n", constantQ.OutputLatency, cqInverse.OutputLatency, latency)
-
 	startTime := time.Now()
+	// TODO: Skip the first 'latency' samples for the stream.
+	fmt.Printf("TODO: Skip latency (= %d) samples)\n", latency)
+	samples := cqInverse.ProcessChannel(constantQ.ProcessChannel(inputSound.GetSamples()))
+	asSound := s.WrapChannelAsSound(samples)
 
-	flacSound.Start()
-	defer flacSound.Stop()
-
-	// TODO: Make a common utility for this, it's used here and in both CQ and CQI.
-	samples := cqInverse.ProcessChannel(constantQ.ProcessChannel(flacSound.GetSamples()))
-	frameSize := 44100
-	buffer := make([]float64, frameSize, frameSize)
-	at := 0 
-	for s := range samples {
-		if at == frameSize {
-			writeFrame(fileWriter, buffer)
-			at = 0;
-		}
-		buffer[at] = s
-		at++
+	if outputFile != "" {
+		output.WriteSoundToFlac(asSound, outputFile)
+	} else {
+		output.Play(asSound)
 	}
-	writeFrame(fileWriter, buffer[:at])
 
 	elapsedSeconds := time.Since(startTime).Seconds()
 	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)

@@ -46,6 +46,9 @@ func NewBaseSound(def SoundDefinition, sampleCount uint64) Sound {
 func (s *BaseSound) GetSamples() <-chan float64 {
 	// TODO(padster): Add some tracking here to make sure that GetSamples() is only called once
 	// between each Start() and Stop(), if possible, to avoid re-using sounds.
+	if !s.running {
+		panic("Can't get samples while sound is not running...")
+	}
 	return s.samples
 }
 

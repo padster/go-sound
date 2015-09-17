@@ -6,6 +6,7 @@ import (
 	"math"
 	"runtime"
 
+	"github.com/padster/go-sound/cq"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/util"
@@ -114,7 +115,16 @@ func playClairDeLune() {
 	// s1 := s.NewTimedSound(s.NewSineWave(10), 1000)
 	// s2 := s.NewTimedSound(s.NewSineWave(13), 1000)
 	// toPlay := s.SumSounds(s1, s2)
-	toPlay := s.LoadFlacAsSound("jeeves.flac")
+
+
+	params := cq.NewCQParams(44100.0, 110.0, 14080.0, 24)
+	constantQ, cqInverse := cq.NewConstantQ(params), cq.NewCQInverse(params)
+
+	input := s.LoadFlacAsSound("jeeves.flac")
+	input.Start()
+
+	processedChannel := cqInverse.ProcessChannel(constantQ.ProcessChannel(input.GetSamples()))
+	toPlay := s.WrapChannelAsSound(processedChannel)
 
 	fmt.Printf("Playing: \n\t%s\n", toPlay)
 	// output.Render(toPlay, 2000, 400)
