@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	// "github.com/padster/go-sound/cq"
+	file "github.com/padster/go-sound/file"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/util"
@@ -116,12 +117,13 @@ func playClairDeLune() {
 	// s2 := s.NewTimedSound(s.NewSineWave(13), 1000)
 	// toPlay := s.SumSounds(s1, s2)
 
+
 	input := make(chan float64)
 	go func() {
-		seconds := 1
+		seconds := 6
 		maxSeconds := seconds * 44100
 		for i := 0; i < maxSeconds; i++ {
-			hz := 220.0 * (1.0 + 6 * float64(i) / float64(maxSeconds))
+			hz := 220.0 * (1.0 + 5 * float64(i) / float64(maxSeconds))
 			input <- hz
 		}
 		close(input)
@@ -129,8 +131,11 @@ func playClairDeLune() {
 
 	toPlay := s.NewHzFromChannel(input)
 	// fmt.Printf("Playing: \n\t%s\n", toPlay)
-	output.Render(toPlay, 2000, 400)
+	// output.Render(toPlay, 2000, 400)
 	// output.Play(toPlay)
+	file.Write(toPlay, "toneslide.wav")
+
+	// output.Play(s.LoadFlacAsSound("toneslide.flac"))
 
 	// Optional: Write to a .wav file:
 	// clairDeLune.Reset()

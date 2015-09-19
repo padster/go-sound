@@ -17,6 +17,7 @@ func WriteSoundToFlac(sound s.Sound, path string) error {
   }
 
   if _, err := os.Stat(path); err == nil {
+    panic("File already exists! Please delete first")
     return os.ErrExist
   }
 

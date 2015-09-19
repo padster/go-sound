@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/padster/go-sound/cq"
+	f "github.com/padster/go-sound/file"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
@@ -17,6 +18,7 @@ func main() {
 	runtime.GOMAXPROCS(1)
 
 	// Parse flags...
+	sampleRate := s.CyclesPerSecond
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
 	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
@@ -32,15 +34,12 @@ func main() {
 		outputFile = remainingArgs[1]
 	}
 
-	// TODO: Better custom load method, to support more filetypes.
-	// inputSound := s.LoadFlacAsSound(inputFile)
-	fmt.Printf("%d\n", inputFile)
-	inputSound := s.NewTimedSound(s.NewSineWave(440.0), 1000)
+	inputSound := f.Read(inputFile)
+	// inputSound := s.NewTimedSound(s.NewSineWave(440.0), 1000)
 	inputSound.Start()
 	defer inputSound.Stop()
 
 	// minFreq, maxFreq, bpo := 110.0, 14080.0, 24
-	sampleRate := 44100.0
 	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
 	constantQ := cq.NewConstantQ(params)
 	cqInverse := cq.NewCQInverse(params)
@@ -49,11 +48,11 @@ func main() {
 	startTime := time.Now()
 	// TODO: Skip the first 'latency' samples for the stream.
 	fmt.Printf("TODO: Skip latency (= %d) samples)\n", latency)
-	samples := cqInverse.ProcessChannel(shiftChannel(21, constantQ.ProcessChannel(inputSound.GetSamples())))
+	samples := cqInverse.ProcessChannel(shiftChannel(0, constantQ.ProcessChannel(inputSound.GetSamples())))
 	asSound := s.WrapChannelAsSound(samples)
 
 	if outputFile != "" {
-		output.WriteSoundToFlac(asSound, outputFile)
+		f.Write(asSound, outputFile)
 	} else {
 		output.Play(asSound)
 	}
@@ -71,6 +70,7 @@ func shiftChannel(buckets int, in <-chan []complex128) chan []complex128 {
 			copy(cOut, cIn[buckets:])
 			out <- cOut
 		}
+		close(out)
 	}(buckets)
 	return out
 }

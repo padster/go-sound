@@ -158,7 +158,7 @@ func (s *SpectrogramScreen) drawSignal() {
       */
 
       gl.Color3d(grey, grey, grey)
-      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (2 * i + 1)))
+      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (3 * i + 1)))
     }
   })
   gl.End()

@@ -18,6 +18,7 @@ const (
 func WriteSoundToWav(s sounds.Sound, path string) error {
 	// Create file first, only if it doesn't exist:
 	if _, err := os.Stat(path); err == nil {
+		panic("File already exists! Please delete first")
 		return os.ErrExist
 	}
 	file, err := os.Create(path)

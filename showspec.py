@@ -8,7 +8,7 @@ import sys
 import subprocess
 
 bins = 24
-octaves = 7
+octaves = 5
 # TODO: Pass bins to go run
 # subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
 ys1 = np.memmap("out.raw", dtype=np.complex64, mode="r").reshape((-1, bins*octaves)).T
