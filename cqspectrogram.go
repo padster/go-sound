@@ -29,6 +29,7 @@ func main() {
 		panic("Required: <input> filename argument")
 	}
 	inputFile := remainingArgs[0]
+	fmt.Printf("%s\n", inputFile)
 	// TODO: renable writing out to file if one is provided.
 	// outputFile := "out.raw"
 
@@ -37,24 +38,21 @@ func main() {
 	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
 	spectrogram := cq.NewSpectrogram(params)
 
-	inputSound := s.LoadFlacAsSound(inputFile)
-	// inputSound := s.ConcatSounds(
-	// 	s.NewTimedSound(s.NewSineWave(440), 5000),
-	// 	s.NewTimedSound(s.NewSineWave(880), 5000),
-	// 	s.NewTimedSound(s.SumSounds(s.NewSineWave(440), s.NewSineWave(880)), 5000),
-	// )
+	// inputSound := s.LoadFlacAsSound(inputFile)
+	inputSound := s.ConcatSounds(
+		s.NewTimedSound(s.NewSineWave(440), 5000),
+		s.NewTimedSound(s.NewSineWave(880), 5000),
+		s.NewTimedSound(s.SumSounds(s.NewSineWave(440), s.NewSineWave(880)), 5000),
+	)
 	inputSound.Start()
 	defer inputSound.Stop()
 
-
 	soundChannel, specChannel := splitChannel(inputSound.GetSamples())
-
-
 	startTime := time.Now()
 
 	go func() {
 		columns := spectrogram.ProcessChannel(specChannel)
-		toShow := util.NewSpectrogramScreen(441, *bpo * 5 * 3)
+		toShow := util.NewSpectrogramScreen(441, *bpo * 5 * 2)
 		toShow.Render(columns, 4)
 	}()
 

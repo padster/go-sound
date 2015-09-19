@@ -150,13 +150,15 @@ func (s *SpectrogramScreen) drawSignal() {
       }
 
       // HACK: Stretch to make the darks darker and the whites whiter.
+      /*
       grey = grey * grey * grey * grey // more space at the top, [0, 1]
       grey = 2.0 * grey - 1.0 // [-1, 1]
       grey = math.Tanh(3.0 * grey) // streched, still [-1, 1] 
       grey = (grey + 1.0) / 2.0
+      */
 
       gl.Color3d(grey, grey, grey)
-      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (3 * i + 1)))
+      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (2 * i + 1)))
     }
   })
   gl.End()

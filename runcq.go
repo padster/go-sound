@@ -33,7 +33,9 @@ func main() {
 	}
 
 	// TODO: Better custom load method, to support more filetypes.
-	inputSound := s.LoadFlacAsSound(inputFile)
+	// inputSound := s.LoadFlacAsSound(inputFile)
+	fmt.Printf("%d\n", inputFile)
+	inputSound := s.NewTimedSound(s.NewSineWave(440.0), 1000)
 	inputSound.Start()
 	defer inputSound.Stop()
 
@@ -47,7 +49,7 @@ func main() {
 	startTime := time.Now()
 	// TODO: Skip the first 'latency' samples for the stream.
 	fmt.Printf("TODO: Skip latency (= %d) samples)\n", latency)
-	samples := cqInverse.ProcessChannel(constantQ.ProcessChannel(inputSound.GetSamples()))
+	samples := cqInverse.ProcessChannel(shiftChannel(21, constantQ.ProcessChannel(inputSound.GetSamples())))
 	asSound := s.WrapChannelAsSound(samples)
 
 	if outputFile != "" {
@@ -58,4 +60,17 @@ func main() {
 
 	elapsedSeconds := time.Since(startTime).Seconds()
 	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)
+}
+
+func shiftChannel(buckets int, in <-chan []complex128) chan []complex128 {
+	out := make(chan []complex128)
+	go func(b int) {
+		for cIn := range in {
+			s := len(cIn)
+			cOut := make([]complex128, s, s)
+			copy(cOut, cIn[buckets:])
+			out <- cOut
+		}
+	}(buckets)
+	return out
 }
