@@ -4,6 +4,7 @@ import (
   "fmt"
   "io"
   "os"
+  "strings"
 
   flac "github.com/cocoonlife/goflac"
 )
@@ -19,6 +20,10 @@ type flacFileSound struct {
 // For example, to read the first channel from a local file at 'piano.flac':
 //  sounds.LoadFlacAsSound("piano.flac")
 func LoadFlacAsSound(path string) Sound {
+  if !strings.HasSuffix(path, ".flac") {
+    panic("Input file must be .flac")
+  }
+
   flacReader := loadFlacReaderOrPanic(path)
 
   if flacReader.Rate != int(CyclesPerSecond) {

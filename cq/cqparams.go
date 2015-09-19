@@ -32,6 +32,7 @@ type CQParams struct {
 }
 
 func NewCQParams(sampleRate float64, minFreq float64, maxFreq float64, binsPerOctave int) CQParams {
+	// TODO: change (minFreq, maxFreq) to (minFreq, octaves)
 	if maxFreq <= minFreq || minFreq <= 0 {
 		panic("Requires frequencies 0 < min < max")
 	}

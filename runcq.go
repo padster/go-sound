@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/padster/go-sound/cq"
@@ -34,9 +33,6 @@ func main() {
 	}
 
 	// TODO: Better custom load method, to support more filetypes.
-	if !strings.HasSuffix(inputFile, ".flac") {
-		panic("Input file must be .flac")
-	}
 	inputSound := s.LoadFlacAsSound(inputFile)
 	inputSound.Start()
 	defer inputSound.Stop()

@@ -51,6 +51,7 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 	defer s.Stop()
 
 	// Continually buffers data from the stream and writes to audio.
+	sampleCount := 0
 	st.ConnectToSink()
 	for {
 		toAdd := st.WritableSize()
@@ -60,10 +61,11 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 
 		// No buffer - write immediately.
 		// TODO(padster): Play with this to see if chunked writes actually reduce delay.
-		if toAdd > 1 {
-			toAdd = 1
+		if toAdd > 441 {
+			toAdd = 441
 		}
 
+		// TODO: Reuse just one of these?
 		buffer := make([]float32, toAdd)
 		finishedAt := toAdd
 
@@ -77,8 +79,10 @@ func playSamples(s sounds.Sound, sync_ch chan int, pa *PulseMainLoop) {
 		}
 		if finishedAt == 0 {
 			st.Drain()
-			return
+			break
 		}
+		sampleCount += finishedAt
 		st.Write(buffer[0:finishedAt], SEEK_RELATIVE)
 	}
+	fmt.Printf("Samples written: %d\n", sampleCount)
 }

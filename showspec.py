@@ -7,7 +7,7 @@ import numpy as np
 import sys
 import subprocess
 
-bins = 120
+bins = 24
 octaves = 7
 # TODO: Pass bins to go run
 # subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
@@ -22,21 +22,24 @@ def running_mean(x, N):
 def plot_complex_spectrogram(ys, ax0, ax1):
     values = np.log(np.abs(ys) + 1e-8)
     # values = np.abs(ys)
+    # values = np.abs(ys)
     ax0.imshow(values, vmin=-12, vmax=5, cmap='gray')
 
-    colSum = np.std(values, axis=0)
-    colSumD = np.diff(colSum)
-    ax1.plot(running_mean(colSum, 5))
+    colMax = np.max(values, axis=0)
+    ax1.plot(colMax)
+    # colSum = np.std(values, axis=0)
+    # colSumD = np.diff(colSum)
+    # ax1.plot(running_mean(colSum, 5))
     # notes = np.where((colSumD > 250) & (colSumD < 600))[0]
     # notes = np.insert(notes, 0, 0)
     # dupes = np.diff(notes)
     # notes = notes[np.where(dupes > 50)[0] + 1]
     # notes = notes[np.where(notes < 10500)[0]] + 18
-    notes = np.concatenate((
-        np.arange(50, 300, 52),
-        np.arange(328, 600, 60),
-        np.arange(670, 1380, 54)
-    ))
+    # notes = np.concatenate((
+        # np.arange(50, 300, 52),
+        # np.arange(328, 600, 60),
+        # np.arange(670, 1380, 54)
+    # ))
     # print notes
     # i = 0
     # for note in notes[0:5]:
@@ -46,7 +49,7 @@ def plot_complex_spectrogram(ys, ax0, ax1):
         # ax1.axvline(note, color='r')
     # print "# notes = %d" % len(notes)
     # 50 changes
-    # ax1.imshow(np.angle(ys), cmap='gist_rainbow')
+    #ax1.imshow(np.angle(ys), cmap='gist_rainbow')
 
 ys1 = ys1[:,::32]
 if len(sys.argv) < 3:

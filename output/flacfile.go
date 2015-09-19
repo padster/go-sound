@@ -4,6 +4,7 @@ package output
 import (
   "fmt"
   "os"
+  "strings"
 
   goflac "github.com/cocoonlife/goflac"
   s "github.com/padster/go-sound/sounds"
@@ -11,6 +12,10 @@ import (
 
 // WriteSoundToFlac creates a file at a path, and writes the given sound in the .flac format.
 func WriteSoundToFlac(sound s.Sound, path string) error {
+  if !strings.HasSuffix(path, ".flac") {
+    panic("Output file must be .flac")
+  }
+
   if _, err := os.Stat(path); err == nil {
     return os.ErrExist
   }

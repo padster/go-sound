@@ -98,6 +98,11 @@ func (b *TypedBuffer) IsFull() bool {
 	return b.size == b.capacity
 }
 
+// Size returns the number of values in the buffer.
+func (b *TypedBuffer) Size() int {
+	return b.size
+}
+
 // IsFinished returns whether there is nothing more to be added to the buffer
 func (b *TypedBuffer) IsFinished() bool {
 	return b.finished

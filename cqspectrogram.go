@@ -1,28 +1,27 @@
 package main
 
 import (
-	"bytes"
+	// "bytes"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
+	// "io/ioutil"
 	"runtime"
-	"strings"
 	"time"
 
-	goflac "github.com/cocoonlife/goflac"
 	"github.com/padster/go-sound/cq"
+	s "github.com/padster/go-sound/sounds"
+	"github.com/padster/go-sound/output"
+	"github.com/padster/go-sound/util"
 )
 
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
-	// Singlethreaded for now...
-	runtime.GOMAXPROCS(1)
+	// Needs to be at least 2 when doing openGL + sound output at the same time.
+	runtime.GOMAXPROCS(3)
 
-	fmt.Printf("Parsing flags\n")
 	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 14080.0, "maximum frequency")
-	bpo := flag.Int("bpo", 24, "Buckets per octave")
+	maxFreq := flag.Float64("maxFreq", 3520.0, "maximum frequency")
+	bpo := flag.Int("bpo", 48, "Buckets per octave")
 	flag.Parse()
 	remainingArgs := flag.Args()
 
@@ -30,84 +29,57 @@ func main() {
 		panic("Required: <input> filename argument")
 	}
 	inputFile := remainingArgs[0]
-	outputFile := "out.raw"
-
-	fmt.Printf("Building parameters\n")
+	// TODO: renable writing out to file if one is provided.
+	// outputFile := "out.raw"
 
 	sampleRate := 44100.0
 	// minFreq, maxFreq, bpo := 110.0, 14080.0, 24
 	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
-
-	fmt.Printf("Params = %v\n", params)
-	fmt.Printf("Building Spectrogram... %v\n", params)
-
 	spectrogram := cq.NewSpectrogram(params)
 
-	fmt.Printf("Loading file from %v\n", inputFile)
-	if !strings.HasSuffix(inputFile, ".flac") {
-		panic("Input file must be .flac")
-	}
+	inputSound := s.LoadFlacAsSound(inputFile)
+	// inputSound := s.ConcatSounds(
+	// 	s.NewTimedSound(s.NewSineWave(440), 5000),
+	// 	s.NewTimedSound(s.NewSineWave(880), 5000),
+	// 	s.NewTimedSound(s.SumSounds(s.NewSineWave(440), s.NewSineWave(880)), 5000),
+	// )
+	inputSound.Start()
+	defer inputSound.Stop()
 
-	fileReader, err := goflac.NewDecoder(inputFile)
-	if err != nil {
-		fmt.Printf("Error reading file! %v\n", err)
-		panic("Can't read file")
-	}
-	defer fileReader.Close()
 
-	outputBuffer := bytes.NewBuffer(make([]byte, 0, 1024))
+	soundChannel, specChannel := splitChannel(inputSound.GetSamples())
 
-	inframe := 0
 
 	startTime := time.Now()
 
-	frame, err := fileReader.ReadFrame()
-	for err != io.EOF {
-		if frame.Depth != 16 {
-			fmt.Printf("Only depth 16-bit flac supported for now, file is %d. TODO: support more...", frame.Depth)
-			panic("Unsupported input file format")
-		}
-		if frame.Rate != 44100 {
-			fmt.Printf("Only 44.1khz flac supported for now, file is %d. TODO: support more...", frame.Rate)
-			panic("Unsupported input file format")
-		}
+	go func() {
+		columns := spectrogram.ProcessChannel(specChannel)
+		toShow := util.NewSpectrogramScreen(441, *bpo * 5 * 3)
+		toShow.Render(columns, 4)
+	}()
 
-		count := len(frame.Buffer) / frame.Channels
-		samples := make([]float64, count, count)
-		total := 0.0
-		for i := 0; i < count; i++ {
-			v := 0.0
-			for _, c := range frame.Buffer[i*frame.Channels : (i+1)*frame.Channels] {
-				v += floatFrom16bit(c)
-			}
-			v = v / float64(frame.Channels)
-			samples[i] = v
-			total += v
-		}
+	output.Play(s.WrapChannelAsSound(soundChannel))	
 
-		spectrogramBlock := spectrogram.Process(samples)
-		for _, col := range spectrogramBlock {
-			for _, c := range col {
-				cq.WriteComplex(outputBuffer, c)
-			}
-		}
-
-		inframe += count
-		frame, err = fileReader.ReadFrame()
-	}
-
-	spectrogramBlock := spectrogram.GetRemainingOutput()
-	for _, col := range spectrogramBlock {
+/*
+	// TODO: renable writing out to file.
+	outputBuffer := bytes.NewBuffer(make([]byte, 0, 1024))
+	width, height := 0, 0
+	for col := range columns {
 		for _, c := range col {
 			cq.WriteComplex(outputBuffer, c)
 		}
+		if width % 1000 == 0 {
+			fmt.Printf("At frame: %d\n", width)
+		}
+		width++
+		height = len(col)
 	}
-
+	fmt.Printf("Done! - %d by %d\n", width, height)
 	ioutil.WriteFile(outputFile, outputBuffer.Bytes(), 0644)
+*/
 
 	elapsedSeconds := time.Since(startTime).Seconds()
-	fmt.Printf("elapsed time (not counting init): %f sec, frames/sec = %f\n",
-		elapsedSeconds, float64(inframe)/elapsedSeconds)
+	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)
 }
 
 // HACK - move to utils, support in both main apps.
@@ -123,4 +95,15 @@ func floatFrom24bit(input int32) float64 {
 }
 func int24FromFloat(input float64) int32 {
 	return int32(input * (float64(1<<23) - 1.0))
+}
+
+func splitChannel(samples <-chan float64) (chan float64, chan float64) {
+	r1, r2 := make(chan float64), make(chan float64)
+	go func() {
+		for s := range samples {
+			r1 <- s
+			r2 <- s
+		}
+	}()
+	return r1, r2
 }

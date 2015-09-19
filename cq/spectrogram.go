@@ -21,6 +21,46 @@ func NewSpectrogram(params CQParams) *Spectrogram {
 	}
 }
 
+func (spec *Spectrogram) ProcessChannel(samples <-chan float64) <-chan []complex128 {
+	result := make(chan []complex128)
+
+	go func() {
+		partial := spec.cq.ProcessChannel(samples)
+
+		height := spec.cq.binCount()
+		buffer := make([][]complex128, 0, 128) // HACK - get the correct size
+
+		first := false
+		for column := range partial {
+			buffer = append(buffer, column)
+			if first {
+				if len(column) != height {
+					panic("First partial info must be for all values.")
+				}
+				first = false;
+			} else {
+				if len(column) == height {
+					full := fullInterpolate(buffer)
+					for _, ic := range full {
+						result <- ic
+					}
+					buffer = buffer[len(buffer) - 1:]
+				}
+			}
+		}
+
+		if len(buffer[0]) != height {
+			panic("Oops - can't interpolate the ending part, wrong height :/")
+		}
+		for _, ic := range holdInterpolate(buffer) {
+			result <- ic
+		}
+		close(result)
+	}()
+
+	return result
+}
+
 func (spec *Spectrogram) Process(values []float64) [][]complex128 {
 	return spec.interpolate(spec.cq.Process(values), false)
 }
@@ -116,13 +156,13 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 		}
 	} else {
 		// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
-		out := spec.fullInterpolate(spec.buffer[:secondFullHeight + 1])
+		out := fullInterpolate(spec.buffer[:secondFullHeight + 1])
 		spec.buffer = spec.buffer[secondFullHeight:]
 		return append(out, spec.fetchInterpolated(insist)...)
 	}
 }
 
-func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
+func fullInterpolate(values [][]complex128) [][]complex128 {
 	// Last entry is the interpolation end boundary, hence the -1
 	width, height := len(values) - 1, len(values[0]) 
 
@@ -193,4 +233,17 @@ func logInterpolate(a complex128, b complex128, proportion float64) complex128 {
 	cArg, cLogAbs := zArg * proportion, zLogAbs * proportion
 	cAbs := math.Exp(cLogAbs)
 	return a * cmplx.Rect(cAbs, cArg)
+}
+
+func holdInterpolate(values [][]complex128) [][]complex128 {
+	// Hmm...maybe instead interpolate to zeroes?
+	width, height := len(values), len(values[0])
+	for i := 1; i < width; i++ {
+		from := len(values[i])
+		if from >= height {
+			panic("hold interpolate input has wrong structure :(")
+		}
+		values[i] = append(values[i], values[i - 1][from:height]...)
+	}
+	return values;
 }
