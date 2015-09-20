@@ -117,23 +117,11 @@ func playClairDeLune() {
 	// s2 := s.NewTimedSound(s.NewSineWave(13), 1000)
 	// toPlay := s.SumSounds(s1, s2)
 
-
-	input := make(chan float64)
-	go func() {
-		seconds := 6
-		maxSeconds := seconds * 44100
-		for i := 0; i < maxSeconds; i++ {
-			hz := 220.0 * (1.0 + 5 * float64(i) / float64(maxSeconds))
-			input <- hz
-		}
-		close(input)
-	}()
-
-	toPlay := s.NewHzFromChannel(input)
+	toPlay := s.NewTimedSound(shephardTones(), 20000)
 	// fmt.Printf("Playing: \n\t%s\n", toPlay)
-	// output.Render(toPlay, 2000, 400)
+	// output.Render(toPlay, 2100, 400)
 	// output.Play(toPlay)
-	file.Write(toPlay, "toneslide.wav")
+	file.Write(toPlay, "shephard.wav")
 
 	// output.Play(s.LoadFlacAsSound("toneslide.flac"))
 
@@ -194,4 +182,58 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 	}
 	midiToSound := s.NewTimedSound(util.MidiToSound(midi), quaverCount*q)
 	return s.NewADSREnvelope(midiToSound, 15, 50, 0.5, 20)
+}
+
+// Shephard tones
+func shephardTones() s.Sound {
+	octaves := 5
+	base, mid := 110.0, 155.563491861
+
+	tones := 2 * octaves
+	bases := make([]float64, tones, tones)
+	for i := 0; i < octaves; i++ {
+		bases[2 * i] = base * float64(unsafeShift(i))
+		bases[2*i+1] = mid * float64(unsafeShift(i))
+	}
+	secondsPerOctave := 10
+	
+	maxHz := bases[0] * float64(unsafeShift(octaves))
+	downOctaves := 1.0 / float64(unsafeShift(octaves))
+
+	samplesPerOctave := int(secondsPerOctave * s.CyclesPerSecond)
+	octavesPerSample := 1.0 / float64(samplesPerOctave)
+
+	channels := make([]chan []float64, tones, tones)
+	for i := 0; i < tones; i++ {
+		channels[i] = make(chan []float64)
+	}
+	go func() {
+		for {
+			for sample := 0; sample < octaves * samplesPerOctave; sample++ {
+				for i := 0; i < tones; i++ {
+					hz := bases[i] * math.Pow(2.0, float64(sample) * octavesPerSample)
+					if hz >= maxHz {
+						hz *= downOctaves
+					}
+					channels[i] <- []float64{hz, gaussianAmplitude(hz, bases[0], maxHz)}
+				}
+			}
+		}
+	}()
+
+	sounds := make([]s.Sound, tones, tones)
+	for i, v := range channels {
+		sounds[i] = s.NewHzFromChannelWithAmplitude(v)
+	}
+	return s.SumSounds(sounds...)
+}
+
+func gaussianAmplitude(at float64, minHz float64, maxHz float64) float64 {
+	lHalf := 0.5 * (math.Log(minHz) + math.Log(maxHz))
+	diff := (math.Log(at) - lHalf)
+	return math.Exp(-1.0 * diff * diff)
+}
+
+func unsafeShift(s int) int {
+	return 1 << uint(s)
 }
