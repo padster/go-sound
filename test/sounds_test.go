@@ -14,8 +14,20 @@ import (
 
 // Generates multiple sample sounds, and compares against golden files generated in generatetest.go
 
-func TestTimed(t *testing.T) {
-	compareFile(t, "timed.wav", SampleTimedSound())
+func TestTimedSine(t *testing.T) {
+	compareFile(t, "timed_sine.wav", SampleTimedSineSound())
+}
+
+func TestTimedSquare(t *testing.T) {
+	compareFile(t, "timed_square.wav", SampleTimedSquareSound())
+}
+
+func TestTimedSawtooth(t *testing.T) {
+	compareFile(t, "timed_sawtooth.wav", SampleTimedSawtoothSound())
+}
+
+func TestTimedTriangle(t *testing.T) {
+	compareFile(t, "timed_triangle.wav", SampleTimedTriangleSound())
 }
 
 func TestSilence(t *testing.T) {

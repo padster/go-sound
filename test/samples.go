@@ -8,9 +8,24 @@ import (
 // samples.go includes all the example wavs used by the testing package,
 // and written .wav golden files to this folder.
 
-func SampleTimedSound() s.Sound {
+func SampleTimedSineSound() s.Sound {
 	// Includes: SineWave
 	return s.NewTimedSound(s.NewSineWave(261.63), 1000)
+}
+
+func SampleTimedSquareSound() s.Sound {
+	// Includes: SquareWave
+	return s.NewTimedSound(s.NewSquareWave(261.63), 1000)
+}
+
+func SampleTimedSawtoothSound() s.Sound {
+	// Includes: SawtoothWave
+	return s.NewTimedSound(s.NewSawtoothWave(261.63), 1000)
+}
+
+func SampleTimedTriangleSound() s.Sound {
+	// Includes: SquareWave
+	return s.NewTimedSound(s.NewSquareWave(261.63), 1000)
 }
 
 func SampleSilence() s.Sound {

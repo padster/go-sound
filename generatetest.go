@@ -10,7 +10,10 @@ import (
 
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
-	generate("test/timed.wav", test.SampleTimedSound())
+	generate("test/timed_sine.wav", test.SampleTimedSineSound())
+	generate("test/timed_square.wav", test.SampleTimedSquareSound())
+	generate("test/timed_sawtooth.wav", test.SampleTimedSawtoothSound())
+	generate("test/timed_triangle.wav", test.SampleTimedTriangleSound())
 	generate("test/silence.wav", test.SampleSilence())
 	generate("test/concat.wav", test.SampleConcat())
 	generate("test/normalsum.wav", test.SampleNormalSum())

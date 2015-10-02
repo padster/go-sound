@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	// "github.com/padster/go-sound/cq"
-	file "github.com/padster/go-sound/file"
+	// file "github.com/padster/go-sound/file"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/util"
@@ -28,7 +28,7 @@ var trebleKeys = [...]int{-1, -1, 00, -1, -1, 00, -1, -1, -1, 00, -1, -1, 00, -1
 
 func main() {
 	// NOTE: Not required, but shows how this can run on multiple threads.
-	runtime.GOMAXPROCS(4)
+	runtime.GOMAXPROCS(8)
 
 	// Switch on whichever demo you'd like here:
 	if false {
@@ -65,8 +65,8 @@ func renderMidi() {
 // music from http://www.piano-midi.de/noten/debussy/deb_clai.pdf
 func playClairDeLune() {
 	fmt.Println("Building sound.")
-	/*
 
+	/*
 	finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
 
 	// Left-hand split for a bit near the end.
@@ -108,27 +108,36 @@ func playClairDeLune() {
 	)
 
 	clairDeLune := s.SumSounds(leftHand, rightHand)
-	toPlay := s.NewDenseIIR(clairDeLune,
-		[]float64{0.8922, -2.677, 2.677, -0.8922},
-		[]float64{2.772, -2.57, 0.7961},
-	)
 	*/
-	// s1 := s.NewTimedSound(s.NewSineWave(10), 1000)
-	// s2 := s.NewTimedSound(s.NewSineWave(13), 1000)
+	// toPlay := s.NewDenseIIR(clairDeLune,
+		// []float64{0.8922, -2.677, 2.677, -0.8922},
+		// []float64{2.772, -2.57, 0.7961},
+	// )
+	
+	hz := 55.0 / 8
+	toPlay := s.SumSounds(
+		s.NewSineWave(hz),
+		s.NewSquareWave(hz),
+		s.NewSawtoothWave(hz),
+		s.NewTriangleWave(hz),
+	)
+	// toPlay := s.NewTimedSound(s.NewSineWave(500), 1000)
 	// toPlay := s.SumSounds(s1, s2)
 
-	toPlay := s.NewTimedSound(shephardTones(), 20000)
+	// toPlay := s.NewTimedSound(shephardTones(), 10000)
+	// toPlay := file.Read("greatgig.flac")
+	// file.Write(toPlay, "gg.wav")
 	// fmt.Printf("Playing: \n\t%s\n", toPlay)
-	// output.Render(toPlay, 2100, 400)
+	output.Render(toPlay, 2000, 400)
+	// output.PlayJack(toPlay)
 	// output.Play(toPlay)
-	file.Write(toPlay, "shephard.wav")
 
 	// output.Play(s.LoadFlacAsSound("toneslide.flac"))
 
 	// Optional: Write to a .wav file:
 	// clairDeLune.Reset()
 	// fmt.Println("Writing sound to file.")
-	// output.WriteSoundToWav(clairDeLune, "clairdelune.wav")
+	// file.Write(clairDeLune, "clairdelune.wav")
 
 	// Optional: Draw to screen:
 	// clairDeLune.Reset()
@@ -196,7 +205,7 @@ func shephardTones() s.Sound {
 		bases[2*i+1] = mid * float64(unsafeShift(i))
 	}
 	secondsPerOctave := 10
-	
+
 	maxHz := bases[0] * float64(unsafeShift(octaves))
 	downOctaves := 1.0 / float64(unsafeShift(octaves))
 
