@@ -21,9 +21,10 @@ func main() {
 	runtime.GOMAXPROCS(3)
 
 	sampleRate := s.CyclesPerSecond
-	minFreq := flag.Float64("minFreq", 110.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 3520.0, "maximum frequency")
-	bpo := flag.Int("bpo", 24, "Buckets per octave")
+	minFreq := flag.Float64("minFreq", 27.5 * 4.0, "minimum frequency")
+	maxFreq := flag.Float64("maxFreq", 3520.0 / 4.0, "maximum frequency")
+	octaves := 3
+	bpo := flag.Int("bpo", 72, "Buckets per octave")
 	flag.Parse()
 
 	remainingArgs := flag.Args()
@@ -42,6 +43,13 @@ func main() {
 	spectrogram := cq.NewSpectrogram(params)
 
 	inputSound := f.Read(inputFile)
+	// fmt.Printf("TODO: Go back to reading %s\n", inputFile)
+	// inputSound := s.NewTimedSound(
+	// 	s.SumSounds(
+	// 		s.NewSineWave(440.00),
+	// 		// s.NewSineWave(440.00),
+	// 		s.NewSineWave(698.46),
+	// 	), 10000)
 	inputSound.Start()
 	defer inputSound.Stop()
 
@@ -70,8 +78,8 @@ func main() {
 		soundChannel, specChannel := splitChannel(inputSound.GetSamples())
 		go func() {
 			columns := spectrogram.ProcessChannel(specChannel)
-			toShow := util.NewSpectrogramScreen(882, *bpo * 5 * 3)
-			toShow.Render(columns, 4)
+			toShow := util.NewSpectrogramScreen(882, *bpo * octaves, *bpo)
+			toShow.Render(columns, 1)
 		}()
 		output.Play(s.WrapChannelAsSound(soundChannel))	
 	}

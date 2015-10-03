@@ -10,7 +10,6 @@ import (
 func Read(path string) s.Sound {
     switch {
         case strings.HasSuffix(path, ".flac"):
-            panic("FLAC support currently broken, please use something else")
             return s.LoadFlacAsSound(path)
         case strings.HasSuffix(path, ".wav"):    
             return s.LoadWavAsSound(path, 0 /* TODO: average all channels. */)

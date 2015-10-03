@@ -7,26 +7,40 @@ import numpy as np
 import sys
 import subprocess
 
-bins = 24
-octaves = 5
+bins = 72
+octaves = 7
 # TODO: Pass bins to go run
 # subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
 ys1 = np.memmap("out.raw", dtype=np.complex64, mode="r").reshape((-1, bins*octaves)).T
 ys1 = np.nan_to_num(ys1.copy())
+
 # ys1[numpy.abs(ys1) < 1e-6] = 0
 
 def running_mean(x, N):
-    cumsum = np.cumsum(np.insert(x, 0, 0)) 
+    cumsum = np.cumsum(np.insert(x, 0, np.zeros(N))) 
     return (cumsum[N:] - cumsum[:-N]) / N 
 
 def plot_complex_spectrogram(ys, ax0, ax1):
-    values = np.log(np.abs(ys) + 1e-8)
-    # values = np.abs(ys)
-    # values = np.abs(ys)
-    ax0.imshow(values, vmin=-12, vmax=5, cmap='gray')
+    rows, cols = ys.shape
+    values = np.abs(ys)
 
-    colMax = np.max(values, axis=0)
-    ax1.plot(colMax)
+    # for i in range(0, rows):
+        # values[i, :] = running_mean(values[i, :], 32)
+
+    # values = np.log(np.abs(values) + 1e-8)
+    # values = np.log(np.abs(ys) + 1e-8)
+    # values = np.abs(ys)
+    # values = np.abs(ys)
+    # ax0.imshow(values, vmin=-12, vmax=5, cmap='gray')
+
+    # colMax = np.mean(values, axis=1)[::-1]
+    # colMax = np.insert(colMax, 0, 0)
+    # ax1.plot(colMax)
+    # for i in range(0, rows, 12):
+        # ax1.axvline(i, color='r')
+    # print "Max = %d" % np.argmax(colMax)
+    ax0.imshow(values, cmap='gray')
+    # ax1.plot(values[:, 256])
     # colSum = np.std(values, axis=0)
     # colSumD = np.diff(colSum)
     # ax1.plot(running_mean(colSum, 5))
@@ -51,7 +65,9 @@ def plot_complex_spectrogram(ys, ax0, ax1):
     # 50 changes
     #ax1.imshow(np.angle(ys), cmap='gist_rainbow')
 
-ys1 = ys1[:,::32]
+ys1 = ys1[:,::16]
+# ys1 = ys1[:,256:284]
+
 if len(sys.argv) < 3:
     fig, (ax0, ax1) = matplotlib.pylab.subplots(nrows=2, sharex=True)
     plot_complex_spectrogram(ys1, ax0, ax1)

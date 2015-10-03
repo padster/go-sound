@@ -3,7 +3,7 @@ package util
 
 import (
   "log"
-  "math"
+  // "math"
   "math/cmplx"
   "runtime"
 
@@ -27,6 +27,7 @@ type ComplexLine struct {
 type SpectrogramScreen struct {
   width           int
   height          int
+  bpo             int
   pixelsPerSample float64
   eventBuffer     *types.TypedBuffer
 
@@ -35,11 +36,12 @@ type SpectrogramScreen struct {
 }
 
 // NewScreen creates a new output screen of a given size and sample density.
-func NewSpectrogramScreen(width int, height int) *SpectrogramScreen {
+func NewSpectrogramScreen(width int, height int, bpo int) *SpectrogramScreen {
   samplesPerPixel := 1 // HACK - parameterize?
   s := SpectrogramScreen{
     width,
     height,
+    bpo,
     1.0 / float64(samplesPerPixel),
     types.NewTypedBuffer(width * samplesPerPixel),
     nil, // lines
@@ -90,12 +92,16 @@ func (s *SpectrogramScreen) RenderLineWithEvents(line *ComplexLine, events <-cha
   gl.Scaled(2/float64(s.width), 2/float64(s.height), 1.0)
   gl.ClearColor(0.0, 0.0, 0.0, 0.0)
 
+  gl.ShadeModel(gl.FLAT)
+
   // Actually start writing data to the buffer
   s.line.valueBuffer = types.NewTypedBuffer(int(float64(s.width) / s.pixelsPerSample))
   s.line.valueBuffer.GoPushChannel(hackWrapChannel(s.line.Values), sampleRate)
   if events != nil {
     s.eventBuffer.GoPushChannel(events, sampleRate)
   }
+
+  gl.Hint(gl.POINT_SMOOTH_HINT, gl.FASTEST)
 
   // Keep drawing while we still can (and should).
   for !window.ShouldClose() && !s.bufferFinished() {
@@ -135,14 +141,19 @@ func (s *SpectrogramScreen) drawSignal() {
       gl.End()
     }
   })
+
+  spacing := 1
   
+  gl.PointSize(1.0)
   gl.Begin(gl.POINTS)
   s.line.valueBuffer.Each(func(index int, value interface{}) {
     col := value.([]complex128)
     for i, v := range col { 
       // p = log(|v|) = [-20, 5], so map to [0, 1]
-      p := math.Log(cmplx.Abs(v) + 1.e-8)
-      grey := (p + 20.0) / 25.0
+      // p := math.Log(cmplx.Abs(v) + 1.e-8)
+      // grey := (p + 20.0) / 25.0
+      p := cmplx.Abs(v)
+      grey := p / 15.0
       if grey > 1.0 {
         grey = 1.0
       } else if grey < 0.0 {
@@ -150,15 +161,21 @@ func (s *SpectrogramScreen) drawSignal() {
       }
 
       // HACK: Stretch to make the darks darker and the whites whiter.
-      /*
-      grey = grey * grey * grey * grey // more space at the top, [0, 1]
-      grey = 2.0 * grey - 1.0 // [-1, 1]
-      grey = math.Tanh(3.0 * grey) // streched, still [-1, 1] 
-      grey = (grey + 1.0) / 2.0
-      */
+      // grey = grey * grey * grey * grey // more space at the top, [0, 1]
+      // grey = 2.0 * grey - 1.0 // [-1, 1]
+      // grey = math.Tanh(2.0 * grey) // streched, still [-1, 1] 
+      // grey = (grey + 1.0) / 2.0
+      
 
       gl.Color3d(grey, grey, grey)
-      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (3 * i + 1)))
+      // gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (3 * i + 0)))
+      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (spacing * i)))
+      // gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(s.height - 1 - (3 * i + 2))) 
+    }
+
+    gl.Color3ub(255, 0, 0)
+    for i := 1; i < 7; i++ {
+      gl.Vertex2d(float64(index)*s.pixelsPerSample, float64(i * spacing * s.bpo))
     }
   })
   gl.End()
