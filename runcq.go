@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math/cmplx"
 	"runtime"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
 	// Singlethreaded for now...
-	runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(4)
 
 	// Parse flags...
 	sampleRate := s.CyclesPerSecond
@@ -26,12 +27,12 @@ func main() {
 
 	remainingArgs := flag.Args()
 	if len(remainingArgs) < 1 || len(remainingArgs) > 2 {
-		panic("Required: <input> [<output>] filename arguments")
+		panic("Required: <input> [<input>] filename arguments")
 	}
 	inputFile := remainingArgs[0]
-	outputFile := ""
+	inputFile2 := inputFile
 	if len(remainingArgs) == 2 {
-		outputFile = remainingArgs[1]
+		inputFile2 = remainingArgs[1]
 	}
 
 	inputSound := f.Read(inputFile)
@@ -45,20 +46,55 @@ func main() {
 	cqInverse := cq.NewCQInverse(params)
 	latency := constantQ.OutputLatency + cqInverse.OutputLatency
 
+	// Two inputs version - TODO, switch back to input + output.
+	inputSound2 := f.Read(inputFile2)
+	inputSound2.Start()
+	defer inputSound2.Stop()
+	constantQ2 := cq.NewConstantQ(params)
+
 	startTime := time.Now()
 	// TODO: Skip the first 'latency' samples for the stream.
 	fmt.Printf("TODO: Skip latency (= %d) samples)\n", latency)
-	samples := cqInverse.ProcessChannel(shiftChannel(0, constantQ.ProcessChannel(inputSound.GetSamples())))
+	columns := constantQ.ProcessChannel(inputSound.GetSamples())
+	columns2 := constantQ2.ProcessChannel(inputSound2.GetSamples())
+	samples := cqInverse.ProcessChannel(mergeChannels(columns, columns2))
 	asSound := s.WrapChannelAsSound(samples)
 
-	if outputFile != "" {
-		f.Write(asSound, outputFile)
-	} else {
+	// if outputFile != "" {
+		// f.Write(asSound, outputFile)
+	// } else {
 		output.Play(asSound)
-	}
+	// }
 
 	elapsedSeconds := time.Since(startTime).Seconds()
 	fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)
+}
+
+func mergeChannels(in1 <-chan []complex128, in2 <-chan []complex128) chan []complex128 {
+	out := make(chan []complex128)
+	go func() {
+		fmt.Printf("Writing...\n")
+		for cIn1 := range in1 {
+			cIn2 := <-in2
+			if len(cIn1) != len(cIn2) {
+				panic("oops, columns don't match... :(")
+			}
+			cOut := make([]complex128, len(cIn1), len(cIn1))
+			for i := range cIn1 {
+				power1, angle1 := cmplx.Polar(cIn1[i])
+				power2, angle2 := cmplx.Polar(cIn2[i])
+				cOut[i] = cmplx.Rect(power1, angle1)
+				if i > 48 && i <= 72 {
+					cOut[i] = 0
+				}
+				// HACK variable to stop go complaining about unused variables :(
+				cIn2[i] = cmplx.Rect(power2, angle2)
+			}
+			out <- cOut
+		}
+		close(out)
+	}()
+	return out	
 }
 
 func shiftChannel(buckets int, in <-chan []complex128) chan []complex128 {

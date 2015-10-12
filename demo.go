@@ -114,13 +114,14 @@ func playClairDeLune() {
 		// []float64{2.772, -2.57, 0.7961},
 	// )
 	
-	hz := 440.0
-	toPlay := s.SumSounds(
-		s.NewSineWave(hz),
+	// hz := 440.0
+	// toPlay := s.SumSounds(
+		// s.NewSineWave(hz),
 		// s.NewSquareWave(hz),
 		// s.NewSawtoothWave(hz),
 		// s.NewTriangleWave(hz),
-	)
+	// )
+	toPlay := s.NewJackInput("go-sound-in")
 	// toPlay := s.NewTimedSound(s.NewSineWave(500), 1000)
 	// toPlay := s.SumSounds(s1, s2)
 
@@ -129,8 +130,8 @@ func playClairDeLune() {
 	// file.Write(toPlay, "gg.wav")
 	// fmt.Printf("Playing: \n\t%s\n", toPlay)
 	// output.Render(toPlay, 2000, 400)
-	output.PlayJack(toPlay)
-	// output.Play(toPlay)
+	// output.PlayJack(toPlay)
+	output.Play(toPlay)
 
 	// output.Play(s.LoadFlacAsSound("toneslide.flac"))
 
