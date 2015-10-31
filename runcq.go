@@ -83,12 +83,12 @@ func mergeChannels(in1 <-chan []complex128, in2 <-chan []complex128) chan []comp
 			for i := range cIn1 {
 				power1, angle1 := cmplx.Polar(cIn1[i])
 				power2, angle2 := cmplx.Polar(cIn2[i])
-				cOut[i] = cmplx.Rect(power1, angle1)
-				if i > 48 && i <= 72 {
-					cOut[i] = 0
-				}
+				cOut[i] = cmplx.Rect(power1, angle2)
+				// if i > 48 && i <= 72 {
+					// cOut[i] = 0
+				// }
 				// HACK variable to stop go complaining about unused variables :(
-				cIn2[i] = cmplx.Rect(power2, angle2)
+				cIn2[i] = cmplx.Rect(power2, angle1)
 			}
 			out <- cOut
 		}
