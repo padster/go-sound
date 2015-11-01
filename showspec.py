@@ -7,7 +7,7 @@ import numpy as np
 import sys
 import subprocess
 
-bins = 72
+bins = 24
 octaves = 7
 # TODO: Pass bins to go run
 # subprocess.call(["go", "run", "cqspectrogram.go"] + sys.argv[1:2])
@@ -23,11 +23,11 @@ def running_mean(x, N):
 def plot_complex_spectrogram(ys, ax0, ax1):
     rows, cols = ys.shape
     values = np.abs(ys)
+    values = 20 * np.log10(np.abs(values) + 1e-8)
 
     # for i in range(0, rows):
         # values[i, :] = running_mean(values[i, :], 32)
 
-    # values = np.log(np.abs(values) + 1e-8)
     # values = np.log(np.abs(ys) + 1e-8)
     # values = np.abs(ys)
     # values = np.abs(ys)
@@ -63,9 +63,17 @@ def plot_complex_spectrogram(ys, ax0, ax1):
         # ax1.axvline(note, color='r')
     # print "# notes = %d" % len(notes)
     # 50 changes
-    #ax1.imshow(np.angle(ys), cmap='gist_rainbow')
+    ang = np.angle(ys)
+    ang = np.diff(ang)
+    ang[np.where(ang > np.pi)] -= 2 * np.pi
+    ang[np.where(ang < -np.pi)] += 2 * np.pi
 
-ys1 = ys1[:,::16]
+
+    # ax1.imshow(ang, cmap='gist_rainbow')
+    ax1.imshow(ang, cmap='gray')
+    # ax1.plot(values[100])
+
+# ys1 = ys1[:,::16]
 # ys1 = ys1[:,256:284]
 
 if len(sys.argv) < 3:

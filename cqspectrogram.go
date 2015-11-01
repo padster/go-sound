@@ -21,10 +21,10 @@ func main() {
 	runtime.GOMAXPROCS(3)
 
 	sampleRate := s.CyclesPerSecond
-	minFreq := flag.Float64("minFreq", 27.5 * 4.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 3520.0 / 4.0, "maximum frequency")
-	octaves := 3
-	bpo := flag.Int("bpo", 72, "Buckets per octave")
+	octaves := 7
+	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
+	maxFreq := flag.Float64("maxFreq", 55.0 * float64(cq.UnsafeShift(octaves)), "maximum frequency")
+	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 
 	remainingArgs := flag.Args()

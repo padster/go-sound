@@ -40,7 +40,7 @@ func (spec *Spectrogram) ProcessChannel(samples <-chan float64) <-chan []complex
 				first = false;
 			} else {
 				if len(column) == height {
-					full := fullInterpolate(buffer)
+					full := spec.fullInterpolate(buffer)
 					for _, ic := range full {
 						result <- ic
 					}
@@ -111,24 +111,6 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 		return make([][]complex128, 0, 0)
 	}
 
-	//!!! This is surprisingly messy. I must be missing something.
-
-	// We can only return any data when we have at least one column
-	// that has the full height in the buffer, that is not the first
-	// column.
-	//
-	// If the first col has full height, and there is another one
-	// later that also does, then we can interpolate between those, up
-	// to but not including the second full height column.  Then we
-	// drop and return the columns we interpolated, leaving the second
-	// full-height col as the first col in the buffer. And repeat as
-	// long as enough columns are available.
-	//
-	// If the first col does not have full height, then (so long as
-	// we're following the logic above) we must simply have not yet
-	// reached the first full-height column in the CQ output, and we
-	// can interpolate nothing.
-
 	firstFullHeight, secondFullHeight := -1, -1
 
 	for i := 0; i < width; i++ {
@@ -156,15 +138,16 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 		}
 	} else {
 		// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
-		out := fullInterpolate(spec.buffer[:secondFullHeight + 1])
+		out := spec.fullInterpolate(spec.buffer[:secondFullHeight + 1])
 		spec.buffer = spec.buffer[secondFullHeight:]
 		return append(out, spec.fetchInterpolated(insist)...)
 	}
 }
 
-func fullInterpolate(values [][]complex128) [][]complex128 {
+func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 	// Last entry is the interpolation end boundary, hence the -1
 	width, height := len(values) - 1, len(values[0]) 
+	bpo := spec.cq.bpo()
 
 	if height != len(values[width]) {
 		fmt.Printf("interpolateInPlace requires start and end arrays to be the same (full) size, %d != %d\n",
@@ -196,11 +179,35 @@ func fullInterpolate(values [][]complex128) [][]complex128 {
 		if spacing < 2 {
 			continue
 		}
+		thisOctave, lastOctave := y, y - bpo	
+		if lastOctave < 0 {
+			panic("Oops, can't interpolate in the first octave?")
+		}
 
 		for i := 0; i + spacing <= width; i += spacing {
+			// NOTE: can't use result[] instead of values[] here, as result[] doesn't include the full right column yet.
+			thisStart, thisEnd := values[i][thisOctave], values[i + spacing][thisOctave]
+
+			lastPhaseStart := cmplx.Phase(values[i][lastOctave])
+			lastPhaseAt := lastPhaseStart
 			for j := 1; j < spacing; j++ {
+				lastPhaseAt = makeCloser(lastPhaseAt, cmplx.Phase(result[i + j][lastOctave]))
+			}
+			totalLastPhaseDiff := lastPhaseAt - lastPhaseStart
+
+			// Tweak this to allow the slope of the lower octave phase change to differ from the higher octave's
+			upperScale := 1.0
+			targetLastPhase := makeCloser(upperScale * totalLastPhaseDiff, cmplx.Phase(thisEnd) - cmplx.Phase(thisStart))
+			diffScale := 0.0
+			if math.Abs(totalLastPhaseDiff) > 1e-5 {
+				diffScale = targetLastPhase / totalLastPhaseDiff
+			}
+
+			lastPhaseAt = lastPhaseStart
+			for j := 1; j < spacing; j++ {
+				lastPhaseAt := makeCloser(lastPhaseAt, cmplx.Phase(result[i + j][lastOctave]))
 				proportion := float64(j) / float64(spacing)
-				interpolated := logInterpolate(values[i][y], values[i + spacing][y], proportion)
+				interpolated := logInterpolate(thisStart, thisEnd, proportion, lastPhaseStart + (lastPhaseAt - lastPhaseStart) * diffScale)
 				result[i + j][y] = interpolated
 			}
 		}
@@ -209,30 +216,29 @@ func fullInterpolate(values [][]complex128) [][]complex128 {
 	return result;
 }
 
-func logInterpolate(a complex128, b complex128, proportion float64) complex128 {
-	// TODO - precalc arg/norm outside the loop.
-	if cmplx.Abs(a) < cmplx.Abs(b) {
-		return logInterpolate(b, a, 1-proportion)
+func logInterpolate(this1, thisN complex128, proportion float64, interpolatedPhase float64) complex128 {
+	if cmplx.Abs(this1) < cmplx.Abs(thisN) {
+		return logInterpolate(thisN, this1, 1 - proportion, interpolatedPhase)
 	}
 
-	z := b / a
-	zArg := cmplx.Phase(z)
-	if zArg > 0 {
-		// aArg -> bArg, or aArg -> bArg + 2PI, whichever is closer
-		if zArg > math.Pi {
-			zArg -= 2 * math.Pi
-		}
-	} else {
-		// aArg -> bArg, or aArg -> bArg - 2PI, whichever is closer
-		if zArg < -math.Pi {
-			zArg += 2 * math.Pi
-		}
-	}
-
+	// Simple linear interpolation for DB power.
+	z := thisN / this1
 	zLogAbs := math.Log(cmplx.Abs(z))
-	cArg, cLogAbs := zArg * proportion, zLogAbs * proportion
+	cLogAbs := zLogAbs * proportion
 	cAbs := math.Exp(cLogAbs)
-	return a * cmplx.Rect(cAbs, cArg)
+
+	return cmplx.Rect(cAbs * cmplx.Abs(this1), interpolatedPhase)
+}
+
+// Return the closest number X to toShift, such that X mod 2Pi == modTwoPi
+func makeCloser(toShift, modTwoPi float64) float64 {
+	if math.IsNaN(modTwoPi) {
+		modTwoPi = 0.0
+	}
+	// Minimize |toShift - (modTwoPi + pi * cyclesToAdd)|
+	// toShift - modTwoPi - pi * CTA = 0
+	cyclesToAdd := (toShift - modTwoPi) / math.Pi
+	return modTwoPi + float64(Round(cyclesToAdd)) * math.Pi
 }
 
 func holdInterpolate(values [][]complex128) [][]complex128 {
@@ -246,4 +252,14 @@ func holdInterpolate(values [][]complex128) [][]complex128 {
 		values[i] = append(values[i], values[i - 1][from:height]...)
 	}
 	return values;
+}
+
+// HACK
+func Round(value float64) int64 {
+	if value < 0.0 {
+		value -= 0.5
+	} else {
+		value += 0.5
+	}
+	return int64(value)
 }

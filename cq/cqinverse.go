@@ -150,9 +150,13 @@ func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 
 			buffer[at] = s
 			at++
 		}
+		/*
+		HACK - figure out how to pad this properly...
+		Currently we have buffer[:at], but it is too short to cqi.Process()
 		for _, c := range cqi.Process(buffer[:at]) {
 			result <- c
 		}
+		*/
 		for _, c := range cqi.GetRemainingOutput() {
 			result <- c
 		}
@@ -179,7 +183,7 @@ func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 	}
 
 	blockWidth := apf * unsafeShift(octaves-1)
-	if widthProvided%blockWidth != 0 {
+	if widthProvided % blockWidth != 0 {
 		fmt.Printf("ERROR: inverse process block size (%d) must be a multiple of atoms * 2^(octaves - 1) = %d * 2^(%d - 1) = %d\n",
 			widthProvided, apf, cqi.octaves, blockWidth)
 		panic("CQI process block size incorrect")

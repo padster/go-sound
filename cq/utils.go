@@ -59,6 +59,11 @@ func unsafeShift(s int) int {
 	return 1 << uint(s)
 }
 
+// TODO: Move into global exported utils
+func UnsafeShift(s int) int {
+	return unsafeShift(s)
+}
+
 func clampUnit(v float64) float64 {
 	switch {
 	case v > 1.0:
