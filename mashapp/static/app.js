@@ -1,4 +1,6 @@
-console.log('loaded!')
+(function(W) {
+
+W.console.log('loaded!')
 
 // Visual context
 C = document.getElementById('surface');
@@ -11,8 +13,40 @@ CTX.imageSmoothingEnabled = false;
 // Audio context
 AC = new AudioContext();
 
+lines = [];
+
+ROW_HEIGHT = 120;
+ROW_GAP = 30;
+INDEX_STEP = 256;
+
+addLine = function(sound, xStart) {
+  newLine = [{ sound: sound, start: xStart }];
+  lines.push(newLine)
+};
+
+fixRowHeight = function(rows) {
+  if (rows < 1) { rows = 1; }
+  H = rows * ROW_HEIGHT + (rows + 1) * ROW_GAP;
+  C.height = H;
+  C.style.height = H + "px";
+};
+
+drawRows = function() {
+  fixRowHeight(lines.length);
+  for (var i = 0; i < lines.length; i++) {
+    drawRow(i, lines[i]);
+  }
+};
+
+drawRow = function(index, row) {
+  for (var i = 0; i < row.length; i++) {
+    height = ROW_GAP + index * (ROW_HEIGHT + ROW_GAP);
+    drawSamples(row[i].sound.samples, INDEX_STEP, row[i].start, 1.0, height, height + ROW_HEIGHT);
+  }
+};
 
 playSamples = function(samples) {
+  /*
   var buffer = AC.createBuffer(1, samples.length, 44100);
   var channel = buffer.getChannelData(0);
   for (var i = 0; i < samples.length; i++) { 
@@ -22,6 +56,8 @@ playSamples = function(samples) {
   source.buffer = buffer;
   source.connect(AC.destination);
   source.start();
+  */
+  console.log("TODO: reenable sound play");
 };
 
 drawSamples = function(samples, idStep, xStart, xStep, yLo, yHi) {
@@ -44,7 +80,6 @@ drawSamples = function(samples, idStep, xStart, xStep, yLo, yHi) {
   CTX.lineWidth = 1;
   CTX.strokeStyle = '#0000ff';
   CTX.stroke();
-  // console.log("Ys: %O", ys);
 };
 
 handleNewInput = function(data) {
@@ -62,9 +97,23 @@ handleNewInput = function(data) {
   // rewrite base-64 to floats
   data.samples = new Float32Array(buffer);
   console.log("LOADED! %O", data);
-  drawSamples(data.samples, 1000, 0, 0.5, 0, H);
-  playSamples(data.samples);
+
+  addLine(data, 0);
+  drawRows();
+  // drawSamples(data.samples, 1000, 0, 0.5, 0, H);
+  // playSamples(data.samples);
 };
+
+zoomSlider = document.getElementById('zoomSlider');
+zoomValue = document.getElementById('zoomValue');
+zoomValue.innerText = zoomSlider.value;
+INDEX_STEP = Math.pow(2, zoomSlider.value);
+$(zoomSlider).on('change', function() {
+  zoomValue.innerText = zoomSlider.value;
+  INDEX_STEP = Math.pow(2, zoomSlider.value);
+  drawRows();
+});
+
 
 $(document.forms.loadFile).on('submit', function() {
   path = document.forms.loadFile.path.value;
@@ -88,3 +137,12 @@ $(document.forms.loadFile).on('submit', function() {
   }
   return false;
 });
+
+W.C = C;
+W.CTX = CTX;
+W.AC = AC;
+
+// HACK - split drawing code into separate file
+W.lines = lines;
+
+})(window);

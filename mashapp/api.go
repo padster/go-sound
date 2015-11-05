@@ -21,7 +21,7 @@ type LoadInput struct {
     Path string `json:"path"`
 }
 type LoadOutput struct {
-    ID int `json:"path"`
+    ID int `json:"id"`
     Samples string `json:"samples"`
 }
 func (s *MashAppServer) wrapLoad(w http.ResponseWriter, r *http.Request) {
