@@ -53,7 +53,7 @@ func main() {
   resultSound := s.WrapChannelAsSound(soundChannel)
 
   // HACK: Amplify for now.
-  resultSound = s.MultiplyWithClip(resultSound, 4.0)
+  resultSound = s.MultiplyWithClip(resultSound, 2.0)
 
   if argCount == 2 {
     f.Write(resultSound, remainingArgs[1])

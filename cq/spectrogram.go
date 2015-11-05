@@ -196,7 +196,7 @@ func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 			totalLastPhaseDiff := lastPhaseAt - lastPhaseStart
 
 			// Tweak this to allow the slope of the lower octave phase change to differ from the higher octave's
-			upperScale := 1.0
+			upperScale := 0.5
 			targetLastPhase := makeCloser(upperScale * totalLastPhaseDiff, cmplx.Phase(thisEnd) - cmplx.Phase(thisStart))
 			diffScale := 0.0
 			if math.Abs(totalLastPhaseDiff) > 1e-5 {
