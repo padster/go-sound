@@ -9,10 +9,15 @@ import (
 type MashAppServer struct {
     port int
     rootPath string
+    state *ServerState
 }
 
 func NewServer(port int, rootPath string) *MashAppServer {
-    return &MashAppServer{port, rootPath}
+    return &MashAppServer{
+        port, 
+        rootPath,
+        NewServerState(),
+    }
 }
 
 func (s *MashAppServer) Serve() {
@@ -20,6 +25,9 @@ func (s *MashAppServer) Serve() {
     fmt.Printf("Serving http://localhost%s/\n", addr)
 
     serveStaticFiles(fmt.Sprintf("%s/static", s.rootPath), "static")
+
+    s.serveRPCs()
+
     http.HandleFunc("/", s.appHandler)
     
     http.ListenAndServe(addr, nil)
