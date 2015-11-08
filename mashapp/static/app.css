@@ -26,6 +26,12 @@ canvas {
   cursor: pointer;
 }
 
+#playLine {
+  position: absolute;
+  height: 100px;
+  border: 1px solid red;
+}
+
 #zoomSlider {
   width: 400px;
 }

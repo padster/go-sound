@@ -10,6 +10,8 @@ C.width = W; C.height = H;
 var CTX = C.getContext('2d');
 CTX.imageSmoothingEnabled = false;
 
+var playLine = document.getElementById('playLine');
+
 // Visual controls
 var zoomSlider = document.getElementById('zoomSlider');
 var zoomValue = document.getElementById('zoomValue');
@@ -37,13 +39,29 @@ R.drawRows = function() {
   }
 };
 
+R.showPlayLineAtSample = function(sample) {
+  if (playLine.style.display == 'none') {
+    playLine.style.display = 'block';
+    cRect = C.getBoundingClientRect();
+    playLine.style.height = cRect.height + "px";
+    playLine.style.top = cRect.top + "px";
+  }
+  playLine.style.left = (sample * PIXELS_PER_SAMPLE) + 'px';
+};
+R.hidePlayLine = function() {
+  playLine.style.display = 'none';
+};
+
+
+
+
+
 var drawSelectionRange = function() {
   x1 = PIXELS_PER_SAMPLE * VM.startSample;
   x2 = PIXELS_PER_SAMPLE * VM.endSample;
 
   CTX.fillStyle = '#888';
   CTX.fillRect(x1, 0, x2 - x1, H);
-  console.log("(%d, %d), size (%d, %d)", x1, 0, x2 - x1, H)
 };
 
 var drawSelectionLine = function() {

@@ -50,7 +50,11 @@ $(document.forms.loadFile).on('submit', function() {
 
 
 $(document.getElementById('playButton')).on('click', function() {
-  S.playSelection();
+  S.playSelection(function(sampleAt) {
+    R.showPlayLineAtSample(sampleAt);
+  }, function() {
+    R.hidePlayLine();
+  });
 });
 
 
