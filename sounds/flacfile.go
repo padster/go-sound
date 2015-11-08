@@ -6,8 +6,8 @@ import (
   "os"
   "strings"
 
-  // flac "github.com/cocoonlife/goflac"
-  flac "github.com/padster/go-sound/fakeflac"
+  flac "github.com/cocoonlife/goflac"
+  // flac "github.com/padster/go-sound/fakeflac"
 )
 
 // A flacFileSound is parameters to the algorithm that converts a channel from a .flac file into a sound.

@@ -6,8 +6,8 @@ import (
   "os"
   "strings"
 
-  // flac "github.com/cocoonlife/goflac"
-  flac "github.com/padster/go-sound/fakeflac"
+  flac "github.com/cocoonlife/goflac"
+  // flac "github.com/padster/go-sound/fakeflac"
   s "github.com/padster/go-sound/sounds"
 )
 
