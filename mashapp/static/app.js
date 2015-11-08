@@ -1,22 +1,7 @@
-(function(W, R, VM) {
+(function(W, R, S, VM) {
 
 // Audio context
 var AC = new AudioContext();
-
-playSamples = function(samples) {
-  /*
-  var buffer = AC.createBuffer(1, samples.length, 44100);
-  var channel = buffer.getChannelData(0);
-  for (var i = 0; i < samples.length; i++) { 
-    channel[i] = samples[i];
-  }
-  var source = AC.createBufferSource();
-  source.buffer = buffer;
-  source.connect(AC.destination);
-  source.start();
-  */
-  console.log("TODO: reenable sound play");
-};
 
 handleNewInput = function(data) {
   raw = window.atob(data.samples)
@@ -36,7 +21,6 @@ handleNewInput = function(data) {
 
   VM.addLine(data, 0);
   R.drawRows();
-  playSamples(data.samples);
 };
 
 
@@ -45,6 +29,7 @@ $(document.forms.loadFile).on('submit', function() {
   if (!path) {
     window.alert("Must have a path!");
   } else {
+    // TODO - modal 'loading' popup.
     console.log("Loading " + path + "...");
     $.ajax({
       url: "/_/load",
@@ -63,4 +48,10 @@ $(document.forms.loadFile).on('submit', function() {
   return false;
 });
 
-})(window, window.render, window.viewmodel);
+
+$(document.getElementById('playButton')).on('click', function() {
+  S.playSelection();
+});
+
+
+})(window, window.render, window.sound, window.viewmodel);
