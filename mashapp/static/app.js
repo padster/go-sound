@@ -24,13 +24,13 @@ handleNewInput = function(data) {
 };
 
 
-$(document.forms.loadFile).on('submit', function() {
+$(document.forms.loadFile.load).on('click', function(e) {
   path = document.forms.loadFile.path.value;
   if (!path) {
     window.alert("Must have a path!");
   } else {
     // TODO - modal 'loading' popup.
-    console.log("Loading " + path + "...");
+    $(this).blur();
     $.ajax({
       url: "/_/load",
       type: "POST",
@@ -49,13 +49,31 @@ $(document.forms.loadFile).on('submit', function() {
 });
 
 
-$(document.getElementById('playButton')).on('click', function() {
-  S.playSelection(function(sampleAt) {
-    R.showPlayLineAtSample(sampleAt);
-  }, function() {
-    R.hidePlayLine();
-  });
-});
+// TODO - split out into 'actions'?
+var handlePlayStop = function() {
+  // 'Stop' currently showing.
+  if (S.isPlaying()) {
+    S.stop();
+    R.setPlaying(false);
+  } else {
+    R.setPlaying(S.playSelection(function(sampleAt) {
+      R.showPlayLineAtSample(sampleAt);
+    }, function() {
+      R.hidePlayLine();
+      R.setPlaying(false);
+    }));
+  }
+};
+
+
+$(document.getElementById('playButton')).on('click', handlePlayStop);
+document.body.addEventListener('keypress', function(e) {
+  if (e.keyCode == 32) {
+    handlePlayStop();
+  }
+}, true);
+
+// $('input, select').keypress(function(event) { return event.keyCode != 32; });
 
 
 })(window, window.render, window.sound, window.viewmodel);

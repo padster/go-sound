@@ -1,6 +1,6 @@
 window.render = {};
 
-(function(R, VM) {
+(function(WIN, R, VM) {
 
 // Visual context
 var C = document.getElementById('surface');
@@ -10,6 +10,7 @@ C.width = W; C.height = H;
 var CTX = C.getContext('2d');
 CTX.imageSmoothingEnabled = false;
 
+var playButton = document.getElementById('playButton');
 var playLine = document.getElementById('playLine');
 
 // Visual controls
@@ -46,12 +47,27 @@ R.showPlayLineAtSample = function(sample) {
     playLine.style.height = cRect.height + "px";
     playLine.style.top = cRect.top + "px";
   }
-  playLine.style.left = (sample * PIXELS_PER_SAMPLE) + 'px';
+
+  var scrollElt = document.body;
+  var windowWidth = $(WIN).width();
+  var firstVisible = scrollElt.scrollLeft;
+  var lastVisible = firstVisible + windowWidth;
+  var placement = (sample * PIXELS_PER_SAMPLE);
+
+  playLine.style.left = placement + 'px';
+
+  if (placement < firstVisible) {
+    scrollElt.scrollLeft = placement;
+  } else if (placement > lastVisible) {
+    scrollElt.scrollLeft = Math.min(lastVisible, W - windowWidth);
+  }  
 };
 R.hidePlayLine = function() {
   playLine.style.display = 'none';
 };
-
+R.setPlaying = function(isPlaying) {
+  playButton.innerText = isPlaying ? 'stop' : 'play_arrow';
+};
 
 
 
@@ -213,4 +229,4 @@ var updateSlider = function() {
 updateSlider();
 $(zoomSlider).on('change', updateSlider);
 
-})(window.render, window.viewmodel);
+})(window, window.render, window.viewmodel);
