@@ -4,7 +4,7 @@
 var AC = new AudioContext();
 
 playSamples = function(samples) {
-  
+  /*
   var buffer = AC.createBuffer(1, samples.length, 44100);
   var channel = buffer.getChannelData(0);
   for (var i = 0; i < samples.length; i++) { 
@@ -14,8 +14,8 @@ playSamples = function(samples) {
   source.buffer = buffer;
   source.connect(AC.destination);
   source.start();
-  
-  //console.log("TODO: reenable sound play");
+  */
+  console.log("TODO: reenable sound play");
 };
 
 handleNewInput = function(data) {
