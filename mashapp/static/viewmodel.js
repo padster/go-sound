@@ -3,23 +3,36 @@ window.viewmodel = {};
 (function(VM) {
 
 VM.lines = [];
-
+VM.cachedLength = null;
 VM.startSample = null;
 VM.endSample = null;
 
-VM.addLine = function(sound, xStart) {
-  VM.lines.push([{ sound: sound, start: xStart }])
+VM.totalSampleLength = function() {
+  if (VM.cachedLength == null) {
+    VM.cachedLength = 0;
+    for (var i in VM.lines) {
+      for (var j in VM.lines[i]) {
+        var block = VM.lines[i][j];
+        VM.cachedLength = Math.max(VM.cachedLength, block.start + block.sound.samples.length);
+      }
+    }
+  }
+  return VM.cachedLength;
 };
 
+VM.addLine = function(sound, xStart) {
+  VM.lines.push([{ sound: sound, start: xStart }])
+  VM.cachedLength = null;
+};
+
+
 VM.getSelectedSamples = function() {
-  if (VM.startSample === null || VM.endSample === null) {
-    // TODO: Default to startSample = 0, endSample = length.
-    return [];
-  }
+  var start = VM.startSample !== null ? VM.startSample : 0;
+  var end = VM.endSample !== null ? VM.endSample : VM.totalSampleLength();
 
   var totalSamples = null;
   for (var i in VM.lines) {
-    var lineSamples = getSelectedSamplesForLine(i);
+    var lineSamples = getSamplesForLine(i, start, end);
     totalSamples = mergeSamplesInPlace(totalSamples, lineSamples);
   }
   return totalSamples || [];
@@ -39,25 +52,24 @@ var mergeSamplesInPlace = function(s1, s2) {
   return s1;
 };
 
-var getSelectedSamplesForLine = function(i) {
+var getSamplesForLine = function(i, start, end) {
   var totalSamples = null;
   for (var j = 0; j < VM.lines[i].length; j++) {
-    var blockSamples = getSelectedSamplesForBlock(i, j);
+    var blockSamples = getSamplesForBlock(i, j, start, end);
     totalSamples = mergeSamplesInPlace(totalSamples, blockSamples);
   }
   return totalSamples;
 };
 
-var getSelectedSamplesForBlock = function(i, j) {
+var getSamplesForBlock = function(i, j, start, end) {
   var block = VM.lines[i][j];
   var bS = block.start, bE = block.start + block.sound.samples.length;
-  var sS = VM.startSample, sE = VM.endSample;
-  if (!intersect(sS, sE, bS, bE)) {
+  if (!intersect(start, end, bS, bE)) {
     return null;
   }
 
   var result = [];
-  for (var at = sS; at < sE; at++) {
+  for (var at = start; at < end; at++) {
     var s = 0.0;
     if (at >= bS && at < bE) {
       s = block.sound.samples[at - bS];

@@ -13,6 +13,19 @@ canvas {
   height: 100px;
 }
 
+#controls {
+  display: flex;
+  height: 50px;
+  border-bottom: 1px solid blue;
+}
+
+#controls i {
+  font-size: 36px;
+  height: 40px;
+  margin: 5px 0;
+  cursor: pointer;
+}
+
 #zoomSlider {
   width: 400px;
 }
