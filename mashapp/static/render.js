@@ -18,11 +18,14 @@ var INDEX_STEP = Math.pow(2, zoomSlider.value);
 $(zoomSlider).on('change', function() {
   zoomValue.innerText = zoomSlider.value;
   INDEX_STEP = Math.pow(2, zoomSlider.value);
+  PIXELS_PER_SAMPLE = 1 / INDEX_STEP;
   R.drawRows();
 });
 
 var ROW_HEIGHT = 120;
 var ROW_GAP = 30;
+
+var PIXELS_PER_SAMPLE = 1 / INDEX_STEP;
 
 R.drawRows = function() {
   fixRowHeight(VM.lines.length);
@@ -33,8 +36,8 @@ R.drawRows = function() {
 
 var drawRow = function(index, row) {
   for (var i = 0; i < row.length; i++) {
-    height = ROW_GAP + index * (ROW_HEIGHT + ROW_GAP);
-    drawSamples(row[i].sound.samples, INDEX_STEP, row[i].start, 1.0, height, height + ROW_HEIGHT);
+    height = ROW_GAP / 2 + index * (ROW_HEIGHT + ROW_GAP);
+    drawSamples(row[i].sound.samples, INDEX_STEP, row[i].start, PIXELS_PER_SAMPLE, height, height + ROW_HEIGHT);
   }
 };
 
@@ -50,7 +53,7 @@ var drawSamples = function(samples, idStep, xStart, xStep, yLo, yHi) {
     } else {
       CTX.lineTo(x, y);
     }
-    x += xStep;
+    x += PIXELS_PER_SAMPLE * idStep;
   }
 
   CTX.lineWidth = 1;
@@ -60,9 +63,17 @@ var drawSamples = function(samples, idStep, xStart, xStep, yLo, yHi) {
 
 var fixRowHeight = function(rows) {
   if (rows < 1) { rows = 1; }
-  H = rows * ROW_HEIGHT + (rows + 1) * ROW_GAP;
+  H = rows * ROW_HEIGHT + rows * ROW_GAP;
   C.height = H;
   C.style.height = H + "px";
 };
+
+$(C).on('click', function(e) {
+  var x = e.offsetX;
+  var y = e.offsetY;
+  var sampleX = (x / PIXELS_PER_SAMPLE) | 0;
+  var trackY = (y / (ROW_HEIGHT + ROW_GAP)) | 0;
+  console.log("Clicked on sample %d in track %d", sampleX, trackY);
+});
 
 })(window.render, window.viewmodel);

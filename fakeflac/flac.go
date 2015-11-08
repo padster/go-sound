@@ -9,6 +9,8 @@ type Decoder struct {
 }
 
 type Encoder struct {
+	Depth    int
+	Rate     int
 }
 
 type Frame struct {

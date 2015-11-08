@@ -6,7 +6,7 @@ import (
   "os"
   "strings"
 
-  // goflac "github.com/cocoonlife/goflac"
+  // flac "github.com/cocoonlife/goflac"
   flac "github.com/padster/go-sound/fakeflac"
   s "github.com/padster/go-sound/sounds"
 )
@@ -25,7 +25,7 @@ func WriteSoundToFlac(sound s.Sound, path string) error {
   sampleRate := int(s.CyclesPerSecond)
   depth := 24
 
-  fileWriter, err := goflac.NewEncoder(path, 1, depth, sampleRate)
+  fileWriter, err := flac.NewEncoder(path, 1, depth, sampleRate)
   if err != nil {
     fmt.Printf("Error opening file to write to! %v\n", err)
     panic("Can't write file")
@@ -54,7 +54,7 @@ func WriteSoundToFlac(sound s.Sound, path string) error {
   return nil;
 }
 
-func writeFrame(fileWriter *goflac.Encoder, samples []float64) {
+func writeFrame(fileWriter *flac.Encoder, samples []float64) {
   n := len(samples)
 
   frameBuffer := make([]int32, n, n)
@@ -62,7 +62,7 @@ func writeFrame(fileWriter *goflac.Encoder, samples []float64) {
     frameBuffer[i] = intFromFloatWithDepth(v, fileWriter.Depth)
   }
 
-  frame := goflac.Frame{
+  frame := flac.Frame{
     1,                  /* channels */
     fileWriter.Depth,   /* depth */
     fileWriter.Rate,    /* rate */
