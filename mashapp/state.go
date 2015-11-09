@@ -14,7 +14,7 @@ type ServerState struct {
 }
 
 type InputSound struct {
-    samples []float64
+    samples GoSamples
 }
 
 func NewServerState() *ServerState {

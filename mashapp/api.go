@@ -17,16 +17,17 @@ func (s *MashAppServer) serveRPC(path string, handleFunc func(rw http.ResponseWr
     http.HandleFunc(rpcPath, handleFunc)
 }
 
-type LoadInput struct {
+type LoadRequest struct {
     Path string `json:"path"`
 }
-type LoadOutput struct {
-    ID int `json:"id"`
-    Samples string `json:"samples"`
+type LoadResponse struct {
+    Input InputMeta `json:"meta"`
+    Samples JsonSamples `json:"samples"`
 }
 func (s *MashAppServer) wrapLoad(w http.ResponseWriter, r *http.Request) {
-    var in LoadInput
+    var in LoadRequest
     err := json.NewDecoder(r.Body).Decode(&in)
+    fmt.Printf("%v\n", in)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
@@ -39,18 +40,23 @@ func (s *MashAppServer) wrapLoad(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.Write(js)
 }
-func (s *MashAppServer) performLoad(in LoadInput) LoadOutput {
+func (s *MashAppServer) performLoad(req LoadRequest) LoadResponse {
     // TODO: error handling
-    id, sound := s.state.loadSound(in.Path)
+    id, sound := s.state.loadSound(req.Path)
 
-    return LoadOutput{
-        id,
-        floatsToBase64(sound.samples),
+    // TODO - pitch and duration handling
+    meta := InputMeta{
+        id, req.Path, false /* Muted */,
+        len(sound.samples), len(sound.samples), /* Duration */
+        0, 0, /* Pitch */
     }
+
+    return LoadResponse{meta, floatsToBase64(sound.samples)}
 }
 
-func floatsToBase64(values []float64) string {
-    return bytesToBase64(floatsToBytes(values))
+func floatsToBase64(values GoSamples) JsonSamples {
+    asFloats := ([]float64)(values)
+    return JsonSamples(bytesToBase64(floatsToBytes(asFloats)))
 }
 
 func floatsToBytes(values []float64) []byte {
