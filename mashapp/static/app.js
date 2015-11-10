@@ -45,6 +45,8 @@ $(document.forms.loadFile.load).on('click', function(e) {
       }
     });
   }
+  e.stopPropagation();
+  e.preventDefault();
   return false;
 });
 

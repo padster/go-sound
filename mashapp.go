@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-    mashapp.NewServer(8080, "mashapp").Serve()
+    mashapp.NewServer(8080, "mashapp", ".").Serve()
 }

@@ -27,7 +27,6 @@ type LoadResponse struct {
 func (s *MashAppServer) wrapLoad(w http.ResponseWriter, r *http.Request) {
     var in LoadRequest
     err := json.NewDecoder(r.Body).Decode(&in)
-    fmt.Printf("%v\n", in)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
     }
@@ -42,7 +41,7 @@ func (s *MashAppServer) wrapLoad(w http.ResponseWriter, r *http.Request) {
 }
 func (s *MashAppServer) performLoad(req LoadRequest) LoadResponse {
     // TODO: error handling
-    id, sound := s.state.loadSound(req.Path)
+    id, sound := s.state.loadSound(fmt.Sprintf("%s/%s", s.filePath, req.Path))
 
     // TODO - pitch and duration handling
     meta := InputMeta{

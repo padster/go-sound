@@ -13,12 +13,17 @@
 
 
 <form id="loadFile">
-  Path: <input type="text" name="path" value="/home/pat/code/golang/src/github.com/padster/go-sound/jeeves5s.flac"></input>
+  File: 
+  <select id="filePath" name="path">
+    {{range $key, $value := .Files}}
+      <option>{{$value}}</option>
+    {{end}}
+  </select>
+
   <input type="submit" name="load" value="Load"></input>
 </form>
 
 <input id="zoomSlider" type="range" min="0" max="10" value="6"></input>Zoom: <span id="zoomValue"></span>
-
 
 
 <script src="static/viewmodel.js"></script>
