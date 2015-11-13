@@ -1,4 +1,4 @@
-<dom-module id="mash-app-style"><template><style>
+<dom-module id="mash-app-style"><template><style is="custom-style">
 
 /* Data service, so hidden. */
 :host {
@@ -9,6 +9,18 @@
 
 #config {
   display: none;
+}
+
+paper-toolbar {
+  --paper-toolbar-background: green;
+}
+
+paper-dropdown-menu {
+  /*display: block;*/
+}
+
+paper-dialog > *:first-child {
+  margin-top: 0;
 }
 
 </style></template></dom-module>

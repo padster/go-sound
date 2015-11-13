@@ -49,20 +49,16 @@ Polymer({
   },
 
   attached: function() {
-    this.handleZoomChange();
     this.AC = new AudioContext();
     if (this.$.config.innerText != "") {
       this.config = JSON.parse(this.$.config.innerText);
     }
   },
 
-  loadFile: function(e) {
-    path = this.$.filePath.value;
+  loadFile: function(path) {
     if (!path) {
       window.alert("Must have a path!");
     } else {
-      // TODO - modal 'loading' popup.
-      this.$.loadButton.blur();
       $.ajax({
         url: "/_/load",
         type: "POST",
@@ -77,8 +73,6 @@ Polymer({
         }).bind(this),
       });
     }
-    e.stopPropagation();
-    e.preventDefault();
   },
 
   handleNewInput: function(data) {
@@ -124,11 +118,17 @@ Polymer({
       case "play":
         this.handlePlayStop(e);
         break;
+      case "load-file":
+        this.handleLoadFile(e);
+        break;
       case "fast-rewind":
         this.handleFastRewind(e);
         break;
       case "set-selection":
         this.handleSetSelection(e.detail.data);
+        break;
+      case "set-zoom":
+        this.handleSetZoom(e.detail.data);
         break;
       default:
         util.whoops("View action " + e.detail.type + " not supported :(")
@@ -138,7 +138,6 @@ Polymer({
   },
 
   handlePlayStop: function(e) {
-    R = window.render;
     // 'Stop' currently showing.
     if (this.isPlaying) {
       this.stopPlaying();
@@ -165,11 +164,25 @@ Polymer({
     });
   },
 
-  handleZoomChange: function(e) {
-    this.zoom = this.$.zoomSlider.value;
+  handleSetZoom: function(zoomLevel) {
+    this.zoom = zoomLevel;
     this.indexStep = Math.pow(2, this.zoom);
     this.pixelsPerSample = 1 / this.indexStep;
     this.redrawAllLines();
+  },
+
+  handleLoadFile: function(e) {
+    this.$.loadFileDialog.open();
+  },
+
+  handleCloseLoadFile: function(e) {
+    this.$.loadFileDialog.close();
+  },
+
+  handleUploadFile: function(e) {
+    var path = this.$.filePath.selectedItem.innerText.trim();
+    this.loadFile(path);
+    this.$.loadFileDialog.close();
   },
 
   redrawAllLines: function() {

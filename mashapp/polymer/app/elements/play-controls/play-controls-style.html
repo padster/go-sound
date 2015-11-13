@@ -1,17 +1,23 @@
-<dom-module id="play-controls-style"><template><style>
+<dom-module id="play-controls-style"><template><style is="custom-style">
 
 /* Data service, so hidden. */
 :host {
   display: flex;
-  height: 50px;
-  border-bottom: 1px solid blue;
+  width: 100%;
+
+  align-items: center;
+  justify-content: space-between;
 }
 
-i {
-  font-size: 36px;
-  height: 40px;
-  margin: 5px 0;
-  cursor: pointer;
+#startControls, #endControls {
+  display: flex;
+  align-items: center;
+}
+
+paper-slider {
+  --paper-slider-active-color: red;
+  --paper-slider-knob-color: red;
+  width: 400px;
 }
 
 </style></template></dom-module>

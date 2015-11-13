@@ -1,5 +1,8 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<!-- <link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html"> -->
+<link rel="import" href="../../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-slider/paper-slider.html">
 
 <link rel="import" href="../util-src/util-src.html">
 
@@ -8,9 +11,17 @@
 <dom-module id="play-controls">
   <style include="play-controls-style"></style>
   <template>
-    <i class="material-icons" on-tap="handleFastRewind">fast_rewind</i>
-    <i class="material-icons" hidden$="{{isPlaying}}" on-tap="handlePlayButton">play_arrow</i>
-    <i class="material-icons" hidden$="{{!isPlaying}}" on-tap="handlePlayButton">stop</i>
+    <div id="startControls">
+      <paper-icon-button icon="av:fast-rewind" on-tap="handleFastRewind"></paper-icon-button>
+      <paper-icon-button icon="av:play-arrow" hidden$="{{isPlaying}}" on-tap="handlePlayButton"></paper-icon-button>
+      <paper-icon-button icon="av:stop" hidden$="{{!isPlaying}}" on-tap="handlePlayButton"></paper-icon-button>
+    </div>
+
+    <div id="endControls">
+      Zoom:&nbsp;<span>{{zoomValue}}</span>
+      <paper-slider id="zoom" min="3" max="10" value="{{zoomValue}}" on-change="handleZoomChange"></paper-slider>
+      <paper-icon-button icon="icons:file-upload" on-tap="handleLoadFile"></paper-icon-button>
+    </div>
   </template>
 </dom-module>
 
