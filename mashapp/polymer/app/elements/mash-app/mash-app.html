@@ -1,0 +1,39 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../util-src/util-src.html">
+<link rel="import" href="../play-controls/play-controls.html">
+<link rel="import" href="../track-line/track-line.html">
+
+<link rel="import" href="mash-app-style.html">
+
+<dom-module id="mash-app">
+  <style include="mash-app-style"></style>
+  <template>
+
+    <play-controls is-playing="[[isPlaying]]"></play-controls>
+
+    <template is="dom-repeat" items="{{lines}}">
+      <track-line details="{{item}}" play-sample-at="[[playSampleAt]]">
+      </track-line>
+    </template>
+    
+    <form id="loadFile">
+      File: 
+      <select id="filePath" name="path">
+        <template is="dom-repeat" items="{{config.files}}">
+          <option>{{item}}</option>
+        </template>
+      </select>
+
+      <input id="loadButton" on-tap="loadFile" type="submit" name="load" value="Load"></input>
+    </form >
+
+    <input id="zoomSlider" type="range" min="0" max="10" value="6" on-change="handleZoomChange"></input>Zoom: <span id="zoomValue"></span>
+
+    <div id="config">
+      <content></content>
+    </div>
+  </template>
+</dom-module>
+
+<script src="mash-app.js"></script>

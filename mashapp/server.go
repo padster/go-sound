@@ -1,6 +1,7 @@
 package mashapp
 
 import (
+    "encoding/json"
     "fmt"
     "html/template"
     "io/ioutil"
@@ -34,6 +35,7 @@ func (s *MashAppServer) Serve() {
     fmt.Printf("Serving http://localhost%s/\n", addr)
 
     serveStaticFiles(fmt.Sprintf("%s/static", s.rootPath), "static")
+    serveStaticFiles(fmt.Sprintf("%s/polymer/app", s.rootPath), "polymer")
 
     s.serveRPCs()
 
@@ -42,8 +44,12 @@ func (s *MashAppServer) Serve() {
     http.ListenAndServe(addr, nil)
 }
 
+type BootstrapData struct {
+    Files []string `json:"files"`
+}
 type TemplateData struct {
-    Files []string
+    // Files []string
+    JsonConfig template.HTML
 }
 
 func (s *MashAppServer) appHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,8 +57,13 @@ func (s *MashAppServer) appHandler(w http.ResponseWriter, r *http.Request) {
         s.fileOptions = listMusicFiles(s.filePath)
     }
 
-    s.renderTemplate(w, "app.html", TemplateData{
+    bootstrap := BootstrapData {
         s.fileOptions,
+    }
+    asJson, _ := json.Marshal(bootstrap)
+    s.renderTemplate(w, "app.html", TemplateData{
+        // s.fileOptions,
+        template.HTML(string(asJson)),
     })
 }
 

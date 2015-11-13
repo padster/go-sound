@@ -1,0 +1,20 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<!-- <link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html"> -->
+
+<link rel="import" href="../util-src/util-src.html">
+
+<link rel="import" href="track-line-style.html">
+
+<dom-module id="track-line">
+  <style include="track-line-style"></style>
+  <template>
+    <div id="controls">
+      <i id="soloLine" class="material-icons">volume_up</i>
+      <i id="muteLine" class="material-icons">volume_off</i>
+    </div>
+    <div id="playLine" hidden$="{{!showPlayLine}}"></div>
+    <canvas id="surface" on-mousedown="handleMouseDown" on-mouseup="handleMouseUp" on-mousemove="handleMouseMove"></canvas>
+  </template>
+</dom-module>
+
+<script src="track-line.js"></script>

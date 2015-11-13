@@ -1,33 +1,11 @@
 <script src="static/jquery-2.1.4.min.js"></script>
+
 <link href="static/app.css" type="text/css" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
-<div id="controls">
-  <i id="playButton" class="material-icons">play_arrow</i>
-</div>
+<link href="polymer/elements/mash-app/mash-app.html" rel="import">
 
-
-<canvas id="surface">
-</canvas>
-<div id="playLine" style="display: none"></div>
-
-
-<form id="loadFile">
-  File: 
-  <select id="filePath" name="path">
-    {{range $key, $value := .Files}}
-      <option>{{$value}}</option>
-    {{end}}
-  </select>
-
-  <input type="submit" name="load" value="Load"></input>
-</form>
-
-<input id="zoomSlider" type="range" min="0" max="10" value="6"></input>Zoom: <span id="zoomValue"></span>
-
-
-<script src="static/viewmodel.js"></script>
-<script src="static/render.js"></script>
-<script src="static/sound.js"></script>
-<script src="static/app.js"></script>
+<mash-app>
+  {{.JsonConfig}}
+</mash-app>
 

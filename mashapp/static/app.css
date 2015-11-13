@@ -13,17 +13,13 @@ canvas {
   height: 100px;
 }
 
-#controls {
+.line {
   display: flex;
-  height: 50px;
-  border-bottom: 1px solid blue;
+  flex-direction: row;
 }
 
-#controls i {
-  font-size: 36px;
-  height: 40px;
-  margin: 5px 0;
-  cursor: pointer;
+.lineButtons {
+  width: 50px;
 }
 
 #playLine {
@@ -34,4 +30,9 @@ canvas {
 
 #zoomSlider {
   width: 400px;
+}
+
+/* HACK - figure out why this isn't coming from polymer. */
+[hidden] {
+  display: none !important;
 }

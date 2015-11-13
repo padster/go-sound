@@ -1,0 +1,17 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<!-- <link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html"> -->
+
+<link rel="import" href="../util-src/util-src.html">
+
+<link rel="import" href="play-controls-style.html">
+
+<dom-module id="play-controls">
+  <style include="play-controls-style"></style>
+  <template>
+    <i class="material-icons" on-tap="handleFastRewind">fast_rewind</i>
+    <i class="material-icons" hidden$="{{isPlaying}}" on-tap="handlePlayButton">play_arrow</i>
+    <i class="material-icons" hidden$="{{!isPlaying}}" on-tap="handlePlayButton">stop</i>
+  </template>
+</dom-module>
+
+<script src="play-controls.js"></script>

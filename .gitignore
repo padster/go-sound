@@ -31,3 +31,22 @@ demo
 *.mp3
 *.flac
 *.raw
+
+
+# MashApp bower polymer stuffs
+mashapp/polymer/.bowerrc
+mashapp/polymer/.editorconfig
+mashapp/polymer/.gitattributes
+mashapp/polymer/.gitignore
+mashapp/polymer/.jscsrc
+mashapp/polymer/.jshintrc
+mashapp/polymer/app/cache-config.json
+mashapp/polymer/app/favicon.ico
+mashapp/polymer/app/index.html
+mashapp/polymer/app/manifest.json
+mashapp/polymer/app/robots.txt
+mashapp/polymer/app/sw-import.js
+mashapp/polymer/docs/
+mashapp/polymer/gulpfile.js
+mashapp/polymer/package.json
+mashapp/polymer/wct.conf.js
