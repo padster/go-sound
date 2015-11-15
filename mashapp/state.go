@@ -22,6 +22,7 @@ const (
 type ServerState struct {
     nextId int
     inputs map[int]InputSound
+    blocks map[int]Block
 }
 
 // HACK - remove, replace with structs from model.go
@@ -33,6 +34,7 @@ func NewServerState() *ServerState {
     result := ServerState {
         0,
         make(map[int]InputSound),
+        make(map[int]Block),
     }
     return &result
 }
@@ -48,6 +50,12 @@ func (state *ServerState) loadSound(path string) (int, InputSound) {
     }
     state.inputs[id] = inputSound
     return id, inputSound
+}
+
+func (state *ServerState) createBlock(block Block) Block {
+  block.ID = state.nextId
+  state.nextId++
+  return block
 }
 
 // Pitch- and/or Time-shift an input, return the resulting samples 
@@ -68,11 +76,12 @@ func (state *ServerState) shiftInput(input InputMeta) InputSound {
     resultSound := s.WrapChannelAsSound(soundChannel)
 
     afterSamples := util.CacheSamples(resultSound)
+
+    // TODO - update all blocks created off this input.
     return InputSound {
         afterSamples,
     }
 }
-
 
 func shiftSpectrogram(binOffset int, sampleOffset int, samples <-chan []complex128, octaves int, bpo int) <-chan []complex128 {
   result := make(chan []complex128)

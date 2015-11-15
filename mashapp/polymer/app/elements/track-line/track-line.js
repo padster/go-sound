@@ -247,13 +247,10 @@ Polymer({
 
   handleCanvasClick: function(e) {
     var globals = util.getService('globals', this);
+    var selection = util.getService('selection', this);
 
     var x = e.offsetX, y = e.offsetY;
     var sampleX = (x / globals.pixelsPerSample) | 0;
-    // TODO - track IDs?
-    console.log("Clicked on sample %d in track %O", sampleX, this);
-
-    var selection = util.getService('selection', this);
 
     if (e.shiftKey && selection.startSample !== null) {
       if (selection.endSample === null) {

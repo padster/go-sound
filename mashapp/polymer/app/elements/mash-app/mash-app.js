@@ -165,6 +165,7 @@ Polymer({
         break;
       case "edit-track":
         this.handleEditTrack(e.detail.data);
+        break;
       case "fast-rewind":
         this.handleFastRewind(e);
         break;
@@ -176,6 +177,9 @@ Polymer({
         break;
       case "mute-all-except":
         this.handleMuteAllExcept(e.detail.data);
+        break;
+      case "create-block":
+        this.handleCreateBlock(e);
         break;
       default:
         util.whoops("View action " + e.detail.type + " not supported :(")
@@ -233,6 +237,43 @@ Polymer({
       // NOTE: mute-all-except null is a special case, resuling in nothing muted.
       line.isMuted = (data.track !== null && data.track != line);
     });
+  },
+
+  handleCreateBlock: function(e) {
+    if (this.selection && this.selection.startSample && this.selection.endSample && this.selection.track) {
+      var trackDetails = this.selection.track.details[0].sound.meta;
+      var name = window.prompt("Block name...");
+
+      var blockDetails = {
+        inputId: trackDetails.id | 0, // HACK - normalize on read, not on write.
+        name: name,
+        startSample: this.selection.startSample,
+        endSample: this.selection.endSample,
+      }
+
+      this.startRpc("Creating block...");
+      $.ajax({
+        url: "/_/block/new",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({block: blockDetails}),
+        dataType: "json",
+        success: (function(result) {
+          this.endRpc();
+          this.handleCreateBlockResult(result);
+        }).bind(this),
+        error: (function(result) {
+          this.endRpc();
+          console.log("Oops! %O", result);
+        }).bind(this),
+      });
+    } else {
+      // TODO: Toasty.
+      window.alert("Oops, need a selection on a single input track.");
+    }
+  },
+  handleCreateBlockResult: function(result) {
+    // TODO - handle.
   },
 
   redrawAllLines: function() {

@@ -9,6 +9,7 @@ import (
 func (s *MashAppServer) serveRPCs() {
     s.serveRPC("input/load", s.wrapLoad)
     s.serveRPC("input/edit", s.wrapEdit)
+    s.serveRPC("block/new", s.wrapCreateBlock)
 }
 
 func (s *MashAppServer) serveRPC(path string, handleFunc func(rw http.ResponseWriter, req *http.Request)) {
@@ -82,4 +83,34 @@ func (s *MashAppServer) performEdit(req EditRequest) EditResponse {
     // TODO: error handling
     newSamples := s.state.shiftInput(req.Meta).samples
     return EditResponse{req.Meta, floatsToBase64(newSamples)}
+}
+
+// Create Block RPC
+type CreateBlockRequest struct {
+    Block Block `json:"block"`
+}
+type CreateBlockResponse struct {
+    Block Block `json:"block"`
+}
+func (s *MashAppServer) wrapCreateBlock(w http.ResponseWriter, r *http.Request) {
+    var in CreateBlockRequest
+    err := json.NewDecoder(r.Body).Decode(&in)
+    if err != nil {
+        fmt.Printf("Decode error :(\n")
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    out := s.performCreateBlock(in)
+    js, err := json.Marshal(out)
+    if err != nil {
+        fmt.Printf("Marshal error :(\n")
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.Write(js)
+}
+func (s *MashAppServer) performCreateBlock(req CreateBlockRequest) CreateBlockResponse {
+    block := s.state.createBlock(req.Block)
+    return CreateBlockResponse{block}
 }

@@ -30,6 +30,10 @@ Polymer({
   handleLoadFile: function(e) {
     util.performAction('load-file', null, this);
   },
+
+  handleCreateBlock: function(e) {
+    util.performAction('create-block', null, this);
+  },
 });
 
 })();

@@ -21,12 +21,12 @@ type InputMeta struct {
 }
 
 type Block struct {
-    ID int `json:"id,string"`
-    InputID int `json:"inputId,string"`
+    ID int `json:"id"`
+    InputID int `json:"inputId"`
     Name string `json:"name"`
 
-    StartSample int `json:"startSample,string"`
-    EndSample int `json:"endSample,string"`
+    StartSample int `json:"startSample"`
+    EndSample int `json:"endSample"`
 
     // TODO - use?
     Selected bool `json:"selected"`
