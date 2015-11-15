@@ -83,7 +83,16 @@ func (s *MashAppServer) renderTemplate(w http.ResponseWriter, templateName strin
 func serveStaticFiles(fromDirectory string, toHttpPrefix string) {
     asPath := fmt.Sprintf("/%s/", toHttpPrefix)
     fs := http.FileServer(http.Dir(fromDirectory))
-    http.Handle(asPath, http.StripPrefix(asPath, fs))
+    http.Handle(asPath, disableCache(http.StripPrefix(asPath, fs)))
+}
+
+func disableCache(h http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate") // HTTP 1.1.
+        w.Header().Set("Pragma", "no-cache") // HTTP 1.0.
+        w.Header().Set("Expires", "0") // Proxies.
+        h.ServeHTTP(w, r)
+    })
 }
 
 func listMusicFiles(fromDirectory string) []string {
@@ -104,3 +113,4 @@ func listMusicFiles(fromDirectory string) []string {
 func isMusicFile(name string) bool {
     return strings.HasSuffix(name, ".wav") || strings.HasSuffix(name, ".flac")
 }
+
