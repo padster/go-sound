@@ -26,6 +26,8 @@ Polymer({
     },
     showPlayLine: Boolean,
 
+    isMuted: Boolean,
+
     mouseDownE: Object,
     mouseIsDrag: Boolean,
     mouseIsDown: Boolean,
@@ -66,11 +68,36 @@ Polymer({
     this.mouseIsDown = false;
   },
 
+  handleSolo: function(e) {
+    var isShift = e.detail.sourceEvent.shiftKey;
+
+    if (isShift) {
+      util.performAction('mute-all-except', {track: this}, this);
+    } else {
+      this.isMuted = true;
+    }
+  },
+
+  handleMute: function(e) {
+    var isShift = e.detail.sourceEvent.shiftKey;
+    if (isShift) {
+      util.performAction('mute-all-except', {track: this}, this);
+    } else {
+      this.isMuted = false;
+    }
+  },
+
+  handleEdit: function(e) {
+    console.log(e.shiftKey);
+  },
+
   detailsChanged: function() {
     this.sampleCount = 0;
     for (var i in this.details) {
       this.sampleCount = Math.max(this.sampleCount, this.details[i].sound.samples.length)
     }
+
+    this.isMuted = this.details[0].sound.meta.muted;
     this.redraw();
   },
 
@@ -104,6 +131,10 @@ Polymer({
   getSamples: function(start, end) {
     if (this.details.length != 1) {
       util.whoops("Only support one sound per track so far...");
+    }
+
+    if (this.isMuted) {
+      return null;
     }
 
     var totalSamples = null;
@@ -193,7 +224,6 @@ Polymer({
   },
 
   drawSamples: function(samples, sampleStart) {
-    // debugger;
     // HACK - clean up.
     var yLo = 0;
     var yHi = 100;

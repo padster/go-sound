@@ -89,10 +89,7 @@ Polymer({
     // TODO - move into util?
     // rewrite base-64 to floats
     data.samples = new Float32Array(buffer);
-
     this.push('lines', [{ sound: data, start: 0 }]);
-    // VM.addLine(data, 0);
-    // R.drawRows();
   },
 
   // Generic services
@@ -129,6 +126,9 @@ Polymer({
         break;
       case "set-zoom":
         this.handleSetZoom(e.detail.data);
+        break;
+      case "mute-all-except":
+        this.handleMuteAllExcept(e.detail.data);
         break;
       default:
         util.whoops("View action " + e.detail.type + " not supported :(")
@@ -186,6 +186,12 @@ Polymer({
     this.$.loadFileDialog.close();
   },
 
+  handleMuteAllExcept: function(data) {
+    this.forEachLine(function(line) {
+      line.isMuted = (line != data.track);
+    });
+  },
+
   redrawAllLines: function() {
     // TODO - polymerize.
     this.forEachLine(function(line) {
@@ -201,6 +207,7 @@ Polymer({
     return this.playSamples(this.getSelectedSamples(), frameCbWrapped, endCallback);
   },
   stopPlaying: function() {
+    this.playSampleAt = null;
     this.isPlaying = false;
     this.currentSource.stop();
     this.currentSource = null;

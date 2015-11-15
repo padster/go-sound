@@ -1,5 +1,6 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
-<!-- <link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html"> -->
+<link rel="import" href="../../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../../bower_components/iron-icons/editor-icons.html">
 
 <link rel="import" href="../util-src/util-src.html">
 
@@ -9,8 +10,9 @@
   <style include="track-line-style"></style>
   <template>
     <div id="controls">
-      <i id="soloLine" class="material-icons">volume_up</i>
-      <i id="muteLine" class="material-icons">volume_off</i>
+      <paper-icon-button class="active" icon="av:volume-up" on-tap="handleSolo" hidden$="{{isMuted}}"></paper-icon-button>
+      <paper-icon-button icon="av:volume-mute" on-tap="handleMute" hidden$="{{!isMuted}}"></paper-icon-button>
+      <paper-icon-button icon="editor:mode-edit" on-tap="handleEdit"></paper-icon-button>
     </div>
     <div id="drawing">
       <div id="playLine" hidden$="{{!showPlayLine}}"></div>
