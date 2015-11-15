@@ -154,6 +154,10 @@ Polymer({
   },
 
   drawSelectionRange: function(selection) {
+    if (selection.track !== null && selection.track != this) {
+      return;
+    }
+
     var pps = util.getService('globals', this).pixelsPerSample;
     var x1 = pps * selection.startSample;
     var x2 = pps * selection.endSample;
@@ -251,7 +255,11 @@ Polymer({
   },
 
   setSelectedSamples: function(s1, s2) {
-    var selection = {startSample: null, endSample: null};
+    var selection = {
+      startSample: null, 
+      endSample: null,
+      track: null,
+    };
     if (s1 === null) {
       selection.startSample = s2;
     } else if (s2 === null) {
@@ -259,6 +267,8 @@ Polymer({
     } else {
       selection.startSample = Math.min(s1, s2);
       selection.endSample = Math.max(s1, s2);
+      // For range selections, only select one track:
+      selection.track = this;
     }
     util.performAction('set-selection', selection, this)
   },

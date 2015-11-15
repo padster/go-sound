@@ -79,7 +79,7 @@ func (s *Screen) RenderLinesWithEvents(lines []Line, events <-chan interface{}, 
 	}
 	defer glfw.Terminate()
 
-	window, err := glfw.CreateWindow(s.width, s.height, "Muse", nil, nil)
+	window, err := glfw.CreateWindow(s.width, s.height, "Wave", nil, nil)
 	if err != nil {
 		log.Fatalf("CreateWindow failed: %s", err)
 	}

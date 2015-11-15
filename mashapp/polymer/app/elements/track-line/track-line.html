@@ -12,8 +12,10 @@
       <i id="soloLine" class="material-icons">volume_up</i>
       <i id="muteLine" class="material-icons">volume_off</i>
     </div>
-    <div id="playLine" hidden$="{{!showPlayLine}}"></div>
-    <canvas id="surface" on-mousedown="handleMouseDown" on-mouseup="handleMouseUp" on-mousemove="handleMouseMove"></canvas>
+    <div id="drawing">
+      <div id="playLine" hidden$="{{!showPlayLine}}"></div>
+      <canvas id="surface" on-mousedown="handleMouseDown" on-mouseup="handleMouseUp" on-mousemove="handleMouseMove"></canvas>
+    </div>
   </template>
 </dom-module>
 

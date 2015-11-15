@@ -161,6 +161,7 @@ Polymer({
     this.handleSetSelection({
       startSample: null,
       endSample: null,
+      track: null,
     });
   },
 
