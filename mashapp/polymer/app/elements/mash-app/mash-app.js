@@ -57,22 +57,25 @@ Polymer({
 
   loadFile: function(path) {
     if (!path) {
-      window.alert("Must have a path!");
-    } else {
-      $.ajax({
-        url: "/_/load",
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({path: path}),
-        dataType: "json",
-        success: (function(result) {
-          this.handleNewInput(result);
-        }).bind(this),
-        error: (function(result) {
-          console.log("OOPS! %O", result)
-        }).bind(this),
-      });
+      // Ignore, this is called when the dialog is closed.
+      return;
     }
+    this.startRpc("Loading " + path);
+    $.ajax({
+      url: "/_/input/load",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({path: path}),
+      dataType: "json",
+      success: (function(result) {
+        this.endRpc();
+        this.handleNewInput(result);
+      }).bind(this),
+      error: (function(result) {
+        this.endRpc();
+        console.log("OOPS! %O", result)
+      }).bind(this),
+    });
   },
 
   handleNewInput: function(data) {
@@ -90,6 +93,48 @@ Polymer({
     // rewrite base-64 to floats
     data.samples = new Float32Array(buffer);
     this.push('lines', [{ sound: data, start: 0 }]);
+  },
+
+  editTrack: function(data) {
+    if (!data) {
+      // Ignore, called when the edit is cancelled.
+      return;
+    }
+    this.startRpc("Modifying track...");
+    $.ajax({
+      url: "/_/input/edit",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({meta: data}),
+      dataType: "json",
+      success: (function(result) {
+        this.endRpc();
+        this.handleEditTrackResult(result);
+      }).bind(this),
+      error: (function(result) {
+        this.endRpc();
+        console.log("OOPS! %O", result)
+      }).bind(this),
+    });
+  },
+
+  handleEditTrackResult: function(data) {
+    raw = window.atob(data.samples)
+    byteData = Array.prototype.map.call(raw, function(x) { 
+      return x.charCodeAt(0); 
+    });
+    buffer = new ArrayBuffer(byteData.length);
+    intBuffer = new Uint8Array(buffer);
+    for (var i = 0; i < byteData.length; i++) {
+      intBuffer[i] = byteData[i];
+    }
+
+    // TODO - move into util?
+    // rewrite base-64 to floats
+    data.samples = new Float32Array(buffer);
+    // HACK
+    this.lines[0][0].sound = data;
+    this.redrawAllLines();
   },
 
   // Generic services
@@ -118,6 +163,8 @@ Polymer({
       case "load-file":
         this.handleLoadFile(e);
         break;
+      case "edit-track":
+        this.handleEditTrack(e.detail.data);
       case "fast-rewind":
         this.handleFastRewind(e);
         break;
@@ -173,22 +220,18 @@ Polymer({
   },
 
   handleLoadFile: function(e) {
-    this.$.loadFileDialog.open();
+    this.$.loadFileDialog.open(this.loadFile.bind(this));
   },
 
-  handleCloseLoadFile: function(e) {
-    this.$.loadFileDialog.close();
-  },
-
-  handleUploadFile: function(e) {
-    var path = this.$.filePath.selectedItem.innerText.trim();
-    this.loadFile(path);
-    this.$.loadFileDialog.close();
+  handleEditTrack: function(data) {
+    this.$.editTrackDialog.details = data.track.details[0].sound.meta;
+    this.$.editTrackDialog.open(this.editTrack.bind(this));
   },
 
   handleMuteAllExcept: function(data) {
     this.forEachLine(function(line) {
-      line.isMuted = (line != data.track);
+      // NOTE: mute-all-except null is a special case, resuling in nothing muted.
+      line.isMuted = (data.track !== null && data.track != line);
     });
   },
 
@@ -288,6 +331,15 @@ Polymer({
     for (var i = 0; i < lines.length; i++) {
       cb(lines[i]);
     }
+  },
+
+  startRpc: function(message) {
+    this.$.toast.text = message;
+    this.$.toast.show();
+  },
+  endRpc: function() {
+    this.$.toast.hide();
+    this.$.toast.text = "";
   },
 
 });

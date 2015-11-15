@@ -1,22 +1,23 @@
 package mashapp
 
 import (
-    b64 "encoding/base64"
-    "encoding/binary"
     "encoding/json"
     "fmt"
-    "math"
     "net/http" 
 )
 
 func (s *MashAppServer) serveRPCs() {
-    s.serveRPC("load", s.wrapLoad)
+    s.serveRPC("input/load", s.wrapLoad)
+    s.serveRPC("input/edit", s.wrapEdit)
 }
+
 func (s *MashAppServer) serveRPC(path string, handleFunc func(rw http.ResponseWriter, req *http.Request)) {
     rpcPath := fmt.Sprintf("/_/%s", path)
+    fmt.Printf("Adding RPC handler for %s\n", rpcPath)
     http.HandleFunc(rpcPath, handleFunc)
 }
 
+// Load input RPC
 type LoadRequest struct {
     Path string `json:"path"`
 }
@@ -43,36 +44,42 @@ func (s *MashAppServer) performLoad(req LoadRequest) LoadResponse {
     // TODO: error handling
     id, sound := s.state.loadSound(fmt.Sprintf("%s/%s", s.filePath, req.Path))
 
-    // TODO - pitch and duration handling
     meta := InputMeta{
         id, req.Path, false /* Muted */,
         len(sound.samples), len(sound.samples), /* Duration */
         0, 0, /* Pitch */
     }
-
     return LoadResponse{meta, floatsToBase64(sound.samples)}
 }
 
-func floatsToBase64(values GoSamples) JsonSamples {
-    asFloats := ([]float64)(values)
-    return JsonSamples(bytesToBase64(floatsToBytes(asFloats)))
+// Edit Input RPC
+type EditRequest struct {
+    Meta InputMeta `json:"meta"`
 }
-
-func floatsToBytes(values []float64) []byte {
-    bytes := make([]byte, 0, 4 * len(values))
-    for _, v := range values {
-        bytes = append(bytes, float32ToBytes(float32(v))...)
+type EditResponse struct {
+    Input InputMeta `json:"meta"`
+    Samples JsonSamples `json:"samples"`
+}
+func (s *MashAppServer) wrapEdit(w http.ResponseWriter, r *http.Request) {
+    var in EditRequest
+    err := json.NewDecoder(r.Body).Decode(&in)
+    if err != nil {
+        fmt.Printf("Decode error :(\n")
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
     }
-    return bytes
+    out := s.performEdit(in)
+    js, err := json.Marshal(out)
+    if err != nil {
+        fmt.Printf("Marshal error :(\n")
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.Write(js)
 }
-
-func float32ToBytes(value float32) []byte {
-    bits := math.Float32bits(value)
-    bytes := make([]byte, 4)
-    binary.LittleEndian.PutUint32(bytes, bits)
-    return bytes
-}
-
-func bytesToBase64(values []byte) string {
-    return b64.StdEncoding.EncodeToString(values)
+func (s *MashAppServer) performEdit(req EditRequest) EditResponse {
+    // TODO: error handling
+    newSamples := s.state.shiftInput(req.Meta).samples
+    return EditResponse{req.Meta, floatsToBase64(newSamples)}
 }

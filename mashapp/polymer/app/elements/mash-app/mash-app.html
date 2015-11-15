@@ -8,13 +8,14 @@
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
-
-
-<link rel="import" href="../util-src/util-src.html">
+<link rel="import" href="../edit-track-dialog/edit-track-dialog.html">
+<link rel="import" href="../loadfile-dialog/loadfile-dialog.html">
 <link rel="import" href="../play-controls/play-controls.html">
 <link rel="import" href="../track-line/track-line.html">
+<link rel="import" href="../util-src/util-src.html">
 
 <link rel="import" href="mash-app-style.html">
 
@@ -31,24 +32,10 @@
       </track-line>
     </template>
 
-    <paper-dialog id="loadFileDialog" modal 
-        entry-animation="scale-up-animation" exit-animation="scale-down-animation">
-      <!-- TODO: Separate element for file picker dialog and behaviour? -->
-      <paper-toolbar style$="{{toolbarStyle(event)}}">
-        <div class="title">Load a file...</div>
-      </paper-toolbar>
-
-      <paper-dropdown-menu label="Path to load">
-        <paper-listbox id="filePath" class="dropdown-content" selected="12"> <!-- HACK, for convenience -->
-          <template is="dom-repeat" items="[[config.files]]">
-            <paper-item>[[item]]</paper-item>
-          </template>
-        </paper-menu>
-      </paper-dropdown-menu>
-
-      <paper-icon-button icon="icons:file-upload" on-tap="handleUploadFile"></paper-icon-button>
-      <paper-icon-button icon="icons:close" on-tap="handleCloseLoadFile"></paper-icon-button>
-    </paper-dialog>
+    <!-- Dialogs -->
+    <loadfile-dialog id="loadFileDialog" options="[[config.files]]"></loadfile-dialog>
+    <edit-track-dialog id="editTrackDialog"></edit-track-dialog>
+    <paper-toast id="toast" duration="30000"></paper-toast>
 
     <div id="config">
       <content></content>

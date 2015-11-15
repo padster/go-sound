@@ -72,7 +72,7 @@ Polymer({
     var isShift = e.detail.sourceEvent.shiftKey;
 
     if (isShift) {
-      util.performAction('mute-all-except', {track: this}, this);
+      util.performAction('mute-all-except', {track: null}, this);
     } else {
       this.isMuted = true;
     }
@@ -88,7 +88,7 @@ Polymer({
   },
 
   handleEdit: function(e) {
-    console.log(e.shiftKey);
+    util.performAction('edit-track', {track: this}, this);
   },
 
   detailsChanged: function() {
@@ -103,7 +103,6 @@ Polymer({
 
   playSampleAtChanged: function() {
     if (!this.ctx) {
-      console.log("Skipping, not ready");
       return;
     }
     this.showPlayLine = (this.playSampleAt != null);
