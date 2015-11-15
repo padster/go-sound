@@ -1,0 +1,41 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/scale-down-animation.html">
+<link rel="import" href="../../bower_components/neon-animation/animations/scale-up-animation.html">
+<link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="../util-src/util-src.html">
+
+<link rel="import" href="loadfile-dialog-style.html">
+
+<dom-module id="loadfile-dialog">
+  <style include="loadfile-dialog-style"></style>
+
+  <template>
+    <paper-dialog id="dialog" modal 
+      entry-animation="scale-up-animation" exit-animation="scale-down-animation">
+      <paper-toolbar>
+        <div class="title">Load a file...</div>
+      </paper-toolbar>
+
+      <paper-dropdown-menu label="Path to load">
+        <paper-listbox id="filePath" class="dropdown-content" selected="12"> <!-- HACK, for convenience -->
+          <template is="dom-repeat" items="[[options]]">
+            <paper-item>[[item]]</paper-item>
+          </template>
+        </paper-menu>
+      </paper-dropdown-menu>
+
+      <paper-icon-button icon="icons:file-upload" on-tap="handleUploadFile"></paper-icon-button>
+      <paper-icon-button icon="icons:close" on-tap="handleClose"></paper-icon-button>
+    </paper-dialog>
+  </template>
+</dom-module>
+
+<script src="loadfile-dialog.js"></script>
