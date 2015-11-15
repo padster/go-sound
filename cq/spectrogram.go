@@ -9,7 +9,7 @@ import (
 type Spectrogram struct {
 	cq *ConstantQ
 
-	buffer [][]complex128
+	buffer     [][]complex128
 	prevColumn []complex128
 }
 
@@ -37,14 +37,14 @@ func (spec *Spectrogram) ProcessChannel(samples <-chan float64) <-chan []complex
 				if len(column) != height {
 					panic("First partial info must be for all values.")
 				}
-				first = false;
+				first = false
 			} else {
 				if len(column) == height {
 					full := spec.fullInterpolate(buffer)
 					for _, ic := range full {
 						result <- ic
 					}
-					buffer = buffer[len(buffer) - 1:]
+					buffer = buffer[len(buffer)-1:]
 				}
 			}
 		}
@@ -100,7 +100,7 @@ func (spec *Spectrogram) fetchHold() [][]complex128 {
 	}
 
 	spec.buffer = make([][]complex128, 0, 256)
-	return out;
+	return out
 }
 
 func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
@@ -138,7 +138,7 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 		}
 	} else {
 		// firstFullHeight == 0 and secondFullHeight also valid. Can interpolate
-		out := spec.fullInterpolate(spec.buffer[:secondFullHeight + 1])
+		out := spec.fullInterpolate(spec.buffer[:secondFullHeight+1])
 		spec.buffer = spec.buffer[secondFullHeight:]
 		return append(out, spec.fetchInterpolated(insist)...)
 	}
@@ -146,7 +146,7 @@ func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 
 func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 	// Last entry is the interpolation end boundary, hence the -1
-	width, height := len(values) - 1, len(values[0]) 
+	width, height := len(values)-1, len(values[0])
 	bpo := spec.cq.bpo()
 
 	if height != len(values[width]) {
@@ -179,25 +179,25 @@ func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 		if spacing < 2 {
 			continue
 		}
-		thisOctave, lastOctave := y, y - bpo	
+		thisOctave, lastOctave := y, y-bpo
 		if lastOctave < 0 {
 			panic("Oops, can't interpolate in the first octave?")
 		}
 
-		for i := 0; i + spacing <= width; i += spacing {
+		for i := 0; i+spacing <= width; i += spacing {
 			// NOTE: can't use result[] instead of values[] here, as result[] doesn't include the full right column yet.
-			thisStart, thisEnd := values[i][thisOctave], values[i + spacing][thisOctave]
+			thisStart, thisEnd := values[i][thisOctave], values[i+spacing][thisOctave]
 
 			lastPhaseStart := cmplx.Phase(values[i][lastOctave])
 			lastPhaseAt := lastPhaseStart
 			for j := 1; j < spacing; j++ {
-				lastPhaseAt = makeCloser(lastPhaseAt, cmplx.Phase(result[i + j][lastOctave]))
+				lastPhaseAt = makeCloser(lastPhaseAt, cmplx.Phase(result[i+j][lastOctave]))
 			}
 			totalLastPhaseDiff := lastPhaseAt - lastPhaseStart
 
 			// Tweak this to allow the slope of the lower octave phase change to differ from the higher octave's
 			upperScale := 0.5
-			targetLastPhase := makeCloser(upperScale * totalLastPhaseDiff, cmplx.Phase(thisEnd) - cmplx.Phase(thisStart))
+			targetLastPhase := makeCloser(upperScale*totalLastPhaseDiff, cmplx.Phase(thisEnd)-cmplx.Phase(thisStart))
 			diffScale := 0.0
 			if math.Abs(totalLastPhaseDiff) > 1e-5 {
 				diffScale = targetLastPhase / totalLastPhaseDiff
@@ -205,20 +205,20 @@ func (spec *Spectrogram) fullInterpolate(values [][]complex128) [][]complex128 {
 
 			lastPhaseAt = lastPhaseStart
 			for j := 1; j < spacing; j++ {
-				lastPhaseAt := makeCloser(lastPhaseAt, cmplx.Phase(result[i + j][lastOctave]))
+				lastPhaseAt := makeCloser(lastPhaseAt, cmplx.Phase(result[i+j][lastOctave]))
 				proportion := float64(j) / float64(spacing)
-				interpolated := logInterpolate(thisStart, thisEnd, proportion, lastPhaseStart + (lastPhaseAt - lastPhaseStart) * diffScale)
-				result[i + j][y] = interpolated
+				interpolated := logInterpolate(thisStart, thisEnd, proportion, lastPhaseStart+(lastPhaseAt-lastPhaseStart)*diffScale)
+				result[i+j][y] = interpolated
 			}
 		}
 	}
 
-	return result;
+	return result
 }
 
 func logInterpolate(this1, thisN complex128, proportion float64, interpolatedPhase float64) complex128 {
 	if cmplx.Abs(this1) < cmplx.Abs(thisN) {
-		return logInterpolate(thisN, this1, 1 - proportion, interpolatedPhase)
+		return logInterpolate(thisN, this1, 1-proportion, interpolatedPhase)
 	}
 
 	// Simple linear interpolation for DB power.
@@ -227,7 +227,7 @@ func logInterpolate(this1, thisN complex128, proportion float64, interpolatedPha
 	cLogAbs := zLogAbs * proportion
 	cAbs := math.Exp(cLogAbs)
 
-	return cmplx.Rect(cAbs * cmplx.Abs(this1), interpolatedPhase)
+	return cmplx.Rect(cAbs*cmplx.Abs(this1), interpolatedPhase)
 }
 
 // Return the closest number X to toShift, such that X mod 2Pi == modTwoPi
@@ -238,7 +238,7 @@ func makeCloser(toShift, modTwoPi float64) float64 {
 	// Minimize |toShift - (modTwoPi + pi * cyclesToAdd)|
 	// toShift - modTwoPi - pi * CTA = 0
 	cyclesToAdd := (toShift - modTwoPi) / math.Pi
-	return modTwoPi + float64(Round(cyclesToAdd)) * math.Pi
+	return modTwoPi + float64(Round(cyclesToAdd))*math.Pi
 }
 
 func holdInterpolate(values [][]complex128) [][]complex128 {
@@ -249,9 +249,9 @@ func holdInterpolate(values [][]complex128) [][]complex128 {
 		if from >= height {
 			panic("hold interpolate input has wrong structure :(")
 		}
-		values[i] = append(values[i], values[i - 1][from:height]...)
+		values[i] = append(values[i], values[i-1][from:height]...)
 	}
-	return values;
+	return values
 }
 
 // HACK

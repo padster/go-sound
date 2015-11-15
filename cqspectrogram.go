@@ -10,8 +10,8 @@ import (
 
 	"github.com/padster/go-sound/cq"
 	f "github.com/padster/go-sound/file"
-	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/output"
+	s "github.com/padster/go-sound/sounds"
 	"github.com/padster/go-sound/util"
 )
 
@@ -23,7 +23,7 @@ func main() {
 	sampleRate := s.CyclesPerSecond
 	octaves := 7
 	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 55.0 * float64(cq.UnsafeShift(octaves)), "maximum frequency")
+	maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 
@@ -34,7 +34,7 @@ func main() {
 	}
 	inputFile := remainingArgs[0]
 	outputFile := ""
-	if (argCount == 2) {
+	if argCount == 2 {
 		outputFile = remainingArgs[1]
 	}
 
@@ -53,7 +53,6 @@ func main() {
 	inputSound.Start()
 	defer inputSound.Stop()
 
-
 	startTime := time.Now()
 	if outputFile != "" {
 		// Write to file
@@ -64,7 +63,7 @@ func main() {
 			for _, c := range col {
 				cq.WriteComplex(outputBuffer, c)
 			}
-			if width % 1000 == 0 {
+			if width%1000 == 0 {
 				fmt.Printf("At frame: %d\n", width)
 			}
 			width++
@@ -78,10 +77,10 @@ func main() {
 		soundChannel, specChannel := splitChannel(inputSound.GetSamples())
 		go func() {
 			columns := spectrogram.ProcessChannel(specChannel)
-			toShow := util.NewSpectrogramScreen(882, *bpo * octaves, *bpo)
+			toShow := util.NewSpectrogramScreen(882, *bpo*octaves, *bpo)
 			toShow.Render(columns, 1)
 		}()
-		output.Play(s.WrapChannelAsSound(soundChannel))	
+		output.Play(s.WrapChannelAsSound(soundChannel))
 	}
 
 	elapsedSeconds := time.Since(startTime).Seconds()
@@ -89,7 +88,8 @@ func main() {
 
 	if outputFile == "" {
 		// Hang around to the view can be looked at.
-		for {}
+		for {
+		}
 	}
 }
 

@@ -5,12 +5,12 @@ import (
 )
 
 type Decoder struct {
-	Rate     int
+	Rate int
 }
 
 type Encoder struct {
-	Depth    int
-	Rate     int
+	Depth int
+	Rate  int
 }
 
 type Frame struct {

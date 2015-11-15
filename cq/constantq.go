@@ -182,13 +182,13 @@ func (cq *ConstantQ) ProcessChannel(samples <-chan float64) <-chan []complex128 
 
 	go func() {
 		buffer := make([]float64, required, required)
-		at := 0 
+		at := 0
 		for s := range samples {
 			if at == required {
 				for _, c := range cq.Process(buffer) {
 					result <- c
 				}
-				at = 0;
+				at = 0
 			}
 			buffer[at] = s
 			at++

@@ -61,9 +61,9 @@ func main() {
 	asSound := s.WrapChannelAsSound(samples)
 
 	// if outputFile != "" {
-		// f.Write(asSound, outputFile)
+	// f.Write(asSound, outputFile)
 	// } else {
-		output.Play(asSound)
+	output.Play(asSound)
 	// }
 
 	elapsedSeconds := time.Since(startTime).Seconds()
@@ -85,7 +85,7 @@ func mergeChannels(in1 <-chan []complex128, in2 <-chan []complex128) chan []comp
 				power2, angle2 := cmplx.Polar(cIn2[i])
 				cOut[i] = cmplx.Rect(power1, angle2)
 				// if i > 48 && i <= 72 {
-					// cOut[i] = 0
+				// cOut[i] = 0
 				// }
 				// HACK variable to stop go complaining about unused variables :(
 				cIn2[i] = cmplx.Rect(power2, angle1)
@@ -94,7 +94,7 @@ func mergeChannels(in1 <-chan []complex128, in2 <-chan []complex128) chan []comp
 		}
 		close(out)
 	}()
-	return out	
+	return out
 }
 
 func shiftChannel(buckets int, in <-chan []complex128) chan []complex128 {

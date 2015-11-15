@@ -67,59 +67,59 @@ func playClairDeLune() {
 	fmt.Println("Building sound.")
 
 	/*
-	finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
+		finalNoteLength := float64(3 + 6) // 6 extra beats, just for effect
 
-	// Left-hand split for a bit near the end.
-	rh1 := s.ConcatSounds(
-		notesT(7, fs(1)),
-		notesTQRun(0, 1, 0, 3, 0, -1, 0),
-		notesT(2, fs(-1)), notesTQRun(-2, -1), notesT(3, fs(-2)), notesT(finalNoteLength, fs(-3)),
-	)
-	rh2 := s.ConcatSounds(
-		notesT(6, fs(-1)),
-		notesT(6, fs(-2)), notesT(3, fs(-2)),
-		notesT(6, fs(-4)), notesT(finalNoteLength, fs(-4)),
-	)
+		// Left-hand split for a bit near the end.
+		rh1 := s.ConcatSounds(
+			notesT(7, fs(1)),
+			notesTQRun(0, 1, 0, 3, 0, -1, 0),
+			notesT(2, fs(-1)), notesTQRun(-2, -1), notesT(3, fs(-2)), notesT(finalNoteLength, fs(-3)),
+		)
+		rh2 := s.ConcatSounds(
+			notesT(6, fs(-1)),
+			notesT(6, fs(-2)), notesT(3, fs(-2)),
+			notesT(6, fs(-4)), notesT(finalNoteLength, fs(-4)),
+		)
 
-	// Split of couplets over long Bb
-	couplets := s.SumSounds(
-		s.ConcatSounds(notesT(1.5, fs(2)), notesT(3, fs(4)), notesT(2.5, fs(2))),
-		notesT(7, fs(0)),
-	)
+		// Split of couplets over long Bb
+		couplets := s.SumSounds(
+			s.ConcatSounds(notesT(1.5, fs(2)), notesT(3, fs(4)), notesT(2.5, fs(2))),
+			notesT(7, fs(0)),
+		)
 
-	// Top half of the score:
-	rightHand := s.ConcatSounds(
-		rest(2), notesT(4, fs(4, 6)), notesT(4, fs(2, 4)),
-		notesT(1, fs(1, 3)), notesT(1, fs(2, 4)), notesT(7, fs(1, 3)),
-		notesT(1, fs(0, 2)), notesT(1, fs(1, 3)), couplets,
-		notesT(1, fs(-1, 1)), notesT(1, fs(0, 2)), s.SumSounds(rh1, rh2),
-	)
+		// Top half of the score:
+		rightHand := s.ConcatSounds(
+			rest(2), notesT(4, fs(4, 6)), notesT(4, fs(2, 4)),
+			notesT(1, fs(1, 3)), notesT(1, fs(2, 4)), notesT(7, fs(1, 3)),
+			notesT(1, fs(0, 2)), notesT(1, fs(1, 3)), couplets,
+			notesT(1, fs(-1, 1)), notesT(1, fs(0, 2)), s.SumSounds(rh1, rh2),
+		)
 
-	// Bottom half.
-	leftHand := s.ConcatSounds(
-		rest(1), notesT(8, fs(-1, -3)),
-		notesT(9, fs(-0.5, -2)),
-		notesT(9, fs(-1, -3)),
-		notesT(9, fs(-2, -4)),
-		notesT(6, fs(-4, -5)),
-		notesT(3, fs(-4, -6)),
-		notesT(6, fs(-5, -7)), // HACK: Actually in bass clef, but rewritten in treble for these two chords.
-		notesT(finalNoteLength, fs(-6, -7.5)),
-	)
+		// Bottom half.
+		leftHand := s.ConcatSounds(
+			rest(1), notesT(8, fs(-1, -3)),
+			notesT(9, fs(-0.5, -2)),
+			notesT(9, fs(-1, -3)),
+			notesT(9, fs(-2, -4)),
+			notesT(6, fs(-4, -5)),
+			notesT(3, fs(-4, -6)),
+			notesT(6, fs(-5, -7)), // HACK: Actually in bass clef, but rewritten in treble for these two chords.
+			notesT(finalNoteLength, fs(-6, -7.5)),
+		)
 
-	clairDeLune := s.SumSounds(leftHand, rightHand)
+		clairDeLune := s.SumSounds(leftHand, rightHand)
 	*/
 	// toPlay := s.NewDenseIIR(clairDeLune,
-		// []float64{0.8922, -2.677, 2.677, -0.8922},
-		// []float64{2.772, -2.57, 0.7961},
+	// []float64{0.8922, -2.677, 2.677, -0.8922},
+	// []float64{2.772, -2.57, 0.7961},
 	// )
-	
+
 	// hz := 440.0
 	// toPlay := s.SumSounds(
-		// s.NewSineWave(hz),
-		// s.NewSquareWave(hz),
-		// s.NewSawtoothWave(hz),
-		// s.NewTriangleWave(hz),
+	// s.NewSineWave(hz),
+	// s.NewSquareWave(hz),
+	// s.NewSawtoothWave(hz),
+	// s.NewTriangleWave(hz),
 	// )
 	toPlay := s.NewJackInput("go-sound-in")
 	// toPlay := s.NewTimedSound(s.NewSineWave(500), 1000)
@@ -202,7 +202,7 @@ func shephardTones() s.Sound {
 	tones := 2 * octaves
 	bases := make([]float64, tones, tones)
 	for i := 0; i < octaves; i++ {
-		bases[2 * i] = base * float64(unsafeShift(i))
+		bases[2*i] = base * float64(unsafeShift(i))
 		bases[2*i+1] = mid * float64(unsafeShift(i))
 	}
 	secondsPerOctave := 10
@@ -219,9 +219,9 @@ func shephardTones() s.Sound {
 	}
 	go func() {
 		for {
-			for sample := 0; sample < octaves * samplesPerOctave; sample++ {
+			for sample := 0; sample < octaves*samplesPerOctave; sample++ {
 				for i := 0; i < tones; i++ {
-					hz := bases[i] * math.Pow(2.0, float64(sample) * octavesPerSample)
+					hz := bases[i] * math.Pow(2.0, float64(sample)*octavesPerSample)
 					if hz >= maxHz {
 						hz *= downOctaves
 					}

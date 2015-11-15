@@ -15,7 +15,6 @@ type simpleWave struct {
 	mapper    SimpleSampleMap
 }
 
-
 // NewSimpleWave creates an unending repeating sound based on cycles defined by a given mapping function.
 // For examples of usage, see sine/square/sawtooth/triangle waves below.
 func NewSimpleWave(hz float64, mapper SimpleSampleMap) Sound {
@@ -30,7 +29,7 @@ func NewSineWave(hz float64) Sound {
 	return NewSimpleWave(hz, SineMap)
 }
 
-// NewSquareWave creates an unending [-1, 1] square wave at a given pitch. 
+// NewSquareWave creates an unending [-1, 1] square wave at a given pitch.
 func NewSquareWave(hz float64) Sound {
 	return NewSimpleWave(hz, SquareMap)
 }
@@ -82,11 +81,11 @@ func SquareMap(at float64) float64 {
 	}
 }
 func SawtoothMap(at float64) float64 {
-	return at * 2.0 - 1.0
+	return at*2.0 - 1.0
 }
 func TriangleMap(at float64) float64 {
 	if at > 0.5 {
 		at = 1.0 - at
 	}
-	return at * 2.0 * 2.0 - 1.0
+	return at*2.0*2.0 - 1.0
 }
