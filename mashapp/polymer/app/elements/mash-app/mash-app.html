@@ -1,6 +1,8 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
+<link rel="import" href="../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../../bower_components/neon-animation/animations/scale-down-animation.html">
 <link rel="import" href="../../bower_components/neon-animation/animations/scale-up-animation.html">
 <link rel="import" href="../../bower_components/paper-dialog/paper-dialog.html">
@@ -8,6 +10,7 @@
 <link rel="import" href="../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../bower_components/paper-item/paper-item.html">
 <link rel="import" href="../../bower_components/paper-listbox/paper-listbox.html">
+<link rel="import" href="../../bower_components/paper-tabs/paper-tabs.html">
 <link rel="import" href="../../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../../bower_components/paper-toolbar/paper-toolbar.html">
 
@@ -27,10 +30,40 @@
       <play-controls is-playing="[[isPlaying]]"></play-controls>
     </paper-toolbar>
 
-    <template is="dom-repeat" items="{{lines}}">
-      <track-line details="{{item}}" play-sample-at="[[playSampleAt]]">
-      </track-line>
-    </template>
+    <div id="split">
+      <div id="blockList">
+        <h3>Blocks</h3>
+        <paper-listbox>
+          <template is="dom-repeat" items="[[blocks]]">
+            <paper-item>[[item.name]]</paper-item>
+          </template>
+        </paper-listbox>
+      </div>
+
+      <div id="tracks">
+        <div id="tabHolder">
+          <paper-tabs selected="{{selectedTab}}">
+            <paper-tab>Inputs</paper-tab>
+            <paper-tab>Workspace</paper-tab>
+          </paper-tabs>
+        </div>
+
+        <iron-pages selected="{{selectedTab}}">
+          <div>
+            <template is="dom-repeat" items="{{lines}}">
+              <track-line details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
+            </template>
+            <div id="noTrackPrompt" on-tap="handleAddTrack">
+              <iron-icon icon="av:playlist-add"></iron-icon> New track
+            </div>
+          </div>
+          <div>
+            Workspace lines...
+          </div>
+        </iron-pages>
+      </div>
+    </div>
+
 
     <!-- Dialogs -->
     <loadfile-dialog id="loadFileDialog" options="[[config.files]]"></loadfile-dialog>

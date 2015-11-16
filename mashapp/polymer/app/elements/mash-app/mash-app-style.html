@@ -2,21 +2,84 @@
 
 /* Data service, so hidden. */
 :host {
-  border: 1px solid green;
   display: flex;
   flex-direction: column;
+
+  height: 100%;
+  border: 1px solid green;
 }
 
-#config {
-  display: none;
+#split {
+  display: flex;
+  width: 100%;
+  flex-grow: 1;
+}
+
+#blockList {
+  min-width: 240px;
+  border-right: 1px solid black;
+}
+#blockList h3 {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background-color: purple;
+  color: white;
+  margin: 0;
+  padding-left: 24px;
+  font-weight: normal;
+  font-size: 14px;
+}
+#blockList paper-listbox {
+  padding: 0;
+}
+#blockList paper-item {
+  cursor: pointer;
+  border-bottom: 1px solid black;
+  height: 50px; /* Two items line up with one track. */
+}
+#blockList paper-item.iron-selected {
+  cursor: pointer;
+  background-color: plum;
+}
+#blockList paper-item:hover {
+  background-color: lavender !important;
+}
+
+#tabHolder {
+  background-color: plum;
+}
+paper-tabs {
+  width: 300px;
+  background-color: purple;
+  color: white;
+}
+
+#tracks {
+  flex-grow: 1;
+}
+
+#noTrackPrompt {
+  cursor: pointer;
+  display: flex;
+  height: 100px;
+  align-items: center;
+  padding: 0 28px;
+  background-color: whitesmoke;
+}
+#noTrackPrompt:hover {
+  background-color: lavender;
+}
+#noTrackPrompt iron-icon {
+  margin-right: 14px;
 }
 
 paper-toolbar {
   --paper-toolbar-background: green;
 }
 
-paper-dropdown-menu {
-  /*display: block;*/
+#config {
+  display: none;
 }
 
 </style></template></dom-module>

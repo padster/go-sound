@@ -16,6 +16,11 @@ Polymer({
       value: [],
     },
 
+    blocks: {
+      type: Array,
+      value: []
+    },
+
     selection: {
       type: Object,
       value: {
@@ -41,6 +46,11 @@ Polymer({
     zoom: Number,
     indexStep: Number,
     pixelsPerSample: Number,
+
+    selectedTab: {
+      type: Number,
+      value: 0,
+    }
   },
 
   listeners: {
@@ -223,6 +233,10 @@ Polymer({
     this.redrawAllLines();
   },
 
+  handleAddTrack: function() {
+    util.performAction('load-file', null, this);
+  },
+
   handleLoadFile: function(e) {
     this.$.loadFileDialog.open(this.loadFile.bind(this));
   },
@@ -273,7 +287,7 @@ Polymer({
     }
   },
   handleCreateBlockResult: function(result) {
-    // TODO - handle.
+    this.push('blocks', result.block);
   },
 
   redrawAllLines: function() {

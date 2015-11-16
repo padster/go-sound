@@ -3,6 +3,11 @@
 }
 
 body {
+  /* TODO: Customize to something else? Make sure that paper elements use it too. */
+  /* Copied from paper-styles. */
+  font-family: 'Roboto', 'Noto', sans-serif;
+  -webkit-font-smoothing: antialiased;  /* OS X subpixel AA bleed bug */
+
   margin: 0;
   padding: 0;
 }
