@@ -11,7 +11,12 @@ Polymer({
       value: null,
     },
 
-    lines: {
+    inputLines: {
+      type: Array,
+      value: [],
+    },
+
+    outputLines: {
       type: Array,
       value: [],
     },
@@ -21,12 +26,22 @@ Polymer({
       value: []
     },
 
-    selection: {
+    inputSelection: {
       type: Object,
       value: {
+        track: null,
         startSample: null,
         endSample: null,
       },
+    },
+
+    outputSelection: {
+      type: Object,
+      value: {
+        track: null,
+        startSample: null,
+        endSample: null,
+      }
     },
 
     // TODO: migrate to sound service.
@@ -102,7 +117,7 @@ Polymer({
     // TODO - move into util?
     // rewrite base-64 to floats
     data.samples = new Float32Array(buffer);
-    this.push('lines', [{ sound: data, start: 0 }]);
+    this.push('inputLines', [{ sound: data, start: 0 }]);
   },
 
   editTrack: function(data) {
@@ -143,7 +158,7 @@ Polymer({
     // rewrite base-64 to floats
     data.samples = new Float32Array(buffer);
     // HACK
-    this.lines[0][0].sound = data;
+    this.inputLines[0][0].sound = data;
     this.redrawAllLines();
   },
 
@@ -151,7 +166,9 @@ Polymer({
   getService: function(e) {
     switch (e.detail.service) {
       case "selection": 
-        e.detail.result = this.selection;
+        selection = util.clone(this.isOutputMode() ? this.outputSelection : this.inputSelection);
+        selection.isOutput = this.isOutputMode();
+        e.detail.result = selection;
         break;
       // HACK - remove once it's split up properly.
       case "globals":
@@ -214,15 +231,19 @@ Polymer({
   },
 
   handleSetSelection: function(data) {
-    this.selection = data;
+    if (this.isOutputMode()) {
+      this.outputSelection = data;
+    } else {
+      this.inputSelection = data;
+    }
     this.redrawAllLines();
   },
 
   handleFastRewind: function(e) {
     this.handleSetSelection({
+      track: null,
       startSample: null,
       endSample: null,
-      track: null,
     });
   },
 
@@ -233,8 +254,13 @@ Polymer({
     this.redrawAllLines();
   },
 
-  handleAddTrack: function() {
+  handleAddInputTrack: function() {
     util.performAction('load-file', null, this);
+  },
+
+  handleAddOutputTrack: function() {
+    // TODO: Use action instead?
+    this.push('outputLines', []);
   },
 
   handleLoadFile: function(e) {
@@ -247,22 +273,35 @@ Polymer({
   },
 
   handleMuteAllExcept: function(data) {
-    this.forEachLine(function(line) {
+    this.forEachInputLine(function(line) {
       // NOTE: mute-all-except null is a special case, resuling in nothing muted.
       line.isMuted = (data.track !== null && data.track != line);
     });
   },
 
+  handleSelectBlock: function(e) {
+    var blockId = e.target.dataset.blockId;
+    if (e.detail.sourceEvent.ctrlKey && this.isOutputMode()) {
+      if (this.outputLines.length == 0) {
+        // First ensure 
+        this.handleAddOutputTrack();
+      }
+      this.addBlockToOutput(blockId, this.outputSelection.track || 0, this.outputSelection.startSample || 0)
+    } else {
+      console.log("TODO: Select block " + blockId);
+    }
+  },
+
   handleCreateBlock: function(e) {
-    if (this.selection && this.selection.startSample && this.selection.endSample && this.selection.track) {
-      var trackDetails = this.selection.track.details[0].sound.meta;
+    if (this.inputSelection && this.inputSelection.startSample && this.inputSelection.endSample && this.inputSelection.track) {
+      var trackDetails = this.inputSelection.track.details[0].sound.meta;
       var name = window.prompt("Block name...");
 
       var blockDetails = {
         inputId: trackDetails.id | 0, // HACK - normalize on read, not on write.
         name: name,
-        startSample: this.selection.startSample,
-        endSample: this.selection.endSample,
+        startSample: this.inputSelection.startSample,
+        endSample: this.inputSelection.endSample,
       }
 
       this.startRpc("Creating block...");
@@ -290,9 +329,30 @@ Polymer({
     this.push('blocks', result.block);
   },
 
+  addBlockToOutput: function(blockId, track, startSample) {
+    var block = this.getBlockById(blockId);
+    if (!block) {
+      util.whoops("Can't find the block, something really bad has happened...");
+    }
+    var input = this.getInputById(block.inputId);
+    if (!input) {
+      util.whoops("Can't find input block refers to...");
+    }
+    var samples = input.sound.samples.slice(block.startSample, block.endSample);
+
+    // NOTE: Can't be done as a single push, for some reason that doesn't propagate correctly.
+    var trackDetails = util.clone(this.outputLines[track.trackIndex]);
+    trackDetails.push({
+      sound: { samples: samples, },
+      start: startSample,
+    });
+    var key = 'outputLines.' + track.trackIndex;
+    this.set(key, trackDetails);
+  },
+
   redrawAllLines: function() {
     // TODO - polymerize.
-    this.forEachLine(function(line) {
+    this.forEachInputLine(function(line) {
       line.redraw();
     }.bind(this));
   },
@@ -300,7 +360,12 @@ Polymer({
 
   // TODO: Migrate into sound service.
   playSelection: function(frameCallback, endCallback) {
-    var startFrame = this.selection.startSample !== null ? this.selection.startSample : 0;
+    var startFrame = 0;
+    if (this.isOutputMode()) {
+      startFrame = this.outputSelection.startSample || 0;
+    } else {
+      startFrame = this.inputSelection.startSample || 0;
+    }
     var frameCbWrapped = function(frameAt) { return frameCallback(startFrame + frameAt); }
     return this.playSamples(this.getSelectedSamples(), frameCbWrapped, endCallback);
   },
@@ -333,20 +398,28 @@ Polymer({
   },
 
   getSelectedSamples: function() {
-    var start = this.selection.startSample !== null ? this.selection.startSample : 0;
-    var end = this.selection.endSample !== null ? this.selection.endSample : this.totalSampleLength();
+    var start, end;
+    if (this.isOutputMode()) {
+      start = this.outputSelection.startSample || 0;
+      end = this.outputSelection.endSample !== null ? this.outputSelection.endSample : this.totalModeSampleLength();
+    } else {
+      start = this.inputSelection.startSample || 0;
+      end = this.inputSelection.endSample !== null ? this.inputSelection.endSample : this.totalModeSampleLength();
+    }
 
     var totalSamples = null;
-    this.forEachLine(function(line) {
+    this.forEachModeLine(function(line) {
       var lineSamples = line.getSamples(start, end);
       totalSamples = util.mergeSamplesInPlace(totalSamples, lineSamples);
     });
     return totalSamples || [];
   },
 
-  totalSampleLength: function() {
+  totalModeSampleLength: function() {
+    console.log("maxing...");
     var result = 0;
-    this.forEachLine(function(line) {
+    this.forEachModeLine(function(line) {
+      console.log("Sample count = " + line.sampleCount);
       result = Math.max(result, line.sampleCount);
     });
     return result;
@@ -381,11 +454,41 @@ Polymer({
     return result;
   },
 
-  forEachLine: function(cb) {
-    lines = this.getElementsByTagName("track-line");
-    for (var i = 0; i < lines.length; i++) {
-      cb(lines[i]);
+  isOutputMode: function() {
+    return this.selectedTab == 1;
+  },
+
+  forEachModeLine: function(cb) {
+    console.log("blah");
+    console.log(this.isOutputMode());
+    if (this.isOutputMode()) {
+      this.forEachOutputLine(cb);
+    } else {
+      this.forEachInputLine(cb);
     }
+  },
+  forEachInputLine: function(cb) {
+    $("track-line.input").each(function(index, element) { cb(element); });
+  },
+  forEachOutputLine: function(cb) {
+    $("track-line.output").each(function(index, element) { cb(element); });
+  },
+
+  getInputById: function(id) {
+    for (var i in this.inputLines) {
+      if (this.inputLines[i][0].sound.meta.id == id) {
+        return this.inputLines[i][0];
+      }
+    }
+    return null;
+  },
+  getBlockById: function(id) {
+    for (var i in this.blocks) {
+      if (this.blocks[i].id == id) {
+        return this.blocks[i];
+      }
+    }
+    return null;
   },
 
   startRpc: function(message) {

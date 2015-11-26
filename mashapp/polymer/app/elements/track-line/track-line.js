@@ -10,6 +10,14 @@ Polymer({
     // Canvas context
     ctx: Object,
 
+    // TODO - clean up; mash-app uses isOutput
+    isOutput: {
+      type: Boolean,
+      value: false,
+    },
+
+    trackIndex: Number,
+
     details: {
       type: Array,
       observer: 'detailsChanged',
@@ -26,7 +34,10 @@ Polymer({
     },
     showPlayLine: Boolean,
 
-    isMuted: Boolean,
+    isMuted: {
+      type: Boolean,
+      observer: 'muteChanged',
+    },
 
     mouseDownE: Object,
     mouseIsDrag: Boolean,
@@ -92,12 +103,8 @@ Polymer({
   },
 
   detailsChanged: function() {
-    this.sampleCount = 0;
-    for (var i in this.details) {
-      this.sampleCount = Math.max(this.sampleCount, this.details[i].sound.samples.length)
-    }
-
-    this.isMuted = this.details[0].sound.meta.muted;
+    this.sampleCount = this.calculateSampleCount();
+    this.isMuted = this.calculateMuted();
     this.redraw();
   },
 
@@ -124,23 +131,25 @@ Polymer({
         scrollElt.scrollLeft = Math.min(lastVisible, this.$.surface.width - windowWidth);
       }  
     }
+  },
 
+  muteChanged: function() {
+    // Need to denormalize mute to the single input if needed.
+    if (!this.isOutput) {
+      this.details[0].sound.meta.muted = this.isMuted;
+    }
   },
 
   getSamples: function(start, end) {
-    if (this.details.length != 1) {
-      util.whoops("Only support one sound per track so far...");
-    }
-
     if (this.isMuted) {
       return null;
     }
 
     var totalSamples = null;
-    for (var i = 0; i < this.details.length; i++) {
-      var blockSamples = this.getSamplesForBlock(this.details[i], start, end);
+    this.forEachBlock(function(block) {
+      var blockSamples = this.getSamplesForBlock(block, start, end);
       totalSamples = util.mergeSamplesInPlace(totalSamples, blockSamples);
-    }
+    }.bind(this));
     return totalSamples;
   },
 
@@ -169,16 +178,15 @@ Polymer({
     this.fixWidth();
 
     var selection = util.getService('selection', this);
-    if (selection.startSample !== null && selection.endSample !== null) {
+    if (selection.isOutput == this.isOutput && selection.startSample !== null && selection.endSample !== null) {
       this.drawSelectionRange(selection);
     }
 
-    if (this.details.length != 1) {
-      util.whoops("Only support one sound per track so far...");
-    }
-    this.drawSamples(this.details[0].sound.samples, this.details[0].start);
+    this.forEachBlock(function(block) {
+      this.drawSamples(block.sound.samples, block.start);
+    }.bind(this));
 
-    if (selection.startSample !== null && selection.endSample === null) {
+    if (selection.isOutput == this.isOutput && selection.startSample !== null && selection.endSample === null) {
       this.drawSelectionLine(selection);
     }
   },
@@ -197,6 +205,10 @@ Polymer({
   },
 
   drawSelectionLine: function(selection) {
+    if (selection.track !== null && selection.track != this) {
+      return;
+    }
+
     var pps = util.getService('globals', this).pixelsPerSample;
     var x = pps * selection.startSample;
 
@@ -284,7 +296,7 @@ Polymer({
     var selection = {
       startSample: null, 
       endSample: null,
-      track: null,
+      track: this,
     };
     if (s1 === null) {
       selection.startSample = s2;
@@ -293,14 +305,35 @@ Polymer({
     } else {
       selection.startSample = Math.min(s1, s2);
       selection.endSample = Math.max(s1, s2);
-      // For range selections, only select one track:
-      selection.track = this;
     }
     util.performAction('set-selection', selection, this)
   },
 
   isLargeDrag: function(e1, e2) {
     return util.dist(e1.offsetX, e1.offsetY, e2.offsetX, e2.offsetY) > 5;
+  },
+
+  forEachBlock: function(cb) {
+    for (var i in this.details) {
+      cb(this.details[i]);
+    }
+  },
+
+  calculateSampleCount: function() {
+    var count = 0;
+    this.forEachBlock(function(block) {
+      count = Math.max(count, block.start + block.sound.samples.length);
+    });
+    return count;
+  },
+
+  // Input/Output distinction:
+  calculateMuted: function() {
+    if (this.isOutput) {
+      return this.isMuted;
+    } else {
+      return this.details[0].sound.meta.muted;
+    }
   },
 });
 

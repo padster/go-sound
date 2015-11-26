@@ -101,10 +101,17 @@ M.deepEquals = function(a, b) {
   }
 };
 
+M.clone = function(o) {
+  if ($.isArray(o)) {
+    return o.slice();
+  }
+  return $.extend(true, {}, o);
+};
+
 M.whoops = function(msg) {
   console.error(msg);
   debugger;
   return null;
-}
+};
 
 })(window.util);

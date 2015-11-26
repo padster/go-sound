@@ -21,8 +21,8 @@
 <link rel="import" href="../util-src/util-src.html">
 
 <link rel="import" href="mash-app-style.html">
-
 <dom-module id="mash-app">
+
   <style include="mash-app-style"></style>
   <template>
 
@@ -35,7 +35,7 @@
         <h3>Blocks</h3>
         <paper-listbox>
           <template is="dom-repeat" items="[[blocks]]">
-            <paper-item>[[item.name]]</paper-item>
+            <paper-item data-block-id$="[[item.id]]" on-tap="handleSelectBlock">[[item.name]]</paper-item>
           </template>
         </paper-listbox>
       </div>
@@ -44,21 +44,26 @@
         <div id="tabHolder">
           <paper-tabs selected="{{selectedTab}}">
             <paper-tab>Inputs</paper-tab>
-            <paper-tab>Workspace</paper-tab>
+            <paper-tab>Output</paper-tab>
           </paper-tabs>
         </div>
 
         <iron-pages selected="{{selectedTab}}">
           <div>
-            <template is="dom-repeat" items="{{lines}}">
-              <track-line details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
+            <template is="dom-repeat" items="{{inputLines}}">
+              <track-line class="input" track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
             </template>
-            <div id="noTrackPrompt" on-tap="handleAddTrack">
-              <iron-icon icon="av:playlist-add"></iron-icon> New track
+            <div class="addTrackPrompt" on-tap="handleAddInputTrack">
+              <iron-icon icon="av:playlist-add"></iron-icon> Load input track
             </div>
           </div>
           <div>
-            Workspace lines...
+            <template is="dom-repeat" items="{{outputLines}}">
+              <track-line class="output" is-output track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
+            </template>
+            <div class="addTrackPrompt" on-tap="handleAddOutputTrack">
+              <iron-icon icon="av:playlist-add"></iron-icon> Add output track
+            </div>
           </div>
         </iron-pages>
       </div>
