@@ -32,7 +32,10 @@
 
     <div id="split">
       <div id="blockList">
-        <h3>Blocks</h3>
+        <h3 class="caption">
+          <div>Blocks</div>
+          <paper-icon-button icon="av:library-add" on-tap="handleCreateBlock"></paper-icon-button>
+        </h3>
         <paper-listbox>
           <template is="dom-repeat" items="[[blocks]]">
             <paper-item data-block-id$="[[item.id]]" on-tap="handleSelectBlock">[[item.name]]</paper-item>

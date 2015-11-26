@@ -205,9 +205,6 @@ Polymer({
       case "mute-all-except":
         this.handleMuteAllExcept(e.detail.data);
         break;
-      case "create-block":
-        this.handleCreateBlock(e);
-        break;
       default:
         util.whoops("View action " + e.detail.type + " not supported :(")
         return false;
@@ -416,10 +413,8 @@ Polymer({
   },
 
   totalModeSampleLength: function() {
-    console.log("maxing...");
     var result = 0;
     this.forEachModeLine(function(line) {
-      console.log("Sample count = " + line.sampleCount);
       result = Math.max(result, line.sampleCount);
     });
     return result;
@@ -459,8 +454,6 @@ Polymer({
   },
 
   forEachModeLine: function(cb) {
-    console.log("blah");
-    console.log(this.isOutputMode());
     if (this.isOutputMode()) {
       this.forEachOutputLine(cb);
     } else {

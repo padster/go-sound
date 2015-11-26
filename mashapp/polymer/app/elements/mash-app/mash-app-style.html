@@ -19,7 +19,7 @@
   min-width: 240px;
   border-right: 1px solid black;
 }
-#blockList h3 {
+#blockList>h3 {
   display: flex;
   align-items: center;
   height: 48px;
@@ -27,8 +27,12 @@
   color: white;
   margin: 0;
   padding-left: 24px;
+  padding-right: 8px;
   font-weight: normal;
   font-size: 14px;
+}
+#blocklist>h3>div {
+  flex-grow: 1;
 }
 #blockList paper-listbox {
   padding: 0;
