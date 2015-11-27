@@ -216,7 +216,6 @@ Polymer({
     // 'Stop' currently showing.
     if (this.isPlaying) {
       this.stopPlaying();
-      // R.setPlaying(false);
     } else {
       this.isPlaying = this.playSelection(function(sampleAt) {
         this.playSampleAt = sampleAt;
@@ -291,37 +290,48 @@ Polymer({
 
   handleCreateBlock: function(e) {
     if (this.inputSelection && this.inputSelection.startSample && this.inputSelection.endSample && this.inputSelection.track) {
-      var trackDetails = this.inputSelection.track.details[0].sound.meta;
-      var name = window.prompt("Block name...");
-
-      var blockDetails = {
-        inputId: trackDetails.id | 0, // HACK - normalize on read, not on write.
-        name: name,
-        startSample: this.inputSelection.startSample,
-        endSample: this.inputSelection.endSample,
-      }
-
-      this.startRpc("Creating block...");
-      $.ajax({
-        url: "/_/block/new",
-        type: "POST",
-        contentType: "application/json",
-        data: JSON.stringify({block: blockDetails}),
-        dataType: "json",
-        success: (function(result) {
-          this.endRpc();
-          this.handleCreateBlockResult(result);
-        }).bind(this),
-        error: (function(result) {
-          this.endRpc();
-          console.log("Oops! %O", result);
-        }).bind(this),
-      });
+      var trackId = this.inputSelection.track.details[0].sound.meta.id | 0; // HACK - normalize on read, not on write.
+      this.$.textDialog.value = "";
+      this.$.textDialog.title = "Enter name";
+      this.$.textDialog.open(function(name) {
+        this.createBlock(trackId, name);
+      }.bind(this));
     } else {
       // TODO: Toasty.
       window.alert("Oops, need a selection on a single input track.");
     }
   },
+
+  createBlock: function(trackId, name) {
+    if (name === null) {
+      return; // Dialog closed.
+    }
+
+    var blockDetails = {
+      inputId: trackId,
+      name: name,
+      startSample: this.inputSelection.startSample,
+      endSample: this.inputSelection.endSample,
+    }
+
+    this.startRpc("Creating block...");
+    $.ajax({
+      url: "/_/block/new",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({block: blockDetails}),
+      dataType: "json",
+      success: (function(result) {
+        this.endRpc();
+        this.handleCreateBlockResult(result);
+      }).bind(this),
+      error: (function(result) {
+        this.endRpc();
+        console.log("Oops! %O", result);
+      }).bind(this),
+    });
+  },
+
   handleCreateBlockResult: function(result) {
     this.push('blocks', result.block);
   },
