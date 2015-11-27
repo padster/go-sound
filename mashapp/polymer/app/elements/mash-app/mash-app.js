@@ -65,7 +65,12 @@ Polymer({
     selectedTab: {
       type: Number,
       value: 0,
-    }
+    },
+
+    selectedBlock: {
+      type: Number,
+      value: null,
+    },
   },
 
   listeners: {
@@ -284,7 +289,11 @@ Polymer({
       }
       this.addBlockToOutput(blockId, this.outputSelection.track || 0, this.outputSelection.startSample || 0)
     } else {
-      console.log("TODO: Select block " + blockId);
+      if (this.selectedBlock !== null && this.selectedBlock.id == blockId) {
+        this.selectedBlock = null;
+      } else {
+        this.selectedBlock = this.getBlockById(blockId);
+      }
     }
   },
 

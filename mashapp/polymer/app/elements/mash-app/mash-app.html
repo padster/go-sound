@@ -37,7 +37,7 @@
           <div>Blocks</div>
           <paper-icon-button icon="av:library-add" on-tap="handleCreateBlock"></paper-icon-button>
         </h3>
-        <paper-listbox>
+        <paper-listbox id="blockSelector">
           <template is="dom-repeat" items="[[blocks]]">
             <paper-item data-block-id$="[[item.id]]" on-tap="handleSelectBlock">[[item.name]]</paper-item>
           </template>
@@ -55,7 +55,7 @@
         <iron-pages selected="{{selectedTab}}">
           <div>
             <template is="dom-repeat" items="{{inputLines}}">
-              <track-line class="input" track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
+              <track-line class="input" track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]" selected-block="{{selectedBlock}}"></track-line>
             </template>
             <div class="addTrackPrompt" on-tap="handleAddInputTrack">
               <iron-icon icon="av:playlist-add"></iron-icon> Load input track
@@ -63,7 +63,7 @@
           </div>
           <div>
             <template is="dom-repeat" items="{{outputLines}}">
-              <track-line class="output" is-output track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]"></track-line>
+              <track-line class="output" is-output track-index$="[[index]]" details="{{item}}" play-sample-at="[[playSampleAt]]" selected-block="{{selectedBlock}}"></track-line>
             </template>
             <div class="addTrackPrompt" on-tap="handleAddOutputTrack">
               <iron-icon icon="av:playlist-add"></iron-icon> Add output track

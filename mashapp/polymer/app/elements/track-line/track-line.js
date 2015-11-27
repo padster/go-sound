@@ -28,11 +28,28 @@ Polymer({
       value: 0,
     },
 
+    selectionLines: {
+      type: Array,
+      value: [],
+      // TODO - computed off selectedBlock
+    },
+
+    blockSelectionRanges: {
+      type: Array,
+      value: [],
+      // TODO - computed off selectedBlock
+    },
+
     playSampleAt: {
       type: Number,
       observer: 'playSampleAtChanged',
     },
     showPlayLine: Boolean,
+
+    selectedBlock: {
+      type: Number,
+      observer: 'selectedBlockChanged',
+    },
 
     isMuted: {
       type: Boolean,
@@ -133,6 +150,25 @@ Polymer({
     }
   },
 
+  selectedBlockChanged: function() {
+    var newLines = [];
+    var newRanges = [];
+
+    if (this.selectedBlock !== null) {
+      if (this.isOutput) {
+
+      } else {
+        // Input track: Show where it is:
+        newLines = [this.selectedBlock.startSample, this.selectedBlock.endSample];
+        newRanges = [newLines];
+      }
+    }
+
+    this.set('selectionLines', newLines);
+    this.set('blockSelectionRanges', newRanges);
+    this.redraw();
+  },
+
   muteChanged: function() {
     // Need to denormalize mute to the single input if needed.
     if (!this.isOutput) {
@@ -177,6 +213,9 @@ Polymer({
 
     this.fixWidth();
 
+    for (var i in this.blockSelectionRanges) {
+      this.drawBlockSelectionRange(this.blockSelectionRanges[i]);
+    }
     var selection = util.getService('selection', this);
     if (selection.isOutput == this.isOutput && selection.startSample !== null && selection.endSample !== null) {
       this.drawSelectionRange(selection);
@@ -202,6 +241,15 @@ Polymer({
 
     this.ctx.fillStyle = '#888';
     this.ctx.fillRect(x1, 0, x2 - x1, this.$.surface.height);
+  },
+
+  drawBlockSelectionRange: function(range) {
+    var pps = util.getService('globals', this).pixelsPerSample;
+    var x1 = pps * range[0];
+    var x2 = pps * range[1];
+
+    this.ctx.fillStyle = '#ADFF2F';
+    this.ctx.fillRect(x1, 0, x2 - x1, this.$.surface.height);    
   },
 
   drawSelectionLine: function(selection) {
@@ -317,6 +365,14 @@ Polymer({
     for (var i in this.details) {
       cb(this.details[i]);
     }
+  },
+
+  selectionLineStyle: function(lineSample) {
+    var pps = util.getService('globals', this).pixelsPerSample;
+    var offset = lineSample * pps;
+    return util.asStyleAttribute({
+      'left': offset + 'px',
+    });
   },
 
   calculateSampleCount: function() {

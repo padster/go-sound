@@ -15,7 +15,10 @@
       <paper-icon-button icon="editor:mode-edit" on-tap="handleEdit"></paper-icon-button>
     </div>
     <div id="drawing">
-      <div id="playLine" hidden$="{{!showPlayLine}}"></div>
+      <div id="playLine" class="fixedLine" hidden$="{{!showPlayLine}}"></div>
+      <template is="dom-repeat" items="[[selectionLines]]">
+        <div class="fixedLine selection" style$="{{selectionLineStyle(item)}}"></div>
+      </template>
       <canvas id="surface" on-mousedown="handleMouseDown" on-mouseup="handleMouseUp" on-mousemove="handleMouseMove"></canvas>
     </div>
   </template>
