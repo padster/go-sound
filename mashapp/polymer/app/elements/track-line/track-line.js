@@ -155,8 +155,15 @@ Polymer({
     var newRanges = [];
 
     if (this.selectedBlock !== null) {
-      if (this.isOutput) {
+      var selectedBlockId = this.selectedBlock.id;
 
+      if (this.isOutput) {
+        this.forEachBlock(function(block) {
+          if (block.meta.id == selectedBlockId) {
+            newLines.push(block.start, block.start + block.sound.samples.length);
+            newRanges.push([block.start, block.start + block.sound.samples.length]);
+          }
+        });
       } else {
         // Input track: Show where it is:
         newLines = [this.selectedBlock.startSample, this.selectedBlock.endSample];

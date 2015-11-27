@@ -280,8 +280,9 @@ Polymer({
     });
   },
 
+  // HACK - bind properly via polymer
   handleSelectBlock: function(e) {
-    var blockId = e.target.dataset.blockId;
+    var blockId = e.target.dataset.blockId | 0;
     if (e.detail.sourceEvent.ctrlKey && this.isOutputMode()) {
       if (this.outputLines.length == 0) {
         // First ensure 
@@ -291,6 +292,9 @@ Polymer({
     } else {
       if (this.selectedBlock !== null && this.selectedBlock.id == blockId) {
         this.selectedBlock = null;
+        this.async(function() {
+          this.$.blockSelector.selected = null;
+        }.bind(this)); // HACK!
       } else {
         this.selectedBlock = this.getBlockById(blockId);
       }
@@ -321,7 +325,7 @@ Polymer({
       name: name,
       startSample: this.inputSelection.startSample,
       endSample: this.inputSelection.endSample,
-    }
+    };
 
     this.startRpc("Creating block...");
     $.ajax({
@@ -359,6 +363,7 @@ Polymer({
     // NOTE: Can't be done as a single push, for some reason that doesn't propagate correctly.
     var trackDetails = util.clone(this.outputLines[track.trackIndex]);
     trackDetails.push({
+      meta: block,
       sound: { samples: samples, },
       start: startSample,
     });
