@@ -6,6 +6,10 @@ import (
 	"math/cmplx"
 )
 
+const (
+	TAU = 2.0 * math.Pi
+)
+
 type Spectrogram struct {
 	cq *ConstantQ
 
@@ -230,15 +234,15 @@ func logInterpolate(this1, thisN complex128, proportion float64, interpolatedPha
 	return cmplx.Rect(cAbs*cmplx.Abs(this1), interpolatedPhase)
 }
 
-// Return the closest number X to toShift, such that X mod 2Pi == modTwoPi
-func makeCloser(toShift, modTwoPi float64) float64 {
-	if math.IsNaN(modTwoPi) {
-		modTwoPi = 0.0
+// Return the closest number X to toShift, such that X mod Tau == modTwoPi
+func makeCloser(toShift, modTau float64) float64 {
+	if math.IsNaN(modTau) {
+		modTau = 0.0
 	}
-	// Minimize |toShift - (modTwoPi + pi * cyclesToAdd)|
-	// toShift - modTwoPi - pi * CTA = 0
-	cyclesToAdd := (toShift - modTwoPi) / math.Pi
-	return modTwoPi + float64(Round(cyclesToAdd))*math.Pi
+	// Minimize |toShift - (modTau + tau * cyclesToAdd)|
+	// toShift - modTau - tau * CTA = 0
+	cyclesToAdd := (toShift - modTau) / TAU
+	return modTau + float64(Round(cyclesToAdd))*TAU
 }
 
 func holdInterpolate(values [][]complex128) [][]complex128 {

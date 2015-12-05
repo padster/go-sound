@@ -13,9 +13,8 @@ import (
 	s "github.com/padster/go-sound/sounds"
 )
 
-// Generates the golden files. See test/sounds_test.go for actual test.
+// Runs CQ, applies some processing, and plays the result.
 func main() {
-	// Singlethreaded for now...
 	runtime.GOMAXPROCS(4)
 
 	// Parse flags...

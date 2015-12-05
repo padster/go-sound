@@ -63,7 +63,7 @@ func main() {
 			for _, c := range col {
 				cq.WriteComplex(outputBuffer, c)
 			}
-			if width%1000 == 0 {
+			if width%10000 == 0 {
 				fmt.Printf("At frame: %d\n", width)
 			}
 			width++
