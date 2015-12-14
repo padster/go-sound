@@ -23,7 +23,7 @@ def running_mean(x, N):
 def plot_complex_spectrogram(ys, ax0, ax1):
     rows, cols = ys.shape
     values = np.abs(ys)
-    values = 20 * np.log10(np.abs(values) + 1e-8)
+    # values = 20 * np.log10(np.abs(values) + 1e-8)
 
     # for i in range(0, rows):
         # values[i, :] = running_mean(values[i, :], 32)
@@ -39,7 +39,13 @@ def plot_complex_spectrogram(ys, ax0, ax1):
     # for i in range(0, rows, 12):
         # ax1.axvline(i, color='r')
     # print "Max = %d" % np.argmax(colMax)
-    ax0.imshow(values, cmap='gray')
+
+    # [0, 168) -> [84, 0)
+
+    values = np.sum(values, axis=1)
+    # ax0.plot(np.arange(84, 0, -0.5), values / 700.0)
+    # ax0.imshow(values, cmap='gray')
+
     # ax1.plot(values[:, 256])
     # colSum = np.std(values, axis=0)
     # colSumD = np.diff(colSum)
@@ -70,11 +76,12 @@ def plot_complex_spectrogram(ys, ax0, ax1):
 
 
     # ax1.imshow(ang, cmap='gist_rainbow')
-    ax1.imshow(ang, cmap='gray')
+    # ax1.imshow(ang, cmap='gray')
     # ax1.plot(values[100])
+    ax1.plot(np.arange(84, 0, -0.5) - 6, values / 700.0)
 
 # ys1 = ys1[:,::16]
-# ys1 = ys1[:,256:284]
+ys1 = ys1[:,850*16:950*16]
 
 if len(sys.argv) < 3:
     fig, (ax0, ax1) = matplotlib.pylab.subplots(nrows=2, sharex=True)

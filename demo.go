@@ -2,6 +2,7 @@
 package main
 
 import (
+	// "flag"
 	"fmt"
 	"math"
 	"runtime"
@@ -28,10 +29,10 @@ var trebleKeys = [...]int{-1, -1, 00, -1, -1, 00, -1, -1, -1, 00, -1, -1, 00, -1
 
 func main() {
 	// NOTE: Not required, but shows how this can run on multiple threads.
-	runtime.GOMAXPROCS(8)
+	runtime.GOMAXPROCS(3)
 
 	// Switch on whichever demo you'd like here:
-	if false {
+	if true {
 		renderMidi()
 	} else {
 		playClairDeLune()
@@ -46,18 +47,37 @@ func renderMidi() {
 	midi := s.NewMidiInput(pm.DeviceId(3)) // ++See below
 	fmt.Printf("Rendering midi...\n")
 
-	// Render the generated sine wave to screen:
-	output.Render(midi, 2000, 500)
-	// ...or, play it live:
-	// output.Play(midi)
-
 	/*
-		++ Note: to find your device id, use a version of this:
+		// Note: to find your device id, use a version of this:
 		for i := 1; i <= pm.CountDevices(); i++ {
 			fmt.Printf("Reading device: %d\n", i)
 			di := pm.GetDeviceInfo(pm.DeviceId(i))
 			fmt.Printf("Info = %v\n", di)
 		}
+	*/
+
+	// Render the generated sine wave to screen:
+	// output.Render(midi, 2000, 500, 1)
+	// ...or, play it live:
+	output.Play(midi)
+
+	/*
+	sampleRate := s.CyclesPerSecond
+	octaves := 7
+	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
+	maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
+	bpo := flag.Int("bpo", 48, "Buckets per octave")
+	flag.Parse()
+
+	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+	spectrogram := cq.NewSpectrogram(params)
+
+	midi.Start()
+	defer midi.Stop()
+
+	columns := spectrogram.ProcessChannel(midi.GetSamples())
+	toShow := util.NewSpectrogramScreen(882, *bpo*octaves, *bpo)
+	toShow.Render(columns, 1)
 	*/
 }
 
@@ -121,8 +141,8 @@ func playClairDeLune() {
 	// s.NewSawtoothWave(hz),
 	// s.NewTriangleWave(hz),
 	// )
-	toPlay := s.NewJackInput("go-sound-in")
-	// toPlay := s.NewTimedSound(s.NewSineWave(500), 1000)
+	// toPlay := s.NewJackInput("go-sound-in")
+	toPlay := s.NewTimedSound(s.NewSineWave(500), 1000)
 	// toPlay := s.SumSounds(s1, s2)
 
 	// toPlay := s.NewTimedSound(shephardTones(), 10000)

@@ -17,7 +17,13 @@ const (
 	nsPerCycle         = SecondsPerCycle * 1e9
 	outputSampleBuffer = 1 // how many output samples are written in the same loop
 	tickerDuration     = time.Duration(outputSampleBuffer) * DurationPerCycle
+	MAX_CHANNELS       = 8
 )
+
+// Sample organ synth
+var organOffset = [...]int{0, 12, 19, 24, 31, 34, 36, 38, 40}
+var organVolume = [...]float64{0.18, 0.15, 0.7, 0.62, 1.0, 0.52, 0.4, 0.4, 0.4}
+var organSum = 4.37
 
 // A MidiInput is a sound that is wrapping a portmidi Midi input device.
 type MidiInput struct {
@@ -89,9 +95,15 @@ func (s *MidiInput) Start() {
 					value := 0.0
 					for _, note := range s.notes.List() {
 						// TODO(padster): Remove the * -> int64 -> int cast
-						cps := midiToHz(int(note.(int64)))
-						offset := math.Remainder(cps*cycleAtMult, 1.0) * math.Pi * 2.0
-						value += math.Sin(offset)
+						iNote := int(note.(int64))
+						noteValue := 0.0
+						for i, oOff := range organOffset {
+							cps := midiToHz(iNote + oOff)
+							offset := math.Remainder(cps*cycleAtMult, 1.0) * math.Pi * 2.0
+							noteValue += math.Sin(offset) * organVolume[i]
+						}
+						noteValue *= 1.0 / organSum
+						value += noteValue
 					}
 					if midi.running {
 						midi.samples <- value / float64(s.notes.Size())
@@ -115,10 +127,22 @@ func (s *MidiInput) Start() {
 		for event := range in.Listen() {
 			// TODO - figure out what event.Data2 is (volumne?) and use it...
 			fmt.Printf("Got: %v\n", event)
-			if event.Status == noteStart {
-				s.notes.Add(int64(event.Data1))
-			} else if event.Status == noteEnd {
-				s.notes.Remove(int64(event.Data1))
+			if event.Status >= noteStart && event.Status < noteStart + MAX_CHANNELS {
+				channel := event.Status - noteStart
+				note := int64(event.Data1)
+				// Drop channel 0 an octave
+				if channel == 0 {
+					note -= 12
+				}
+				s.notes.Add(note)
+			} else if event.Status >= noteEnd && event.Status < noteEnd + MAX_CHANNELS {
+				channel := event.Status - noteEnd
+				note := int64(event.Data1)
+				// Drop channel 0 an octave
+				if channel == 0 {
+					note -= 12
+				}
+				s.notes.Remove(note)
 			} else if event.Status == pitchBend {
 				s.Stop()
 			}
