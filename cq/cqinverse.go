@@ -2,7 +2,6 @@ package cq
 
 import (
 	"fmt"
-	"math"
 	"math/cmplx"
 
 	"github.com/mjibson/go-dsp/fft"
@@ -13,7 +12,6 @@ const DEBUG_CQI = false
 type CQInverse struct {
 	kernel *CQKernel
 
-	octaves       int
 	OutputLatency int
 	buffers       [][]float64
 	olaBufs       [][]float64
@@ -23,11 +21,6 @@ type CQInverse struct {
 }
 
 func NewCQInverse(params CQParams) *CQInverse {
-	octaves := roundUp(math.Log2(params.maxFrequency / params.minFrequency))
-	if octaves < 1 {
-		panic("Need at least one octave")
-	}
-
 	kernel := NewCQKernel(params)
 	p := kernel.Properties
 
@@ -36,15 +29,15 @@ func NewCQInverse(params CQParams) *CQInverse {
 	// cares about the ratio, but it only accepts integer source and
 	// target rates, and if we start from the actual samplerate we
 	// risk getting non-integer rates for lower octaves
-	sourceRate := unsafeShift(octaves)
-	latencies := make([]int, octaves, octaves)
-	upsamplers := make([]*Resampler, octaves, octaves)
+	sourceRate := unsafeShift(p.octaves)
+	latencies := make([]int, p.octaves, p.octaves)
+	upsamplers := make([]*Resampler, p.octaves, p.octaves)
 
 	// top octave, no resampling
 	latencies[0] = 0
 	upsamplers[0] = nil
 
-	for i := 1; i < octaves; i++ {
+	for i := 1; i < p.octaves; i++ {
 		factor := unsafeShift(i)
 
 		r := NewResampler(sourceRate/factor, sourceRate, 50, 0.05)
@@ -62,7 +55,7 @@ func NewCQInverse(params CQParams) *CQInverse {
 
 	// additionally we will have fftHop latency at individual octave
 	// rate (before upsampling) for the overlap-add in each octave
-	for i := 0; i < octaves; i++ {
+	for i := 0; i < p.octaves; i++ {
 		latencies[i] += p.fftHop * unsafeShift(i)
 	}
 
@@ -71,16 +64,16 @@ func NewCQInverse(params CQParams) *CQInverse {
 	// sample rate)
 	emptyHops := p.firstCentre / p.atomSpacing
 
-	pushes := make([]int, octaves, octaves)
-	for i := 0; i < octaves; i++ {
+	pushes := make([]int, p.octaves, p.octaves)
+	for i := 0; i < p.octaves; i++ {
 		factor := unsafeShift(i)
-		pushHops := emptyHops*unsafeShift(octaves-i-1) - emptyHops
+		pushHops := emptyHops*unsafeShift(p.octaves-i-1) - emptyHops
 		push := ((pushHops * p.fftHop) * factor) / p.atomsPerFrame
 		pushes[i] = push
 	}
 
 	maxLatLessPush := 0
-	for i := 0; i < octaves; i++ {
+	for i := 0; i < p.octaves; i++ {
 		latLessPush := latencies[i] - pushes[i]
 		if latLessPush > maxLatLessPush {
 			maxLatLessPush = latLessPush
@@ -91,13 +84,13 @@ func NewCQInverse(params CQParams) *CQInverse {
 		totalLatency = 0
 	}
 
-	outputLatency := totalLatency + p.firstCentre*unsafeShift(octaves-1)
+	outputLatency := totalLatency + p.firstCentre*unsafeShift(p.octaves-1)
 	if DEBUG_CQI {
 		fmt.Printf("totalLatency = %d, outputLatency = %d\n", totalLatency, outputLatency)
 	}
 
-	buffers := make([][]float64, octaves)
-	for i := 0; i < octaves; i++ {
+	buffers := make([][]float64, p.octaves)
+	for i := 0; i < p.octaves; i++ {
 		// Calculate the difference between the total latency applied
 		// across all octaves, and the existing latency due to the
 		// upsampler for this octave.
@@ -110,15 +103,14 @@ func NewCQInverse(params CQParams) *CQInverse {
 		buffers[i] = make([]float64, latencyPadding, latencyPadding)
 	}
 
-	olaBufs := make([][]float64, octaves, octaves)
-	for i := 0; i < octaves; i++ {
+	olaBufs := make([][]float64, p.octaves, p.octaves)
+	for i := 0; i < p.octaves; i++ {
 		// Fixed-size buffer for IFFT overlap-add
 		olaBufs[i] = make([]float64, p.fftSize, p.fftSize)
 	}
 
 	return &CQInverse{
 		kernel,
-		octaves,
 
 		outputLatency,
 		buffers,
@@ -133,8 +125,9 @@ func NewCQInverse(params CQParams) *CQInverse {
 func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 {
 	result := make(chan float64)
 
-	octaves := cqi.octaves
 	apf := cqi.kernel.Properties.atomsPerFrame
+	octaves := cqi.kernel.Properties.octaves
+
 	required := apf * unsafeShift(octaves-1) // * some integer multiple?
 
 	go func() {
@@ -168,9 +161,9 @@ func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 
 
 // Return clamped!
 func (cqi *CQInverse) Process(block [][]complex128) []float64 {
-	octaves := cqi.octaves
 	apf := cqi.kernel.Properties.atomsPerFrame
 	bpo := cqi.kernel.Properties.binsPerOctave
+	octaves := cqi.kernel.Properties.octaves
 
 	// The input data is of the form produced by ConstantQ::process --
 	// an unknown number N of columns of varying height. We assert
@@ -185,7 +178,7 @@ func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 	blockWidth := apf * unsafeShift(octaves-1)
 	if widthProvided%blockWidth != 0 {
 		fmt.Printf("ERROR: inverse process block size (%d) must be a multiple of atoms * 2^(octaves - 1) = %d * 2^(%d - 1) = %d\n",
-			widthProvided, apf, cqi.octaves, blockWidth)
+			widthProvided, apf, octaves, blockWidth)
 		panic("CQI process block size incorrect")
 	}
 
@@ -233,7 +226,7 @@ func (cqi *CQInverse) Process(block [][]complex128) []float64 {
 
 // Return clamped!
 func (cqi *CQInverse) drawFromBuffers() []float64 {
-	octaves := cqi.octaves
+	octaves := cqi.kernel.Properties.octaves
 
 	// 6. Sum the resampled streams and return
 	available := len(cqi.buffers[0])
@@ -258,9 +251,9 @@ func (cqi *CQInverse) drawFromBuffers() []float64 {
 
 // Return clamped!
 func (cqi *CQInverse) GetRemainingOutput() []float64 {
-	octaves := cqi.octaves
 	bpo := cqi.kernel.Properties.binsPerOctave
 	fftHop := cqi.kernel.Properties.fftHop
+	octaves := cqi.kernel.Properties.octaves
 
 	for j := 0; j < octaves; j++ {
 		factor := unsafeShift(j)

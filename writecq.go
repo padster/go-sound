@@ -20,9 +20,8 @@ func main() {
 
   // Parse flags...
   sampleRate := s.CyclesPerSecond
-  octaves := 7
-  minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
-  maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
+  octaves := flag.Int("octaves", 7, "Range in octaves")
+  minFreq := flag.Float64("minFreq", 55.0, "Minimum frequency")
   bpo := flag.Int("bpo", 24, "Buckets per octave")
   zip := flag.Bool("zip", false, "Whether to zip the output")
   flag.Parse()
@@ -42,7 +41,7 @@ func main() {
   defer inputSound.Stop()
 
   // minFreq, maxFreq, bpo := 110.0, 14080.0, 24
-  params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+  params := cq.NewCQParams(sampleRate, *octaves, *minFreq, *bpo)
   constantQ := cq.NewConstantQ(params)
 
   startTime := time.Now()

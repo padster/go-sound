@@ -31,7 +31,7 @@ func (spec *Spectrogram) ProcessChannel(samples <-chan float64) <-chan []complex
 	go func() {
 		partial := spec.cq.ProcessChannel(samples)
 
-		height := spec.cq.binCount()
+		height := spec.cq.BinCount()
 		buffer := make([][]complex128, 0, 128) // HACK - get the correct size
 
 		first := false
@@ -83,7 +83,7 @@ func (spec *Spectrogram) interpolate(cq [][]complex128, insist bool) [][]complex
 // Interpolate by copying from the previous column
 func (spec *Spectrogram) fetchHold() [][]complex128 {
 	width := len(spec.buffer)
-	height := spec.cq.binCount()
+	height := spec.cq.BinCount()
 
 	out := make([][]complex128, width, width)
 
@@ -109,7 +109,7 @@ func (spec *Spectrogram) fetchHold() [][]complex128 {
 
 func (spec *Spectrogram) fetchInterpolated(insist bool) [][]complex128 {
 	width := len(spec.buffer)
-	height := spec.cq.binCount()
+	height := spec.cq.BinCount()
 
 	if width == 0 {
 		return make([][]complex128, 0, 0)

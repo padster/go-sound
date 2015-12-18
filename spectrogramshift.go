@@ -19,11 +19,10 @@ func main() {
 	runtime.GOMAXPROCS(3)
 
 	sampleRate := s.CyclesPerSecond
-	octaves := 7
-	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
+	octaves := flag.Int("octaves", 7, "Range in octaves")
+	minFreq := flag.Float64("minFreq", 55.0, "Minimum frequency")
 	semitones := flag.Int("shift", 0, "Semitones to shift")
-	bpo := flag.Int("bpo", 48, "Buckets per octave")
+	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 
 	remainingArgs := flag.Args()
@@ -36,8 +35,8 @@ func main() {
 	// Note: scale the output frequency by this to change pitch dilation into time dilation
 	// shift := math.Pow(2.0, float64(-*semitones) / 12.0)
 
-	paramsIn := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
-	paramsOut := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+	paramsIn := cq.NewCQParams(sampleRate, *octaves, *minFreq, *bpo)
+	paramsOut := cq.NewCQParams(sampleRate, *octaves, *minFreq, *bpo)
 
 	spectrogram := cq.NewSpectrogram(paramsIn)
 	cqInverse := cq.NewCQInverse(paramsOut)
@@ -48,7 +47,7 @@ func main() {
 
 	fmt.Printf("Running...\n")
 	columns := spectrogram.ProcessChannel(inputSound.GetSamples())
-	outColumns := shiftSpectrogram(*semitones*(*bpo/12), 11, columns, octaves, *bpo)
+	outColumns := shiftSpectrogram(*semitones*(*bpo/12), 11, columns, *octaves, *bpo)
 	soundChannel := cqInverse.ProcessChannel(outColumns)
 	resultSound := s.WrapChannelAsSound(soundChannel)
 

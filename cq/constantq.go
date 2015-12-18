@@ -12,7 +12,6 @@ const DEBUG_CQ = false
 type ConstantQ struct {
 	kernel *CQKernel
 
-	octaves       int
 	bigBlockSize  int
 	OutputLatency int
 	buffers       [][]float64
@@ -22,11 +21,6 @@ type ConstantQ struct {
 }
 
 func NewConstantQ(params CQParams) *ConstantQ {
-	octaves := roundUp(math.Log2(params.maxFrequency / params.minFrequency))
-	if octaves < 1 {
-		panic("Need at least one octave")
-	}
-
 	kernel := NewCQKernel(params)
 	p := kernel.Properties
 
@@ -35,15 +29,15 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	// cares about the ratio, but it only accepts integer source and
 	// target rates, and if we start from the actual samplerate we
 	// risk getting non-integer rates for lower octaves
-	sourceRate := unsafeShift(octaves)
-	latencies := make([]int, octaves, octaves)
-	decimators := make([]*Resampler, octaves, octaves)
+	sourceRate := unsafeShift(p.octaves)
+	latencies := make([]int, p.octaves, p.octaves)
+	decimators := make([]*Resampler, p.octaves, p.octaves)
 
 	// top octave, no resampling
 	latencies[0] = 0
 	decimators[0] = nil
 
-	for i := 1; i < octaves; i++ {
+	for i := 1; i < p.octaves; i++ {
 		factor := unsafeShift(i)
 
 		r := NewResampler(sourceRate, sourceRate/factor, 50, 0.05)
@@ -84,7 +78,7 @@ func NewConstantQ(params CQParams) *ConstantQ {
 		decimators[i] = r
 	}
 
-	bigBlockSize := p.fftSize * unsafeShift(octaves-1)
+	bigBlockSize := p.fftSize * unsafeShift(p.octaves-1)
 
 	// Now add in the extra padding and compensate for hops that must
 	// be dropped in order to align the atom centres across
@@ -94,15 +88,15 @@ func NewConstantQ(params CQParams) *ConstantQ {
 
 	emptyHops := p.firstCentre / p.atomSpacing
 
-	drops := make([]int, octaves, octaves)
-	for i := 0; i < octaves; i++ {
+	drops := make([]int, p.octaves, p.octaves)
+	for i := 0; i < p.octaves; i++ {
 		factor := unsafeShift(i)
-		dropHops := emptyHops*unsafeShift(octaves-i-1) - emptyHops
+		dropHops := emptyHops*unsafeShift(p.octaves-i-1) - emptyHops
 		drops[i] = ((dropHops * p.fftHop) * factor) / p.atomsPerFrame
 	}
 
 	maxLatPlusDrop := 0
-	for i := 0; i < octaves; i++ {
+	for i := 0; i < p.octaves; i++ {
 		latPlusDrop := latencies[i] + drops[i]
 		if latPlusDrop > maxLatPlusDrop {
 			maxLatPlusDrop = latPlusDrop
@@ -118,8 +112,8 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	// for each octave i, so that we do not end up with fractional
 	// octave latencies below. In theory this is hard, in practice if
 	// we ensure it for the last octave we should be OK.
-	finalOctLat := float64(latencies[octaves-1])
-	finalOneFactInt := unsafeShift(octaves - 1)
+	finalOctLat := float64(latencies[p.octaves-1])
+	finalOneFactInt := unsafeShift(p.octaves - 1)
 	finalOctFact := float64(finalOneFactInt)
 
 	totalLatency = int(finalOctLat + finalOctFact*math.Ceil((float64(totalLatency)-finalOctLat)/finalOctFact) + .5)
@@ -130,16 +124,16 @@ func NewConstantQ(params CQParams) *ConstantQ {
 
 	// Padding as in the reference (will be introduced with the
 	// latency compensation in the loop below)
-	outputLatency := totalLatency + bigBlockSize - p.firstCentre*unsafeShift(octaves-1)
+	outputLatency := totalLatency + bigBlockSize - p.firstCentre*unsafeShift(p.octaves-1)
 
 	if DEBUG_CQ {
 		fmt.Printf("bigBlockSize = %v, firstCentre = %v, octaves = %v, so outputLatency = %v\n",
-			bigBlockSize, p.firstCentre, octaves, outputLatency)
+			bigBlockSize, p.firstCentre, p.octaves, outputLatency)
 	}
 
-	buffers := make([][]float64, octaves, octaves)
+	buffers := make([][]float64, p.octaves, p.octaves)
 
-	for i := 0; i < octaves; i++ {
+	for i := 0; i < p.octaves; i++ {
 		factor := unsafeShift(i)
 
 		// Calculate the difference between the total latency applied
@@ -162,10 +156,8 @@ func NewConstantQ(params CQParams) *ConstantQ {
 	}
 
 	return &ConstantQ{
-		// params,
 		kernel,
 
-		octaves,
 		bigBlockSize,
 		outputLatency,
 		buffers,
@@ -208,10 +200,11 @@ func (cq *ConstantQ) ProcessChannel(samples <-chan float64) <-chan []complex128 
 func (cq *ConstantQ) Process(td []float64) [][]complex128 {
 	apf := cq.kernel.Properties.atomsPerFrame
 	bpo := cq.kernel.Properties.binsPerOctave
+	octaves := cq.kernel.Properties.octaves
 	fftSize := cq.kernel.Properties.fftSize
 
 	cq.buffers[0] = append(cq.buffers[0], td...)
-	for i := 1; i < cq.octaves; i++ {
+	for i := 1; i < octaves; i++ {
 		decimated := cq.decimators[i].Process(td)
 		cq.buffers[i] = append(cq.buffers[i], decimated...)
 	}
@@ -223,8 +216,8 @@ func (cq *ConstantQ) Process(td []float64) [][]complex128 {
 		// added counts for decimator output on each block) we also
 		// have variable additional latency per octave
 		enough := true
-		for i := 0; i < cq.octaves; i++ {
-			required := fftSize * unsafeShift(cq.octaves-i-1)
+		for i := 0; i < octaves; i++ {
+			required := fftSize * unsafeShift(octaves-i-1)
 			if len(cq.buffers[i]) < required {
 				enough = false
 			}
@@ -234,13 +227,13 @@ func (cq *ConstantQ) Process(td []float64) [][]complex128 {
 		}
 
 		base := len(out)
-		totalColumns := unsafeShift(cq.octaves-1) * apf
+		totalColumns := unsafeShift(octaves-1) * apf
 
 		// Pre-fill totalColumns number of empty arrays
 		out = append(out, make([][]complex128, totalColumns, totalColumns)...)
 
-		for octave := 0; octave < cq.octaves; octave++ {
-			blocksThisOctave := unsafeShift(cq.octaves - octave - 1)
+		for octave := 0; octave < octaves; octave++ {
+			blocksThisOctave := unsafeShift(octaves - octave - 1)
 
 			for b := 0; b < blocksThisOctave; b++ {
 				block := cq.processOctaveBlock(octave)
@@ -293,8 +286,8 @@ func (cq *ConstantQ) processOctaveBlock(octave int) [][]complex128 {
 	return cqblock
 }
 
-func (cq *ConstantQ) binCount() int {
-	return cq.octaves * cq.kernel.Properties.binsPerOctave
+func (cq *ConstantQ) BinCount() int {
+	return cq.kernel.BinCount()
 }
 
 func (cq *ConstantQ) bpo() int {

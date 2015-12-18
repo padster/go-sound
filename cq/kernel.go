@@ -12,8 +12,8 @@ const DEBUG = false
 
 type Properties struct {
 	sampleRate    float64
-	maxFrequency  float64
 	minFrequency  float64
+	octaves       int
 	binsPerOctave int
 	fftSize       int
 	fftHop        int
@@ -39,7 +39,7 @@ func NewCQKernel(params CQParams) *CQKernel {
 	// Constructor
 	p := Properties{}
 	p.sampleRate = params.sampleRate
-	p.maxFrequency = params.maxFrequency
+	p.octaves = params.octaves
 	p.binsPerOctave = params.binsPerOctave
 
 	// GenerateKernel
@@ -48,7 +48,6 @@ func NewCQKernel(params CQParams) *CQKernel {
 	thresh := params.threshold
 	bpo := params.binsPerOctave
 
-	p.minFrequency = float64(math.Pow(2, 1/float64(bpo)) * float64(params.maxFrequency) / 2.0)
 	p.Q = q / (math.Pow(2, 1.0/float64(bpo)) - 1.0)
 
 	maxNK := float64(int(math.Floor(p.Q*p.sampleRate/p.minFrequency + 0.5)))
@@ -253,6 +252,10 @@ func (k *CQKernel) ProcessInverse(cv []complex128) []complex128 {
 		}
 	}
 	return rv
+}
+
+func (k *CQKernel) BinCount() int {
+	return k.Properties.octaves * k.Properties.binsPerOctave
 }
 
 func makeWindow(window Window, len int) []float64 {

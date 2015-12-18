@@ -13,8 +13,8 @@ const (
 
 type CQParams struct {
 	sampleRate    float64
+	octaves 	  int
 	minFrequency  float64
-	maxFrequency  float64
 	binsPerOctave int
 
 	// Spectral atom bandwidth scaling;1 is optimal for reconstruction,
@@ -31,16 +31,15 @@ type CQParams struct {
 	window Window
 }
 
-func NewCQParams(sampleRate float64, minFreq float64, maxFreq float64, binsPerOctave int) CQParams {
-	// TODO: change (minFreq, maxFreq) to (minFreq, octaves)
-	if maxFreq <= minFreq || minFreq <= 0 {
-		panic("Requires frequencies 0 < min < max")
+func NewCQParams(sampleRate float64, octaves int, minFreq float64, binsPerOctave int) CQParams {
+	if minFreq < 0 || octaves < 1 {
+		panic("Requires frequencies 0 < min, octaves ")
 	}
 
 	return CQParams{
 		sampleRate,
+		octaves,
 		minFreq,
-		maxFreq,
 		binsPerOctave,
 		1.0,                /* Q scaling factor */
 		0.25,               /* hop size of shortest temporal atom. */

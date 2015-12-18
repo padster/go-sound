@@ -21,9 +21,8 @@ func main() {
 	runtime.GOMAXPROCS(3)
 
 	sampleRate := s.CyclesPerSecond
-	octaves := 7
-	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
+	octaves := flag.Int("octaves", 7, "Range in octaves")
+	minFreq := flag.Float64("minFreq", 55.0, "Minimum frequency")
 	bpo := flag.Int("bpo", 24, "Buckets per octave")
 	flag.Parse()
 
@@ -39,7 +38,7 @@ func main() {
 	}
 
 	// minFreq, maxFreq, bpo := 110.0, 14080.0, 24
-	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+	params := cq.NewCQParams(sampleRate, *octaves, *minFreq, *bpo)
 	spectrogram := cq.NewSpectrogram(params)
 
 	inputSound := f.Read(inputFile)
@@ -77,7 +76,7 @@ func main() {
 		soundChannel, specChannel := splitChannel(inputSound.GetSamples())
 		go func() {
 			columns := spectrogram.ProcessChannel(specChannel)
-			toShow := util.NewSpectrogramScreen(882, *bpo*octaves, *bpo)
+			toShow := util.NewSpectrogramScreen(882, *bpo * *octaves, *bpo)
 			toShow.Render(columns, 1)
 		}()
 		output.Play(s.WrapChannelAsSound(soundChannel))
