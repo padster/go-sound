@@ -157,3 +157,7 @@ func WriteInt32(w io.Writer, i int32) {
 func WriteFloat32(w io.Writer, f float32) {
 	binary.Write(w, binary.LittleEndian, f)
 }
+
+func WriteByte(w io.Writer, b byte) {
+	binary.Write(w, binary.LittleEndian, b)
+}

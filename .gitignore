@@ -26,6 +26,10 @@ _testmain.go
 Makefile
 demo
 
+# CQ outputs
+.cq
+.peaks
+
 # Sound files
 *.wav
 *.mp3

@@ -10,13 +10,14 @@ import (
   "time"
 
   "github.com/padster/go-sound/cq"
+  "github.com/padster/go-sound/features"
   f "github.com/padster/go-sound/file"
   s "github.com/padster/go-sound/sounds"
 )
 
 // Runs CQ to generate the spectrogram (without interpolation) and writes to file.
 func main() {
-  runtime.GOMAXPROCS(4)
+  runtime.GOMAXPROCS(6)
 
   // Parse flags...
   sampleRate := s.CyclesPerSecond
@@ -24,6 +25,7 @@ func main() {
   minFreq := flag.Float64("minFreq", 55.0, "Minimum frequency")
   bpo := flag.Int("bpo", 24, "Buckets per octave")
   zip := flag.Bool("zip", false, "Whether to zip the output")
+  peaks := flag.Bool("peaks", false, "Whether to write CQ peaks rather than values")
   flag.Parse()
 
   remainingArgs := flag.Args()
@@ -46,7 +48,14 @@ func main() {
 
   startTime := time.Now()
   columns := constantQ.ProcessChannel(inputSound.GetSamples())
-  writeSamples(outputFile, *zip, constantQ.OutputLatency, columns)
+
+  if *peaks {
+    pd := &features.PeakDetector{}
+    asPeaks := pd.ProcessChannel(columns)
+    features.WritePeaks(outputFile, asPeaks)
+  } else {
+    writeSamples(outputFile, *zip, constantQ.OutputLatency, columns)
+  }
   elapsedSeconds := time.Since(startTime).Seconds()
 
   fmt.Printf("elapsed time (not counting init): %f sec\n", elapsedSeconds)

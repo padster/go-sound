@@ -1,14 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"runtime"
 	"time"
 
 	"github.com/padster/go-sound/cq"
+	"github.com/padster/go-sound/features"
 	f "github.com/padster/go-sound/file"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
@@ -18,7 +17,7 @@ import (
 // Generates the golden files. See test/sounds_test.go for actual test.
 func main() {
 	// Needs to be at least 2 when doing openGL + sound output at the same time.
-	runtime.GOMAXPROCS(3)
+	runtime.GOMAXPROCS(6)
 
 	sampleRate := s.CyclesPerSecond
 	octaves := flag.Int("octaves", 7, "Range in octaves")
@@ -42,35 +41,14 @@ func main() {
 	spectrogram := cq.NewSpectrogram(params)
 
 	inputSound := f.Read(inputFile)
-	// fmt.Printf("TODO: Go back to reading %s\n", inputFile)
-	// inputSound := s.NewTimedSound(
-	// 	s.SumSounds(
-	// 		s.NewSineWave(440.00),
-	// 		// s.NewSineWave(440.00),
-	// 		s.NewSineWave(698.46),
-	// 	), 10000)
 	inputSound.Start()
 	defer inputSound.Stop()
 
 	startTime := time.Now()
 	if outputFile != "" {
-		// Write to file
 		columns := spectrogram.ProcessChannel(inputSound.GetSamples())
-		outputBuffer := bytes.NewBuffer(make([]byte, 0, 1024))
-		width, height := 0, 0
-		for col := range columns {
-			for _, c := range col {
-				cq.WriteComplex(outputBuffer, c)
-			}
-			if width%10000 == 0 {
-				fmt.Printf("At frame: %d\n", width)
-			}
-			width++
-			height = len(col)
-		}
-		fmt.Printf("Done! - %d by %d\n", width, height)
-		ioutil.WriteFile(outputFile, outputBuffer.Bytes(), 0644)
-
+		// Write to file
+		f.WriteColumns(outputFile, columns)
 	} else {
 		// No file, so play and show instead:
 		soundChannel, specChannel := splitChannel(inputSound.GetSamples())

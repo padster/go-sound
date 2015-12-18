@@ -41,6 +41,7 @@ func NewCQKernel(params CQParams) *CQKernel {
 	p.sampleRate = params.sampleRate
 	p.octaves = params.octaves
 	p.binsPerOctave = params.binsPerOctave
+	p.minFrequency = params.minFrequency
 
 	// GenerateKernel
 	q := params.q
@@ -83,10 +84,8 @@ func NewCQKernel(params CQParams) *CQKernel {
 	}
 
 	for k := 1; k <= p.binsPerOctave; k++ {
-		nk := int(p.Q*p.sampleRate/(p.minFrequency*math.Pow(2, ((float64(k)-1.0)/float64(bpo)))) + 0.5)
-
+		nk := round(p.Q*p.sampleRate/(p.minFrequency*math.Pow(2, ((float64(k)-1.0)/float64(bpo)))))
 		win := makeWindow(params.window, nk)
-
 		fk := float64(p.minFrequency * math.Pow(2, ((float64(k)-1.0)/float64(bpo))))
 
 		cmplxs := make([]complex128, nk, nk)
@@ -259,6 +258,10 @@ func (k *CQKernel) BinCount() int {
 }
 
 func makeWindow(window Window, len int) []float64 {
+	if len <= 0 {
+		panic("Window too small!")
+	}
+
 	if window != SqrtBlackmanHarris {
 		// HACK - support more?
 		panic("Only SqrtBlackmanHarris window supported currently")
