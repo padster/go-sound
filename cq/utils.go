@@ -2,10 +2,32 @@ package cq
 
 import (
 	"encoding/binary"
+	// "fmt"
 	"io"
 	"math"
 	"math/cmplx"
 )
+
+func GenerateHeights(octaves int) func() int {
+	limit := unsafeShift(octaves)
+	at := limit
+	return func() int {
+		result := TerminalZeros(at) + 1
+		if at == limit {
+			at = 0
+		}
+		at++
+		return result
+	}
+}
+
+func TerminalZeros(val int) int {
+	cnt := 0
+	for ; (val & 1) == 0; cnt++ {
+		val /= 2
+	}
+	return cnt
+}
 
 // Math Utils
 
@@ -160,4 +182,24 @@ func WriteFloat32(w io.Writer, f float32) {
 
 func WriteByte(w io.Writer, b byte) {
 	binary.Write(w, binary.LittleEndian, b)
+}
+
+
+func ReadComplexArray(r io.Reader, size int) []complex128 {
+	array := make([]complex128, size, size)
+	for i := 0; i < size; i++ {
+		array[i] = ReadComplex(r)
+	}
+	return array
+}
+
+func ReadComplex(r io.Reader) complex128 {
+	f1, f2 := ReadFloat32(r), ReadFloat32(r)
+	return complex(float64(f1), float64(f2))
+}
+
+func ReadFloat32(r io.Reader) float32 {
+	var f float32
+	binary.Read(r, binary.LittleEndian, &f)
+	return f
 }

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/padster/go-sound/cq"
-	"github.com/padster/go-sound/features"
 	f "github.com/padster/go-sound/file"
 	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"

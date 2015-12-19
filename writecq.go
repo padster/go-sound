@@ -15,7 +15,7 @@ import (
   s "github.com/padster/go-sound/sounds"
 )
 
-// Runs CQ to generate the spectrogram (without interpolation) and writes to file.
+// Runs CQ to generate the CQ columns and writes to file.
 func main() {
   runtime.GOMAXPROCS(6)
 
@@ -33,7 +33,7 @@ func main() {
     panic("Required: <input> [<input>] filename arguments")
   }
   inputFile := remainingArgs[0]
-  outputFile := "out.raw"
+  outputFile := "out.cq"
   if len(remainingArgs) == 2 {
     outputFile = remainingArgs[1]
   }

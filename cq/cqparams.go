@@ -13,9 +13,9 @@ const (
 
 type CQParams struct {
 	sampleRate    float64
-	octaves 	  int
+	Octaves 	  int
 	minFrequency  float64
-	binsPerOctave int
+	BinsPerOctave int
 
 	// Spectral atom bandwidth scaling;1 is optimal for reconstruction,
 	// q < 1 increases smearing in frequency domain but improves the time domain.

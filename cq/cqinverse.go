@@ -133,8 +133,13 @@ func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 
 	go func() {
 		buffer := make([][]complex128, required, required)
 		at := 0
+		// HACK := 0
 		for s := range blocks {
+			// if HACK % 10 == 0 {
+				// fmt.Printf("Inverting column %d, blocks of %d\n", HACK, required)
+			// }
 			if at == required {
+				fmt.Printf("Purging CQI block!\n")
 				for _, c := range cqi.Process(buffer) {
 					result <- c
 				}
@@ -142,6 +147,7 @@ func (cqi *CQInverse) ProcessChannel(blocks <-chan []complex128) <-chan float64 
 			}
 			buffer[at] = s
 			at++
+			// HACK++
 		}
 		/*
 			HACK - figure out how to pad this properly...
@@ -246,6 +252,7 @@ func (cqi *CQInverse) drawFromBuffers() []float64 {
 			result[i] = clampUnit(v)
 		}
 	}
+	fmt.Printf("%d samples inverted\n", len(result))
 	return result
 }
 

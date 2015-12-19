@@ -30,3 +30,27 @@ func ColumnsToBytes(columns <-chan []complex128) []byte {
     fmt.Printf("Done! - %d by %d\n", width, height)
     return outputBuffer.Bytes()
 }
+
+// Reads a file and converts back into a CQ channel.
+func ReadCQColumns(inputFile string, params cq.CQParams) <-chan []complex128 {
+    loaded, err := ioutil.ReadFile(inputFile)
+    if err != nil {
+        panic("Can't load file " + inputFile)
+    }
+    complexEntries := len(loaded) / 8 // complex stored as two float32s.
+    fmt.Printf("Reading %d entries\n", complexEntries)
+
+    asReader := bytes.NewReader(loaded)
+
+    result := make(chan []complex128)
+    go func() {
+        heightGen := cq.GenerateHeights(params.Octaves)
+        for at := 0; at < complexEntries; {
+            nextSize := heightGen() * params.BinsPerOctave
+            // fmt.Printf("At = %d, Next height: %d\n", at, nextSize)
+            result <- cq.ReadComplexArray(asReader, nextSize)
+            at += nextSize
+        }
+    }()
+    return result
+}
