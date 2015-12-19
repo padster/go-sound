@@ -41,7 +41,7 @@ func NewCQKernel(params CQParams) *CQKernel {
 	p.sampleRate = params.sampleRate
 	p.octaves = params.Octaves
 	p.binsPerOctave = params.BinsPerOctave
-	p.minFrequency = params.minFrequency
+	p.minFrequency = params.minFrequency * math.Pow(2.0, float64(p.octaves) - 1.0 + 1.0 / float64(p.binsPerOctave))
 
 	// GenerateKernel
 	q := params.q
