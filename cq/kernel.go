@@ -12,6 +12,8 @@ const DEBUG = false
 
 type Properties struct {
 	sampleRate    float64
+	// NOTE: minFrequency of the kernel is *not* min frequency of the CQ.
+	// It is the frequency of the lowest note in the top octave.
 	minFrequency  float64
 	octaves       int
 	binsPerOctave int
