@@ -34,6 +34,9 @@ func main() {
   }
   inputFile := remainingArgs[0]
   outputFile := "out.cq"
+  if *peaks {
+    outputFile = "out.meta"
+  }
   if len(remainingArgs) == 2 {
     outputFile = remainingArgs[1]
   }

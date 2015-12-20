@@ -1,17 +1,12 @@
 import numpy as np
-from scipy.fftpack import fft
-from scipy.signal import get_window
-import cmath
-import math
-
-import sys, os
 import matplotlib.pyplot as plt
-
+import cmath, math, sys, os
 
 columns = []
+meta = []
 bpo = 24
 octaves = 7
-MASK = 1 << octaves
+MASK = 1 << (octaves - 1)
 TAU = 2 * np.pi
 
 def fixInput(m):
@@ -68,29 +63,66 @@ def running_mean(x, N):
    return (cumsum[N:] - cumsum[:-N]) / N
 
 def readFile(inputFile='out.cq'):
-    columns = []
+    global columns
     values = np.memmap(inputFile, dtype=np.complex64, mode="r")
 
     at = 0
     columnCounter = MASK
-    columnsWritten = 0
+    columnsRead = 0
     while at < len(values):
         samplesInColumn = trailingZeros(columnCounter) * bpo
         columns.append(values[at:at+samplesInColumn])
         columnCounter = (columnCounter % MASK) + 1
         at = at + samplesInColumn
 
-        columnsWritten = columnsWritten + 1
-        if columnsWritten % 10000 == 0:
-            print "%d columns written" % columnsWritten
+        columnsRead = columnsRead + 1
+        if columnsRead % 10000 == 0:
+            print "%d columns read" % columnsRead
 
     # Normalize: find last full size column
     at = -1
     while len(columns[at]) != octaves * bpo:
         at -= 1
-    print "%d columns read" % (len(columns) + at)
-    return columns[:at]
+    columns = columns[:at]
+    print "%d columns read" % (len(columns))
 
+def readMeta(inputFile='out.meta'):
+    global meta
+    values = np.memmap(inputFile, dtype=np.int8, mode="r")
+
+    at = 0
+    columnCounter = MASK
+    columnsRead = 0
+    while at < len(values):
+        samplesInColumn = trailingZeros(columnCounter) * bpo
+        meta.append(values[at:at+samplesInColumn])
+        columnCounter = (columnCounter % MASK) + 1
+        at = at + samplesInColumn
+
+        columnsRead = columnsRead + 1
+        if columnsRead % 10000 == 0:
+            print "%d columns read" % columnsRead
+
+    # Normalize: find last full size column
+    at = -1
+    while len(meta[at]) != octaves * bpo:
+        at -= 1
+    meta = meta[:at]
+    print "%d columns read" % (len(meta))
+
+def readFileAndMeta():
+    readFile()
+    readMeta()
+    if len(columns) != len(meta):
+        print "CQ data and meta length do not match! %d vs %d" % (len(columns), len(meta))
+        raise BaseException("oops")
+
+def phaseScatter(octave, bin):
+    p1, p2 = pairwise(octave, bin, octave + 1, bin, cmath.phase)
+    p1, p2 = flatPhase(p1), flatPhase(p2)
+    p1, p2 = np.diff(p1), np.diff(p2) * 2
+    plt.scatter(p1, p2)
+    plt.show()
 
 def phaseGraphsForBin(bin):
     for octave in range(octaves):
@@ -104,5 +136,33 @@ def phaseGraphsForBin(bin):
         ncol=3, fancybox=True, shadow=True)
     plt.show()
 
-columns = readFile()
-phaseGraphsForBin(3)
+def plotComplexSpectrogram(data, meta):
+    data = data[:,::32]
+    meta = meta[:,::32]
+    fig, (ax0, ax1) = plt.subplots(nrows=2, sharex=True)
+    power = np.abs(data)
+    print "%f -> %f" % (np.min(meta), np.max(meta))
+    # power = 20 * np.log10(power + 1e-8) # convert to DB
+    phase = np.angle(data)
+    ax0.imshow(power, cmap='gray')
+    ax0.imshow(meta, cmap='copper', alpha=0.4)
+    ax1.imshow(phase, cmap='gist_rainbow')
+    plt.show()
+
+def uninterpolatedSpectrogram():
+    maxHeight = octaves * bpo
+    asMatrix = np.zeros((maxHeight, len(columns)), dtype=np.complex64)
+    metaMatrix = np.zeros((maxHeight, len(columns)), dtype=np.int8)
+    for (i, column) in enumerate(columns):
+        asMatrix[:len(column), i] = column
+        metaMatrix[:len(column), i] = meta[i]
+        if i > 0:
+            asMatrix[len(column):, i] = asMatrix[len(column):, i - 1]
+            metaMatrix[len(column):, i] = metaMatrix[len(column):, i - 1]
+    plotComplexSpectrogram(asMatrix, metaMatrix)
+
+
+readFileAndMeta()
+uninterpolatedSpectrogram()
+# phaseGraphsForBin(4)
+# phaseScatter(2, 4)

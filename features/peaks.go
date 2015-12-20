@@ -4,8 +4,13 @@ import (
     "bytes"
     "fmt"
     "io/ioutil"
+    "math/cmplx"
 
     "github.com/padster/go-sound/cq"
+)
+
+const (
+    THRESHOLD = 1.5
 )
 
 // PeakDetector takes the constant Q output, and for each sample bin, returns 
@@ -20,12 +25,13 @@ func (pd *PeakDetector) ProcessChannel(samples <-chan []complex128) <-chan []byt
     go func() {
         i := 0
         for sample := range samples {
-            if i % 10 == 0 {
+            if i % 10000 == 0 {
                 fmt.Printf("Writing peaks %d\n", i)
             }
             i++
             result <- pd.processColumn(sample)
         }
+        close(result)
     }()
 
     return result
@@ -34,6 +40,15 @@ func (pd *PeakDetector) ProcessChannel(samples <-chan []complex128) <-chan []byt
 func (pd *PeakDetector) processColumn(column []complex128) []byte {
     size := len(column)
     result := make([]byte, size, size)
+
+    for i, v := range column {
+        power, _ := cmplx.Polar(v)
+        if power > THRESHOLD {
+            result[i] = 1
+        } else {
+            result[i] = 0
+        }
+    }
 
     // TODO
     return result
@@ -49,9 +64,6 @@ func PeaksToBytes(peaks <-chan []byte) []byte {
     for col := range peaks {
         for _, c := range col {
             cq.WriteByte(outputBuffer, c)
-        }
-        if width%100 == 0 {
-            fmt.Printf("At frame: %d\n", width)
         }
         width++
         height = len(col)
