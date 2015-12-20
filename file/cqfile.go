@@ -47,10 +47,10 @@ func ReadCQColumns(inputFile string, params cq.CQParams) <-chan []complex128 {
         heightGen := cq.GenerateHeights(params.Octaves)
         for at := 0; at < complexEntries; {
             nextSize := heightGen() * params.BinsPerOctave
-            // fmt.Printf("At = %d, Next height: %d\n", at, nextSize)
             result <- cq.ReadComplexArray(asReader, nextSize)
             at += nextSize
         }
+        close(result)
     }()
     return result
 }

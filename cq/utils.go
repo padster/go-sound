@@ -9,7 +9,7 @@ import (
 )
 
 func GenerateHeights(octaves int) func() int {
-	limit := unsafeShift(octaves)
+	limit := unsafeShift(octaves - 1)
 	at := limit
 	return func() int {
 		result := TerminalZeros(at) + 1
@@ -154,14 +154,14 @@ func factorial(i int) int {
 // IO Utils
 
 func WriteComplexBlock(w io.Writer, block [][]complex128) {
-	WriteInt32(w, int32(len(block)))
+	// WriteInt32(w, int32(len(block)))
 	for _, b := range block {
 		WriteComplexArray(w, b)
 	}
 }
 
 func WriteComplexArray(w io.Writer, array []complex128) {
-	WriteInt32(w, int32(len(array)))
+	// WriteInt32(w, int32(len(array)))
 	for _, c := range array {
 		WriteComplex(w, c)
 	}

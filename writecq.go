@@ -85,6 +85,7 @@ func writeSamples(outputFile string, compress bool, latency int, samples <-chan 
 
   fmt.Printf("Latency = %d\n", latency)
 
+  totalNumbersWritten := 0
   for sample := range samples {
     if latency > 0 {
       latency--
@@ -94,10 +95,11 @@ func writeSamples(outputFile string, compress bool, latency int, samples <-chan 
       }
       cq.WriteComplexArray(writer, sample)
       framesWritten++
+      totalNumbersWritten += len(sample)
       if framesWritten % 10000 == 0 {
         fmt.Printf("Written frame %d\n", framesWritten)
       }
     }
   }
-  fmt.Printf("Result: %d by %d\n", framesWritten, maxHeight)
+  fmt.Printf("Result: %d numbers written, %d by %d\n", totalNumbersWritten, framesWritten, maxHeight)
 }

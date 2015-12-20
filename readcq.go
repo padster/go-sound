@@ -2,12 +2,18 @@ package main
 
 import (
   "flag"
+  "fmt"
   "runtime"
 
   "github.com/padster/go-sound/cq"
   f "github.com/padster/go-sound/file"
   s "github.com/padster/go-sound/sounds"
   "github.com/padster/go-sound/output"
+  "github.com/padster/go-sound/util"
+)
+
+const (
+  SHOW_SPECTROGRAM = false
 )
 
 // Reads the CQ columns from file, converts back into a sound.
@@ -19,7 +25,6 @@ func main() {
   octaves := flag.Int("octaves", 7, "Range in octaves")
   minFreq := flag.Float64("minFreq", 55.0, "Minimum frequency")
   bpo := flag.Int("bpo", 24, "Buckets per octave")
-  zip := flag.Bool("zip", false, "Whether to unzip the input")
   flag.Parse()
 
   remainingArgs := flag.Args()
@@ -32,9 +37,17 @@ func main() {
   }
   
   params := cq.NewCQParams(sampleRate, *octaves, *minFreq, *bpo)
-  asSound := f.ReadCQ(inputFile, params, *zip)
 
-  asSound.Start()
-  defer asSound.Stop()
-  output.Play(asSound)
+  if SHOW_SPECTROGRAM {
+    cqChannel := f.ReadCQColumns(inputFile, params)
+    spectrogram := cq.NewSpectrogram(params)
+    columns := spectrogram.InterpolateCQChannel(cqChannel)
+    toShow := util.NewSpectrogramScreen(882, *bpo * *octaves, *bpo)
+    toShow.Render(columns, 1)
+  } else {
+    asSound := f.ReadCQ(inputFile, params, false)
+    fmt.Printf("Playing...\n")
+    output.Play(asSound)
+    fmt.Printf("Done...\n")
+  }
 }

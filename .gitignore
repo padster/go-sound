@@ -27,8 +27,8 @@ Makefile
 demo
 
 # CQ outputs
-.cq
-.peaks
+*.cq
+*.peaks
 
 # Sound files
 *.wav

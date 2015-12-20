@@ -26,16 +26,18 @@ func NewSpectrogram(params CQParams) *Spectrogram {
 }
 
 func (spec *Spectrogram) ProcessChannel(samples <-chan float64) <-chan []complex128 {
+	return spec.InterpolateCQChannel(spec.cq.ProcessChannel(samples))
+}
+
+func (spec *Spectrogram) InterpolateCQChannel(columns <-chan []complex128) <-chan []complex128 {
 	result := make(chan []complex128)
 
 	go func() {
-		partial := spec.cq.ProcessChannel(samples)
-
 		height := spec.cq.BinCount()
 		buffer := make([][]complex128, 0, 128) // HACK - get the correct size
 
 		first := false
-		for column := range partial {
+		for column := range columns {
 			buffer = append(buffer, column)
 			if first {
 				if len(column) != height {
