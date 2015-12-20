@@ -153,14 +153,8 @@ func factorial(i int) int {
 
 // IO Utils
 
-func WriteComplexBlock(w io.Writer, block [][]complex128) {
-	// WriteInt32(w, int32(len(block)))
-	for _, b := range block {
-		WriteComplexArray(w, b)
-	}
-}
-
 func WriteComplexArray(w io.Writer, array []complex128) {
+	// Uncomment for a weird effect going through the writecq -> readcq cycle
 	// WriteInt32(w, int32(len(array)))
 	for _, c := range array {
 		WriteComplex(w, c)
