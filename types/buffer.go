@@ -2,6 +2,7 @@
 package types
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -78,6 +79,7 @@ func (b *Buffer) GetFromEnd(index int) float64 {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if index < 0 || index >= b.capacity {
+		fmt.Printf("Index = %d, but size = %d and capacity = %d\n", index, b.size, b.capacity)
 		panic("GetFromEnd index out of range")
 	} else if index >= b.size {
 		// Within range, just not filled yet, to default to zero.
@@ -101,6 +103,11 @@ func (b *Buffer) IsFull() bool {
 // IsFinished returns whether there is nothing more to be added to the buffer
 func (b *Buffer) IsFinished() bool {
 	return b.finished
+}
+
+// Size returns how many entries are currently in the buffer.
+func (b *Buffer) Size() int {
+	return b.size
 }
 
 // Clear resets the buffer to being empty

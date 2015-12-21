@@ -68,7 +68,7 @@ func noteToMidi(note string, offset int) (int, int) {
 }
 
 // midiToHz returns the Hz of a given midi note.
-func midiToHz(midiNote int) float64 {
+func MidiToHz(midiNote int) float64 {
 	// Assuming C0 hz == 12 midi
 	octave := midiNote/12 - 1
 	semitone := midiNote % 12
@@ -80,13 +80,13 @@ func midiToHz(midiNote int) float64 {
 func MidiToSound(midiNote int) s.Sound {
 	// NOTE: You can substitute here something that reads from .wav files
 	// to synthesize the notes instead.
-	return s.NewSineWave(midiToHz(midiNote))
+	return s.NewSineWave(MidiToHz(midiNote))
 }
 
 // noteToHz reads a note starting at an offset, and returns the hz and the end offset.
 func noteToHz(note string, offset int, base uint) (float64, int) {
 	midi, next := noteToMidi(note, offset)
-	return midiToHz(midi + 12*int(base+1)), next
+	return MidiToHz(midi + 12*int(base+1)), next
 }
 
 // noteToHz reads a note starting at an offset, and returns its Sound and the end offset.
