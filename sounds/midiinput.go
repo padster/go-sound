@@ -127,7 +127,7 @@ func (s *MidiInput) Start() {
 		for event := range in.Listen() {
 			// TODO - figure out what event.Data2 is (volumne?) and use it...
 			fmt.Printf("Got: %v\n", event)
-			if event.Status >= noteStart && event.Status < noteStart + MAX_CHANNELS {
+			if event.Status >= noteStart && event.Status < noteStart+MAX_CHANNELS {
 				channel := event.Status - noteStart
 				note := int64(event.Data1)
 				// Drop channel 0 an octave
@@ -135,7 +135,7 @@ func (s *MidiInput) Start() {
 					note -= 12
 				}
 				s.notes.Add(note)
-			} else if event.Status >= noteEnd && event.Status < noteEnd + MAX_CHANNELS {
+			} else if event.Status >= noteEnd && event.Status < noteEnd+MAX_CHANNELS {
 				channel := event.Status - noteEnd
 				note := int64(event.Data1)
 				// Drop channel 0 an octave

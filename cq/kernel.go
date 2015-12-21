@@ -11,7 +11,7 @@ import (
 const DEBUG = false
 
 type Properties struct {
-	sampleRate    float64
+	sampleRate float64
 	// NOTE: minFrequency of the kernel is *not* min frequency of the CQ.
 	// It is the frequency of the lowest note in the top octave.
 	minFrequency  float64
@@ -43,7 +43,7 @@ func NewCQKernel(params CQParams) *CQKernel {
 	p.sampleRate = params.sampleRate
 	p.octaves = params.Octaves
 	p.binsPerOctave = params.BinsPerOctave
-	p.minFrequency = params.minFrequency * math.Pow(2.0, float64(p.octaves) - 1.0 + 1.0 / float64(p.binsPerOctave))
+	p.minFrequency = params.minFrequency * math.Pow(2.0, float64(p.octaves)-1.0+1.0/float64(p.binsPerOctave))
 
 	// GenerateKernel
 	q := params.q
@@ -86,7 +86,7 @@ func NewCQKernel(params CQParams) *CQKernel {
 	}
 
 	for k := 1; k <= p.binsPerOctave; k++ {
-		nk := round(p.Q*p.sampleRate/(p.minFrequency*math.Pow(2, ((float64(k)-1.0)/float64(bpo)))))
+		nk := round(p.Q * p.sampleRate / (p.minFrequency * math.Pow(2, ((float64(k)-1.0)/float64(bpo)))))
 		win := makeWindow(params.window, nk)
 		fk := float64(p.minFrequency * math.Pow(2, ((float64(k)-1.0)/float64(bpo))))
 

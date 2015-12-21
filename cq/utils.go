@@ -178,7 +178,6 @@ func WriteByte(w io.Writer, b byte) {
 	binary.Write(w, binary.LittleEndian, b)
 }
 
-
 func ReadComplexArray(r io.Reader, size int) []complex128 {
 	array := make([]complex128, size, size)
 	for i := 0; i < size; i++ {

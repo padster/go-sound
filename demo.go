@@ -62,22 +62,22 @@ func renderMidi() {
 	output.Play(midi)
 
 	/*
-	sampleRate := s.CyclesPerSecond
-	octaves := 7
-	minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
-	maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
-	bpo := flag.Int("bpo", 48, "Buckets per octave")
-	flag.Parse()
+		sampleRate := s.CyclesPerSecond
+		octaves := 7
+		minFreq := flag.Float64("minFreq", 55.0, "minimum frequency")
+		maxFreq := flag.Float64("maxFreq", 55.0*float64(cq.UnsafeShift(octaves)), "maximum frequency")
+		bpo := flag.Int("bpo", 48, "Buckets per octave")
+		flag.Parse()
 
-	params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
-	spectrogram := cq.NewSpectrogram(params)
+		params := cq.NewCQParams(sampleRate, *minFreq, *maxFreq, *bpo)
+		spectrogram := cq.NewSpectrogram(params)
 
-	midi.Start()
-	defer midi.Stop()
+		midi.Start()
+		defer midi.Stop()
 
-	columns := spectrogram.ProcessChannel(midi.GetSamples())
-	toShow := util.NewSpectrogramScreen(882, *bpo*octaves, *bpo)
-	toShow.Render(columns, 1)
+		columns := spectrogram.ProcessChannel(midi.GetSamples())
+		toShow := util.NewSpectrogramScreen(882, *bpo*octaves, *bpo)
+		toShow.Render(columns, 1)
 	*/
 }
 
@@ -127,7 +127,7 @@ func playClairDeLune() {
 	)
 
 	clairDeLune := s.SumSounds(leftHand, rightHand)
-	
+
 	// toPlay := s.NewDenseIIR(clairDeLune,
 	// []float64{0.8922, -2.677, 2.677, -0.8922},
 	// []float64{2.772, -2.57, 0.7961},
@@ -219,7 +219,7 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 
 	// String-like wave:
 	asSound := s.NewKarplusStrong(hz, 0.9)
-	return s.NewTimedSound(asSound, quaverCount * q)
+	return s.NewTimedSound(asSound, quaverCount*q)
 }
 
 // Shephard tones

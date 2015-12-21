@@ -13,7 +13,7 @@ const (
 
 type CQParams struct {
 	sampleRate    float64
-	Octaves 	  int
+	Octaves       int
 	minFrequency  float64
 	BinsPerOctave int
 

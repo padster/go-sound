@@ -53,7 +53,7 @@ func main() {
 		soundChannel, specChannel := splitChannel(inputSound.GetSamples())
 		go func() {
 			columns := spectrogram.ProcessChannel(specChannel)
-			toShow := util.NewSpectrogramScreen(882, *bpo * *octaves, *bpo)
+			toShow := util.NewSpectrogramScreen(882, *bpo**octaves, *bpo)
 			toShow.Render(columns, 1)
 		}()
 		output.Play(s.WrapChannelAsSound(soundChannel))

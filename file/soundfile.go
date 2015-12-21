@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-  	"github.com/padster/go-sound/cq"
+	"github.com/padster/go-sound/cq"
 	o "github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
