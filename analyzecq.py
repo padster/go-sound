@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import cmath, math, sys, os
+import cmath, colorsys, math, sys, os
 
 columns = []
 meta = []
@@ -161,8 +161,45 @@ def uninterpolatedSpectrogram():
             metaMatrix[len(column):, i] = metaMatrix[len(column):, i - 1]
     plotComplexSpectrogram(asMatrix, metaMatrix)
 
+def phaseVsPowerScatter():
+    # TODO: Should these phase peaks line up more?
+    for octave in range(6):
+        for i in range(24):
+            r, g, b = colorsys.hsv_to_rgb(i / 24.0, 1.0, 1.0)
+            c = '#%02x%02x%02x' % (int(r*255), int(g*255), int(b*255))
+            power = valuesForBin(octave, i, np.abs)
+            phase = valuesForBin(octave, i, cmath.phase)
+
+            # power = 20 * np.log10(np.abs(power) + 1e-8)
+            ax1 = plt.subplot(3, 2, octave + 1)
+            plt.title("octave %d" % octave)
+            phase = flatPhase(phase)
+            phase = np.diff(phase)
+            phase = np.fmod(phase * (2 ** octave), 2 * np.pi)
+            ax1.scatter(phase, power[1:], color=c, label='bin' + str(i))
+    plt.show()
+
+def notePower():
+    bins = 24
+    power = np.zeros(bins)
+    for octave in range(3):
+        for bin in range(bins):
+            power[bin] += np.sum(valuesForBin(octave + 2, bin, np.abs))
+
+    notes = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
+    noteLen = len(notes)
+    notePowers = np.zeros(noteLen)
+    width = 0.7
+    for note in range(noteLen):
+        notePowers[note] = power[2 * note] + (power[2 * note + 1] + power[2 * note - 1]) / 2.0
+    plt.bar(range(noteLen), notePowers, width)
+    plt.xticks(np.arange(noteLen) + width / 2, notes)
+    plt.show()
+
 
 readFileAndMeta()
-uninterpolatedSpectrogram()
-# phaseGraphsForBin(4)
+# uninterpolatedSpectrogram()
+# phaseGraphsForBin(3)
 # phaseScatter(2, 4)
+# phaseVsPowerScatter()
+notePower()

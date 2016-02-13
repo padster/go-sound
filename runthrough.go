@@ -125,7 +125,7 @@ func delay() {
 func main() {
 	runtime.GOMAXPROCS(4)
 
-	exampleToRun := 8
+	exampleToRun := 10
 
 	switch exampleToRun {
 	case 1:

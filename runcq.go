@@ -9,7 +9,7 @@ import (
 
 	"github.com/padster/go-sound/cq"
 	f "github.com/padster/go-sound/file"
-	"github.com/padster/go-sound/output"
+    "github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
 
@@ -59,7 +59,7 @@ func main() {
 	asSound := s.WrapChannelAsSound(samples)
 
 	// if outputFile != "" {
-	// f.Write(asSound, outputFile)
+	//f.Write(asSound, "brickwhite.wav")
 	// } else {
 	output.Play(asSound)
 	// }
@@ -80,13 +80,14 @@ func mergeChannels(in1 <-chan []complex128, in2 <-chan []complex128) chan []comp
 			cOut := make([]complex128, len(cIn1), len(cIn1))
 			for i := range cIn1 {
 				power1, angle1 := cmplx.Polar(cIn1[i])
+				power1 = 1.0
 				power2, angle2 := cmplx.Polar(cIn2[i])
-				cOut[i] = cmplx.Rect(power1, angle2)
+				cOut[i] = cmplx.Rect(power1, angle1)
 				// if i > 48 && i <= 72 {
 				// cOut[i] = 0
 				// }
 				// HACK variable to stop go complaining about unused variables :(
-				cIn2[i] = cmplx.Rect(power2, angle1)
+				cIn2[i] = cmplx.Rect(power2, angle2)
 			}
 			out <- cOut
 		}

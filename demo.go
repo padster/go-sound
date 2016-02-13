@@ -214,7 +214,8 @@ func noteTMidi(note float64, quaverCount float64) s.Sound {
 	hz := util.MidiToHz(midi)
 
 	// Simple waves:
-	// asSound := s.NewTriangleWave(hz) // Try different types...
+	// asSound := s.NewSquareWave(hz) // Try different types...
+	// asSound := s.NewSineWave(hz)
 	// asSound = s.NewADSREnvelope(asSound, 15, 50, 0.5, 20)
 
 	// String-like wave:
