@@ -28,7 +28,7 @@ var organSum = 4.37
 // A MidiInput is a sound that is wrapping a portmidi Midi input device.
 type MidiInput struct {
 	samples  chan float64
-	deviceId pm.DeviceId
+	deviceId pm.DeviceID
 	running  bool
 	// TODO(padster): use a more efficient, less general data type.
 	notes *set.Set
@@ -36,7 +36,7 @@ type MidiInput struct {
 
 // NewMidiInput takes a given midi device and converts it into a sound that plays
 // what the device is playing (as sine waves), and stops once a pitch-bend is received.
-func NewMidiInput(deviceId pm.DeviceId) Sound {
+func NewMidiInput(deviceId pm.DeviceID) Sound {
 	ret := MidiInput{
 		nil, /* samples */
 		deviceId,

@@ -44,7 +44,7 @@ func renderMidi() {
 	fmt.Println("Loading portmidi...")
 	pm.Initialize()
 
-	midi := s.NewMidiInput(pm.DeviceId(3)) // ++See below
+	midi := s.NewMidiInput(pm.DeviceID(3)) // ++See below
 	fmt.Printf("Rendering midi...\n")
 
 	/*
