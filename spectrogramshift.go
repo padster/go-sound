@@ -49,7 +49,7 @@ func main() {
 	fmt.Printf("Running...\n")
 	columns := spectrogram.ProcessChannel(inputSound.GetSamples())
 	outColumns := shiftSpectrogram(
-	    *semitones*(*bpo/12), 0, flipSpectrogram(columns, *octaves, *bpo), *octaves, *bpo)
+		*semitones*(*bpo/12), 0, flipSpectrogram(columns, *octaves, *bpo), *octaves, *bpo)
 	soundChannel := cqInverse.ProcessChannel(outColumns)
 	resultSound := s.WrapChannelAsSound(soundChannel)
 
@@ -110,45 +110,46 @@ func numOctaves(at int) int {
 }
 
 func clone(values []complex128) []complex128 {
-    result := make([]complex128, len(values), len(values))
-    for i, v := range values {
-        result[i] = v
-    }
-    return result
+	result := make([]complex128, len(values), len(values))
+	for i, v := range values {
+		result[i] = v
+	}
+	return result
 }
 
-func flipSpectrogram(samples <-chan []complex128, octaves int, bpo int) <-chan []complex128 { 
+func flipSpectrogram(samples <-chan []complex128, octaves int, bpo int) <-chan []complex128 {
 	result := make(chan []complex128)
 	go func() {
-	    var phaseAt []float64 = nil
-	    for s := range samples {
-	        if phaseAt == nil {
-	            phaseAt = make([]float64, len(s), len(s))
-	        }
-            for i, v := range s {
-                vp := cmplx.Phase(v)
-                vp = makeCloser(phaseAt[i], vp)
-                phaseAt[i] = vp
-            }
+		var phaseAt []float64 = nil
+		for s := range samples {
+			if phaseAt == nil {
+				phaseAt = make([]float64, len(s), len(s))
+			}
+			for i, v := range s {
+				vp := cmplx.Phase(v)
+				vp = makeCloser(phaseAt[i], vp)
+				phaseAt[i] = vp
+			}
 
-            newSample := make([]complex128, len(s), len(s))
-            for i := 0; i < len(s); i++ {
-                newSample[i] = s[i]
-            }
-            
-	        for i := 0; i < len(s); i++ {
-	            other := len(s) - 1 - i
-	            pFactor := float64(octaves) - float64(2 * i + 1) / float64(bpo)
-	            phase := phaseAt[other] / math.Pow(2.0, pFactor)
-	            newSample[i] = cmplx.Rect(cmplx.Abs(s[other]), phase)
-	        } 
-	        
-	        result <- newSample
-	    }
-	    close(result)
+			newSample := make([]complex128, len(s), len(s))
+			for i := 0; i < len(s); i++ {
+				newSample[i] = s[i]
+			}
+
+			for i := 0; i < len(s); i++ {
+				other := len(s) - 1 - i
+				pFactor := float64(octaves) - float64(2*i+1)/float64(bpo)
+				phase := phaseAt[other] / math.Pow(2.0, pFactor)
+				newSample[i] = cmplx.Rect(cmplx.Abs(s[other]), phase)
+			}
+
+			result <- newSample
+		}
+		close(result)
 	}()
-	return result;
+	return result
 }
+
 // Return the closest number X to toShift, such that X mod Tau == modTwoPi
 func makeCloser(toShift, modTau float64) float64 {
 	if math.IsNaN(modTau) {
@@ -157,7 +158,5 @@ func makeCloser(toShift, modTau float64) float64 {
 	// Minimize |toShift - (modTau + tau * cyclesToAdd)|
 	// toShift - modTau - tau * CTA = 0
 	cyclesToAdd := (toShift - modTau) / cq.TAU
-	return modTau + float64(cq.Round(cyclesToAdd)) * cq.TAU
+	return modTau + float64(cq.Round(cyclesToAdd))*cq.TAU
 }
-
-

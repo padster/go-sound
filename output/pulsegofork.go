@@ -6,13 +6,12 @@ package output
 /*
 #cgo LDFLAGS: -lpulse
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <pulse/error.h>
 #include <pulse/context.h>
 #include <pulse/stream.h>
 #include <pulse/thread-mainloop.h>
-
-void cfree(void*);
 
 typedef struct {
     pa_threaded_mainloop *pa;
@@ -529,14 +528,14 @@ func (self *PulseContext) ExitDaemon() int {
 func (self *PulseContext) SetDefaultSource(name string) int {
 	name_ := C.CString(name)
 	retval := int(C.context_set_default_source(self.MainLoop.pa, self.ctx, name_))
-	C.cfree(unsafe.Pointer(name_))
+	C.free(unsafe.Pointer(name_))
 	return retval
 }
 
 func (self *PulseContext) SetDefaultSink(name string) int {
 	name_ := C.CString(name)
 	retval := int(C.context_set_default_sink(self.MainLoop.pa, self.ctx, name_))
-	C.cfree(unsafe.Pointer(name_))
+	C.free(unsafe.Pointer(name_))
 	return retval
 }
 
@@ -547,7 +546,7 @@ func (self *PulseContext) NewStream(name string, spec *PulseSampleSpec) *PulseSt
 	if st != nil {
 		retval = &PulseStream{Context: self, st: st}
 	}
-	C.cfree(unsafe.Pointer(name_))
+	C.free(unsafe.Pointer(name_))
 	return retval
 }
 
@@ -558,7 +557,7 @@ func (self *PulseMainLoop) NewContext(name string, flags int) *PulseContext {
 	if ctx != nil {
 		retval = &PulseContext{MainLoop: self, ctx: ctx}
 	}
-	C.cfree(unsafe.Pointer(name_))
+	C.free(unsafe.Pointer(name_))
 	return retval
 }
 

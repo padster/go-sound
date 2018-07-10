@@ -239,7 +239,7 @@ func NewResampler(sourceRate int, targetRate int, snr float64, bandwidth float64
 		phaseData,
 
 		make([]float64, fill, fill), /* buffer */
-		0, /* bufferOrigin */
+		0,                           /* bufferOrigin */
 	}
 }
 

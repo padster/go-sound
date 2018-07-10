@@ -9,7 +9,7 @@ import (
 
 	"github.com/padster/go-sound/cq"
 	f "github.com/padster/go-sound/file"
-    "github.com/padster/go-sound/output"
+	"github.com/padster/go-sound/output"
 	s "github.com/padster/go-sound/sounds"
 )
 
