@@ -33,10 +33,10 @@ const (
 // Sounds also provide a way to start and stop when the samples are written, and reset to an initial state.
 type Sound interface {
 	// Sound wave samples for the sound - only valid after Start() and before Stop()
-	// NOTE: Only one sink should read from GetSamples()!! Otherwise it will not receive every sample.
+	// NOTE: Only one sink should read from GetSamples(). Otherwise it will not receive every sample.
 	GetSamples() <-chan float64
 
-	// Number of samples in this sound - MaxLength of unlimited.
+	// Number of samples in this sound, MaxLength if unlimited.
 	Length() uint64
 
 	// Length of time this goes for. Convenience method, should always be SamplesToDuration(Length())
