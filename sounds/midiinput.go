@@ -1,3 +1,5 @@
+// +build darwin,linux,windows
+
 package sounds
 
 import (
